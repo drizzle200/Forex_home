@@ -1,0 +1,113 @@
+{% extends "trade/base/base.html" %}
+
+{% block body %}
+
+<style>
+    .delete-card {
+        max-width: 600px;
+        margin: 60px auto;
+        background: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+        overflow: hidden;
+    }
+
+    .delete-header {
+        background-color: #e74c3c;
+        color: white;
+        padding: 15px 20px;
+        font-size: 20px;
+        font-weight: bold;
+    }
+
+    .delete-body {
+        padding: 20px;
+    }
+
+    .delete-body p {
+        font-size: 16px;
+        margin-bottom: 15px;
+    }
+
+    .trade-info {
+        list-style: none;
+        padding: 0;
+        margin-bottom: 20px;
+    }
+
+    .trade-info li {
+        padding: 8px 0;
+        border-bottom: 1px solid #eee;
+    }
+
+    .trade-info strong {
+        color: #555;
+    }
+
+    .btn-danger {
+        background-color: #e74c3c;
+        border: none;
+        color: white;
+        padding: 10px 16px;
+        border-radius: 4px;
+        font-weight: 600;
+    }
+
+    .btn-danger:hover {
+        background-color: #c0392b;
+    }
+
+    .btn-secondary {
+        background-color: #bdc3c7;
+        color: #2c3e50;
+        padding: 10px 16px;
+        border-radius: 4px;
+        font-weight: 600;
+        text-decoration: none;
+        margin-left: 10px;
+    }
+
+    .btn-secondary:hover {
+        background-color: #a6acaf;
+        text-decoration: none;
+        color: #2c3e50;
+    }
+
+    .action-buttons {
+        text-align: right;
+    }
+</style>
+
+<div class="delete-card">
+    <div class="delete-header">
+        ⚠️ Confirm Trade Deletion
+    </div>
+
+    <div class="delete-body">
+        <p>
+            Are you sure you want to <strong>permanently delete</strong> this trade?
+            This action cannot be undone.
+        </p>
+
+        <ul class="trade-info">
+            <li><strong>Reference No:</strong> {{ trade.trade_id }}</li>
+            <li><strong>Pair:</strong> {{ trade.pair }}</li>
+            <li><strong>Buy / Sell:</strong> {{ trade.buy_or_sell }}</li>
+            <li><strong>Executed on:</strong> {{ trade.timestamp }}</li>
+        </ul>
+
+        <form method="post" action="{% url 'delete_trade' trade.trade_id %}">
+            {% csrf_token %}
+            <div class="action-buttons">
+                <button type="submit" class="btn-danger">
+                    Yes, Delete
+                </button>
+                <a href="{% url 'journal' %}" class="btn-secondary">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

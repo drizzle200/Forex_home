@@ -1,0 +1,177 @@
+from django.db import models
+from django.contrib.auth.models import User
+from random import choice
+import string
+
+
+
+# Create your models here.
+
+class Trades(models.Model):
+    trade_id = models.IntegerField(null=True, blank=True)
+
+    PAIR_CHOICES = [("EUR/USD","EUR/USD"),
+    				("NZD/USD","NZD/USD"),
+    				("AUD/JPY","AUD/JPY"),
+    				("GBP/USD","GBP/USD"),
+    				("EUR/JPY","EUR/JPY"),
+
+    ]
+
+    H4_CHOICES = 	[("Up Strong","Up Strong"),
+    				("Down Strong","Down Strong"),
+    				("Up Very strong","Up Very strong"),
+    				("Down Very strong","Down Very strong "),
+    				("Up weak","Up weak"),
+    				("Down weak","Down weak"),
+
+    ]
+
+    ENTRY_PLACE_CHOICES = 	[("key level","Key level"),
+    				("POI","POI"),
+    				("BRT","BRT"),
+    				("Other","Other")
+
+    ]
+    BUY_CHOICES = 	[("BUY","BUY"),
+    				("SELL","SELL"),
+    				
+    ]
+    SETUP_QUALITY_CHOICES = 	[(5,"5 Stars"),
+    				(4,"4 Stars"),
+    				(3,"3 Stars"),
+    				(2,"2 Stars"),
+    				(1,"1 Star"),
+    				
+    ]
+
+    TRADE_TYPE_CHOICES = 	[("Scalping (1M)","Scalping (1M)"),
+    				("Day trading (5M)","Day trading (5M)"),
+    				("Intraday trading (15M)","Intraday trading (15M)"),
+    				("Swing (H1)","Swing (H1) "),
+    				
+    ]
+    
+    CONFIRMATION_CHOICES = 	[("Big maru/pin bar","Big maru/pin bar"),
+    				("Triple top","Triple top"),
+    				("Double top","Double top"),
+    				("No confirmation","No confirmation"),
+    				
+    ]
+    
+    MOOD_CHOICES = 	[("Calm","Calm"),
+    				("FOMO","FOMO"),
+    				("Frustrated","Frustrated"),
+    				("Tired","Tired"),
+    				
+    ]
+
+    TP_CHOICES = 	[("Below recent high","Below recent high"),
+    				("At recent high","At recent high"),
+    				("Above recent high","Above recent high"),
+    				    				
+    ]
+
+    TP_REASON_CHOICES = 	[(" Everything OK"," Everything OK"),
+    				("Fake BO at KL","Fake BO at KL"),
+    				("Strong opposite KL","Strong opposite KL"),
+    				("Strong opposite POIL","Strong opposite POI"),
+    				("Strong maru/pin","Strong maru/pin (Price rejection)"),
+    				("Double top","Double top"),
+    				("Triple top","Triple top"),
+    				("Strong opposite volume","Strong opposite volume"),
+    				    				
+    ]
+
+    TARGET_CHOICES = 	[(1,"Win"),
+    				(0,"Lose"),
+    	   				
+    ]
+
+    REASON_CHOICES = 	[("Psycho/Mood","Psycho/Mood"),
+    				("Wrong Structure","Wrong Structure"),
+    				("Trend","Trend"),
+    				("FOMO","FOMO"),
+    				("Greed","Greed"),
+    				("No Confirmation","No Confirmation"),
+    				("Momentum","Momentum"),
+    				("News","News"),
+    				("Other","Other"),
+    	   				
+    ]
+
+
+
+
+
+
+
+    pair   = models.CharField(max_length=20, null=True, choices=PAIR_CHOICES)
+    momentum_h4   = models.CharField(max_length=20, null=True, choices=H4_CHOICES)
+    momentum_h1   = models.CharField(max_length=20, null=True, choices=H4_CHOICES)
+    momentum_15m  = models.CharField(max_length=20, null=True, choices=H4_CHOICES)
+    momentum_5m   = models.CharField(max_length=20, null=True, choices=H4_CHOICES)
+    momentum_1m   = models.CharField(max_length=20, null=True, choices=H4_CHOICES)
+    session   = models.CharField(max_length=20, null=True)
+    entry_place   = models.CharField(max_length=20, null=True, choices=ENTRY_PLACE_CHOICES)
+    buy_or_sell   = models.CharField(max_length=20, null=True, choices=BUY_CHOICES)
+    setup_quality   = models.IntegerField(null=True, blank=True, choices=SETUP_QUALITY_CHOICES)
+    trade_type   = models.CharField(max_length=50, null=True, choices=TRADE_TYPE_CHOICES)
+    confirmation   = models.CharField(max_length=20, null=True, choices=CONFIRMATION_CHOICES)
+    mood		   = models.CharField(max_length=20, null=True, choices=MOOD_CHOICES)
+    tp  		 = models.CharField(max_length=20, null=True, choices= TP_CHOICES)
+    tp_reason   = models.CharField(max_length=50, null=True, choices= TP_REASON_CHOICES)
+    risk_reward = models.FloatField(null=True, blank=True)
+    rvs 		   = models.IntegerField(null=True, blank=True)
+    rvs_grade   = models.CharField(max_length=20, null=True)
+    target 		   = models.IntegerField(null=True, blank=True, choices=TARGET_CHOICES)
+    reason 		   = models.CharField(max_length=20, null=True, choices=REASON_CHOICES)
+    holding_time_hrs   = models.IntegerField(null=True, blank=True)
+    holding_time_mns   = models.IntegerField(null=True, blank=True)
+    narration   = models.CharField(max_length=500, null=True)
+    timestamp   = models.DateTimeField(auto_now_add=True)
+
+
+    def __str__(self):
+        return f'{self.trade_id} - {self.buy_or_sell}'
+#    user = models.ManyToManyField(User, related_name="students")
+#
+#class Course_curriculums(models.Model):
+#    name = models.CharField(max_length=30, blank=False)   
+#    courses = models.ForeignKey(Courses, on_delete=models.CASCADE, related_name="days")
+#    def __str__(self) -> str:
+#        return self.name
+#
+#class Course_lessons(models.Model):
+#    id = models.CharField(primary_key=True,unique=True, max_length=22)
+#    lesson_name =  models.CharField(max_length=70, blank=False, null=False)
+#    lesson_file= models.FileField(upload_to='uploads/tutorials/videos/', null=True)
+#    key_points = models.TextField(max_length=1000, blank=False, null=False)
+#    courses = models.ForeignKey(Courses, on_delete=models.CASCADE, related_name="thetop")
+#    curriculums = models.ForeignKey(Course_curriculums, on_delete=models.CASCADE)
+#    visited = models.BooleanField(default=False)
+#
+#
+#    def __str__(self) -> str:
+#        return self.lesson_name
+#    
+#class Home_contents(models.Model):
+#    image = models.ImageField(upload_to='uploads/%Y/%m/%d/', blank=True, default="uploads/default-thumbnail.jpg")
+#    discription = models.TextField(max_length=1000)
+#    time        = models.TimeField(auto_now=True)
+#
+#    def __str__(self) -> str:
+#        return self.discription
+#
+#class Flight(models.Model):
+#    f_from = models.CharField(max_length=24)
+#    f_to = models.CharField(max_length=45)
+#    duration =models.IntegerField()
+#
+#class Passengers(models.Model):
+#    flight = models.ForeignKey(Flight, on_delete=models.CASCADE, related_name='passengers')
+#    name = models.CharField(max_length=24)
+#
+#class laguage(models.Model):
+#    owner = models.ForeignKey(Passengers, on_delete=models.CASCADE, related_name="pass_lag")
+#    kg = models.IntegerField()

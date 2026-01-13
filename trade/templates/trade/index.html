@@ -1,0 +1,313 @@
+{% extends 'trade/base/base.html' %}
+{% load static %}
+
+{% block title %} Home | Trade {% endblock %}
+
+{% block body %}
+<style>
+.trade-card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    max-width: 600px;
+    margin: 30px auto;
+}
+.trade-header {
+    background-color: #1abc9c;
+    color: white;
+    padding: 12px 16px;
+    border-radius: 6px 6px 0 0;
+    font-size: 20px;
+    font-weight: 600;
+    text-align: center;
+}
+.step-card { display: none; }
+.step-card.active { display: block; }
+.option {
+    background: #f4f6f6;
+    padding: 10px;
+    margin: 6px 0;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid #ddd;
+}
+.option.selected {
+    border-color: #1abc9c;
+    background: #d1f0eb;
+}
+.btn-nav {
+    background-color: #1abc9c;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    margin: 10px 5px 0 0;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.btn-nav:hover { background-color: #17a589; }
+.btn-submit {
+    display: block;
+    width: 50%;
+    margin: 20px auto 0;
+    background-color: #1abc9c;
+    color: white;
+    border: none;
+    padding: 12px 0;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+}
+.btn-submit:hover { background-color: #17a589; }
+/* Modal for preview */
+.modal-bg {
+    display: none;
+    position: fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background: rgba(0,0,0,0.5);
+    z-index:1000;
+}
+.modal-box {
+    background:white;
+    width:90%;
+    max-width:500px;
+    margin:100px auto;
+    border-radius:8px;
+    overflow:hidden;
+}
+.modal-footer {
+    padding:15px;
+    text-align:right;
+}
+.preview-table { width:100%; border-collapse: collapse; }
+.preview-table th { background:#1abc9c; color:white; padding:10px; text-align:left; }
+.preview-table td { padding:10px; background:#f4f6f6; border-bottom:1px solid #ddd; }
+</style>
+
+<div class="trade-card">
+    <div class="trade-header">Start Trading</div>
+
+    <form method="post" action="{% url 'index' %}" id="tradeForm">
+        {% csrf_token %}
+        <!-- Hidden inputs for Django -->
+        {% for field in form %}
+            <input type="hidden" name="{{ field.name }}" id="{{ field.name }}">
+        {% endfor %}
+        <input type="hidden" name="show_confirm" id="show_confirm" value="0">
+
+        <!-- Steps -->
+        <div class="step-card active" data-step="0">
+            <h4>Pair <span style="color:red">*</span></h4>
+            {% for val,label in form.fields.pair.choices %}
+            <div class="option" data-field="pair" data-value="{{ val }}">{{ label }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Momentum H4 -->
+        <div class="step-card" data-step="1">
+            <h4>Momentum H4</h4>
+            {% for val,label in form.fields.momentum_h4.choices %}
+            <div class="option" data-field="momentum_h4" data-value="{{ val }}">{{ label }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Momentum H1 -->
+        <div class="step-card" data-step="2">
+            <h4>Momentum H1</h4>
+            {% for val,label in form.fields.momentum_h1.choices %}
+            <div class="option" data-field="momentum_h1" data-value="{{ val }}">{{ label }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Momentum 15m -->
+        <div class="step-card" data-step="3">
+            <h4>Momentum 15m</h4>
+            {% for val,label in form.fields.momentum_15m.choices %}
+            <div class="option" data-field="momentum_15m" data-value="{{ val }}">{{ label }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Momentum 5m -->
+        <div class="step-card" data-step="4">
+            <h4>Momentum 5m</h4>
+            {% for val,label in form.fields.momentum_5m.choices %}
+            <div class="option" data-field="momentum_5m" data-value="{{ val }}">{{ label }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Momentum 1m -->
+        <div class="step-card" data-step="5">
+            <h4>Momentum 1m</h4>
+            {% for val,label in form.fields.momentum_1m.choices %}
+            <div class="option" data-field="momentum_1m" data-value="{{ val }}">{{ label }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Entry Place -->
+        <div class="step-card" data-step="6">
+            <h4>Entry Place <span style="color:red">*</span></h4>
+            {% for val,label in form.fields.entry_place.choices %}
+            <div class="option" data-field="entry_place" data-value="{{ val }}">{{ label }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Buy/Sell -->
+        <div class="step-card" data-step="7">
+            <h4>Buy / Sell <span style="color:red">*</span></h4>
+            {% for val,label in form.fields.buy_or_sell.choices %}
+            <div class="option" data-field="buy_or_sell" data-value="{{ val }}">{{ label }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Setup Quality -->
+        <div class="step-card" data-step="8">
+            <h4>Setup Quality <span style="color:red">*</span></h4>
+            {% for val,label in form.fields.setup_quality.choices %}
+            <div class="option" data-field="setup_quality" data-value="{{ val }}">{{ label }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Trade Type -->
+        <div class="step-card" data-step="9">
+            <h4>Trade Type <span style="color:red">*</span></h4>
+            {% for val,label in form.fields.trade_type.choices %}
+            <div class="option" data-field="trade_type" data-value="{{ val }}">{{ label }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Confirmation -->
+        <div class="step-card" data-step="10">
+            <h4>Confirmation <span style="color:red">*</span></h4>
+            {% for val,label in form.fields.confirmation.choices %}
+            <div class="option" data-field="confirmation" data-value="{{ val }}">{{ label }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Mood -->
+        <div class="step-card" data-step="11">
+            <h4>Mood <span style="color:red">*</span></h4>
+            {% for val,label in form.fields.mood.choices %}
+            <div class="option" data-field="mood" data-value="{{ val }}">{{ label }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- TP -->
+        <div class="step-card" data-step="12">
+            <h4>TP <span style="color:red">*</span></h4>
+            {% for val,label in form.fields.tp.choices %}
+            <div class="option" data-field="tp" data-value="{{ val }}">{{ label }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- TP Reason -->
+        <div class="step-card" data-step="13">
+            <h4>TP Reason <span style="color:red">*</span></h4>
+            {% for val,label in form.fields.tp_reason.choices %}
+            <div class="option" data-field="tp_reason" data-value="{{ val }}">{{ label }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Risk Reward -->
+        <div class="step-card" data-step="14">
+            <h4>Risk Reward <span style="color:red">*</span></h4>
+            <input type="number" step="0.1" class="form-control" id="input_risk_reward">
+        </div>
+
+        <!-- Navigation -->
+        <div style="text-align:center; margin-top:15px;">
+            <button type="button" class="btn-nav" id="backBtn" style="display:none;">Back</button>
+            <button type="button" class="btn-nav" id="nextBtn">Next</button>
+        </div>
+
+        <button type="submit" class="btn-submit" id="takeTradeBtn" style="display:none;">Take Trade</button>
+    </form>
+</div>
+
+<!-- Trade Preview Modal -->
+{% if show_confirm and trade_preview %}
+<div class="modal-bg" id="tradePreviewModal">
+    <div class="modal-box">
+        <div class="trade-header">Trade Preview</div>
+        <div class="p-3">
+            <table class="preview-table">
+                {% for key, value in trade_preview.items %}
+                <tr>
+                    <td><strong>{{ key }}</strong></td>
+                    <td>{{ value }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+        <div class="modal-footer">
+            <form method="post" action="{% url 'index' %}" style="display:inline;">
+                {% csrf_token %}
+                {% for field in form %}
+                <input type="hidden" name="{{ field.name }}" value="{{ field.value }}">
+                {% endfor %}
+                <button type="submit" name="confirm_save" class="btn btn-success">Confirm Trade</button>
+            </form>
+            <a href="{% url 'index' %}" class="btn btn-danger">Cancel</a>
+        </div>
+    </div>
+</div>
+<script>
+document.getElementById('tradePreviewModal').style.display = 'block';
+</script>
+{% endif %}
+
+<script>
+let currentStep = 0;
+const steps = document.querySelectorAll('.step-card');
+const backBtn = document.getElementById('backBtn');
+const nextBtn = document.getElementById('nextBtn');
+const submitBtn = document.getElementById('takeTradeBtn');
+
+function showStep(step){
+    steps.forEach((s,i)=>s.classList.toggle('active',i===step));
+    backBtn.style.display = step===0?'none':'inline-block';
+    nextBtn.style.display = step===steps.length-1?'none':'inline-block';
+    submitBtn.style.display = step===steps.length-1?'block':'none';
+}
+
+// Option selection
+document.querySelectorAll('.option').forEach(opt=>{
+    opt.addEventListener('click', ()=>{
+        const field = opt.dataset.field;
+        const value = opt.dataset.value;
+        document.getElementById(field).value = value;
+
+        // highlight
+        document.querySelectorAll(`.option[data-field="${field}"]`).forEach(o=>o.classList.remove('selected'));
+        opt.classList.add('selected');
+    });
+});
+
+backBtn.addEventListener('click', ()=>{
+    if(currentStep>0){ currentStep--; showStep(currentStep);}
+});
+nextBtn.addEventListener('click', ()=>{
+    const stepCard = steps[currentStep];
+    const fieldInput = stepCard.querySelector('input, select');
+    const fieldName = fieldInput?fieldInput.id:stepCard.querySelector('.option.selected')?.dataset.field;
+
+    // Validate required (except momentums)
+    const momentumSteps = [1,2,3,4,5];
+    if(!momentumSteps.includes(currentStep) && !document.getElementById(fieldName).value){
+        alert("This field is required!");
+        return;
+    }
+
+    if(currentStep < steps.length-1){ currentStep++; showStep(currentStep);}
+});
+
+// Final submit: mark show_confirm
+submitBtn.addEventListener('click', ()=>{
+    document.getElementById('risk_reward').value = document.getElementById('input_risk_reward').value;
+    document.getElementById('show_confirm').value = '1';
+});
+showStep(currentStep);
+</script>
+{% endblock %}
