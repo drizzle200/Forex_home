@@ -8,6 +8,7 @@ urlpatterns=[
     path("performance", views.performance_view, name="performance"),
     path("trades", views.trades_view, name="trades_view"),
     path('export-trades/', views.export_trades_to_excel, name='export_trades'),
+    path('home/', views.home_view, name="home"),
 
 #   delete urls
 

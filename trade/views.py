@@ -13,7 +13,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from django.db.models import Avg
 from django.views.decorators.http import require_POST
-from .models import Trades
+from .models import Trades, Pairs
 from .forms import NewTradeForm, TradeUpdateForm
 import joblib
 import os
@@ -202,7 +202,7 @@ def export_trades_to_excel(request):
 
 # ---------------------------
 # Index view
-# ---------------------------
+# ---------------------------[]
 def index_view(request):
     model = get_model()
 
@@ -291,17 +291,20 @@ def update_trade_view(request, trade_id):
 
     if request.method == "POST":
         form = TradeUpdateForm(request.POST, instance=trade)
+
         if form.is_valid():
             updated_trade = form.save(commit=False)
 
-            # Ensure empty strings become NULL
+            # Convert empty strings to NULL (skip relations)
             for field in Trades._meta.fields:
-                val = getattr(updated_trade, field.name)
-                if val == "":
+                if field.is_relation:
+                    continue
+                if getattr(updated_trade, field.name) == "":
                     setattr(updated_trade, field.name, None)
 
             updated_trade.save()
             return redirect("journal")
+
     else:
         form = TradeUpdateForm(instance=trade)
 
@@ -309,6 +312,7 @@ def update_trade_view(request, trade_id):
         "form": form,
         "trade": trade,
     })
+
 
 def delete_trade_confirm(request, trade_id):
     trade = get_object_or_404(Trades, trade_id=trade_id)
@@ -324,108 +328,135 @@ def delete_trade(request, trade_id):
     return redirect("journal")
 
 def performance_view(request):
-    eurusd_wins = Trades.objects.filter(
-    pair="EUR/USD",
-    target=1
-    ).count()
-    eurusd_lost = Trades.objects.filter(
-    pair="EUR/USD",
-    target=0
-    ).count()
-    eurusd_winrate = round(eurusd_wins/(eurusd_wins+eurusd_lost)*100,2)
-
-    gbpusd_wins = Trades.objects.filter(
-    pair="GBP/USD",
-    target=1
-    ).count()
-    gbpusd_lost = Trades.objects.filter(
-    pair="GBP/USD",
-    target=0
-    ).count()
-    gbpusd_winrate = round(gbpusd_wins/(gbpusd_wins+gbpusd_lost)*100,2)
-
-    nzdusd_wins = Trades.objects.filter(
-    pair="NZD/USD",
-    target=1
-    ).count()
-    nzdusd_lost = Trades.objects.filter(
-    pair="NZD/USD",
-    target=0
-    ).count()
-    nzdusd_winrate = round(nzdusd_wins/(nzdusd_wins+nzdusd_lost)*100,2) 
-
-    audjpy_wins = Trades.objects.filter(
-    pair="AUD/JPY",
-    target=1
-    ).count()
-    audjpy_lost = Trades.objects.filter(
-    pair="AUD/JPY",
-    target=0
-    ).count()
-    audjpy_winrate = round(audjpy_wins/(audjpy_wins+audjpy_lost)*100,2) 
-
-    eurjpy_wins = Trades.objects.filter(
-    pair="EUR/JPY",
-    target=1
-    ).count()
-    eurjpy_lost = Trades.objects.filter(
-    pair="EUR/JPY",
-    target=0
-    ).count()
-    eurjpy_winrate = round(eurjpy_wins/(eurjpy_wins+eurjpy_lost)*100,2)
-
-    total_wins_all = Trades.objects.filter(
-    target=1
-    ).count()
-    total_lost_all = Trades.objects.filter(
-    target=0
-    ).count()
+    #eurusd_wins = Trades.objects.filter(
+    #pair="EUR/USD",
+    #target=1
+    #).count()
+    #eurusd_lost = Trades.objects.filter(
+    #pair="EUR/USD",
+    #target=0
+    #).count()
+    #eurusd_winrate = round(eurusd_wins/(eurusd_wins+eurusd_lost)*100,2)
+#
+    #gbpusd_wins = Trades.objects.filter(
+    #pair="GBP/USD",
+    #target=1
+    #).count()
+    #gbpusd_lost = Trades.objects.filter(
+    #pair="GBP/USD",
+    #target=0
+    #).count()
+    #gbpusd_winrate = round(gbpusd_wins/(gbpusd_wins+gbpusd_lost)*100,2)
+#
+    #nzdusd_wins = Trades.objects.filter(
+    #pair="NZD/USD",
+    #target=1
+    #).count()
+    #nzdusd_lost = Trades.objects.filter(
+    #pair="NZD/USD",
+    #target=0
+    #).count()
+    #nzdusd_winrate = round(nzdusd_wins/(nzdusd_wins+nzdusd_lost)*100,2) 
+#
+    #audjpy_wins = Trades.objects.filter(
+    #pair="AUD/JPY",
+    #target=1
+    #).count()
+    #audjpy_lost = Trades.objects.filter(
+    #pair="AUD/JPY",
+    #target=0
+    #).count()
+    #audjpy_winrate = round(audjpy_wins/(audjpy_wins+audjpy_lost)*100,2) 
+#
+    #eurjpy_wins = Trades.objects.filter(
+    #pair="EUR/JPY",
+    #target=1
+    #).count()
+    #eurjpy_lost = Trades.objects.filter(
+    #pair="EUR/JPY",
+    #target=0
+    #).count()
+    #eurjpy_winrate = round(eurjpy_wins/(eurjpy_wins+eurjpy_lost)*100,2)
+#
+    #total_wins_all = Trades.objects.filter(
+    #target=1
+    #).count()
+    #total_lost_all = Trades.objects.filter(
+    #target=0
+    #).count()
+    #
+    #all_trades = total_wins_all + total_lost_all
+    #
+    #####  avg RR per pair  ######
+    #rr_eurusd = round(Trades.objects.filter(target=1, pair="EUR/USD").aggregate(rr_eurusd=Avg('risk_reward'))["rr_eurusd"] or 0,2)
+    #rr_gbpusd = round(Trades.objects.filter(target=1, pair="GBP/USD").aggregate(rr_gbpusd=Avg("risk_reward"))["rr_gbpusd"] or 0,2)
+    #rr_nzdusd = round(Trades.objects.filter(target=1, pair="NZD/USD").aggregate(rr_nzdusd=Avg("risk_reward"))["rr_nzdusd"] or 0,2)
+    #rr_audjpy = round(Trades.objects.filter(target=1, pair="AUD/JPY").aggregate(rr_audjpy=Avg("risk_reward"))["rr_audjpy"] or 0,2)
+    #rr_eurjpy = round(Trades.objects.filter(target=1, pair="EUR/JPY").aggregate(rr_eurjpy=Avg("risk_reward"))["rr_eurjpy"] or 0,2)
+    #
+#
+#
+    #trades_qs = Trades.objects.filter(target__in=[0, 1]).order_by("-timestamp")[:30]
+    #
+    #df = pd.DataFrame.from_records(trades_qs.values(
+    #    "target",        # 1 = win, 0 = loss
+    #    "risk_reward",   # RR value
+    #    "rvs"            # Rule Violation Score
+    #))
+#
+    #total_trades = len(df)
+#
+    #if total_trades == 0:
+    #    winrate = lossrate = expectancy = avg_rr_value = avg_rvs = 0
+    #else:
+    #    wins = df[df["target"] == 1]
+    #    losses = df[df["target"] == 0]
+    #
+    #    winrate = round((len(wins) / total_trades) * 100, 2)
+    #    lossrate = round((len(losses) / total_trades) * 100, 2)
+    #
+    #    avg_rr_value = round(df["risk_reward"].mean(), 2)
+    #    avg_rvs = round(df["rvs"].mean(), 2)
+    #
+    #    # Expectancy formula:
+    #    # E = (Win% × Avg Win RR) − (Loss% × Avg Loss RR)
+    #    avg_win_rr = wins["risk_reward"].mean() if not wins.empty else 0
+    #    #avg_loss_rr = losses["risk_reward"].mean() if not losses.empty else 0
+    #    avg_loss_rr = 1
+    #
+    #    expectancy = round(
+    #        ((winrate / 100) * avg_win_rr) -
+    #        ((lossrate / 100) * avg_loss_rr),
+    #        2
+    #    )
     
-    all_trades = total_wins_all + total_lost_all
-    
-    ####  avg RR per pair  ######
-    rr_eurusd = round(Trades.objects.filter(target=1, pair="EUR/USD").aggregate(rr_eurusd=Avg('risk_reward'))["rr_eurusd"] or 0,2)
-    rr_gbpusd = round(Trades.objects.filter(target=1, pair="GBP/USD").aggregate(rr_gbpusd=Avg("risk_reward"))["rr_gbpusd"] or 0,2)
-    rr_nzdusd = round(Trades.objects.filter(target=1, pair="NZD/USD").aggregate(rr_nzdusd=Avg("risk_reward"))["rr_nzdusd"] or 0,2)
-    rr_audjpy = round(Trades.objects.filter(target=1, pair="AUD/JPY").aggregate(rr_audjpy=Avg("risk_reward"))["rr_audjpy"] or 0,2)
-    rr_eurjpy = round(Trades.objects.filter(target=1, pair="EUR/JPY").aggregate(rr_eurjpy=Avg("risk_reward"))["rr_eurjpy"] or 0,2)
-    
+    pairs_summary = []
 
+    pairs = Pairs.objects.all()
 
-    trades_qs = Trades.objects.filter(target__in=[0, 1]).order_by("-timestamp")[:30]
-    
-    df = pd.DataFrame.from_records(trades_qs.values(
-        "target",        # 1 = win, 0 = loss
-        "risk_reward",   # RR value
-        "rvs"            # Rule Violation Score
-    ))
+    for pair in pairs:
+        trades = pair.trades.all()
 
-    total_trades = len(df)
+        if not trades.exists():
+            continue
 
-    if total_trades == 0:
-        winrate = lossrate = expectancy = avg_rr_value = avg_rvs = 0
-    else:
-        wins = df[df["target"] == 1]
-        losses = df[df["target"] == 0]
-    
-        winrate = round((len(wins) / total_trades) * 100, 2)
-        lossrate = round((len(losses) / total_trades) * 100, 2)
-    
-        avg_rr_value = round(df["risk_reward"].mean(), 2)
-        avg_rvs = round(df["rvs"].mean(), 2)
-    
-        # Expectancy formula:
-        # E = (Win% × Avg Win RR) − (Loss% × Avg Loss RR)
-        avg_win_rr = wins["risk_reward"].mean() if not wins.empty else 0
-        #avg_loss_rr = losses["risk_reward"].mean() if not losses.empty else 0
-        avg_loss_rr = 1
-    
-        expectancy = round(
-            ((winrate / 100) * avg_win_rr) -
-            ((lossrate / 100) * avg_loss_rr),
-            2
-        )
- 
+        won = trades.filter(target=1).count()
+        lost = trades.exclude(target=1).count()
+        total = won + lost
+
+        winrate = round((won / total) * 100, 2) if total > 0 else 0
+
+        avg_rr = trades.filter(target=1).aggregate(avg_rr=Avg("risk_reward"))["avg_rr"] or 0
+        avg_rr = round(avg_rr, 2)
+
+        pairs_summary.append({
+            "pair": pair.name,
+            "won": won,
+            "lost": lost,
+            "avg_rr": avg_rr,
+            "winrate": winrate,
+        })
+
     reasons = Trades.objects.filter(target=0).order_by("-timestamp").values_list("reason",flat=True)[:10]
 
 
@@ -462,34 +493,36 @@ def performance_view(request):
 
 
     return render(request, 'trade/performance.html', {
-    'eurusd_wins':eurusd_wins,
-    'eurusd_lost':eurusd_lost,
-    'gbpusd_wins':gbpusd_wins,
-    'gbpusd_lost':gbpusd_lost,
-    'nzdusd_wins':nzdusd_wins,
-    'nzdusd_lost':nzdusd_lost,
-    'audjpy_wins':audjpy_wins,
-    'audjpy_lost':audjpy_lost,
-    'eurjpy_wins':eurjpy_wins,
-    'eurjpy_lost':eurjpy_lost,
-    'total_wins_all':total_wins_all,
-    'total_lost_all':total_lost_all,
-    'all_trades':all_trades,
-    'rr_eurusd':rr_eurusd,
-    'rr_gbpusd':rr_gbpusd,
-    'rr_nzdusd':rr_nzdusd,
-    'rr_audjpy':rr_audjpy,
-    'rr_eurjpy':rr_eurjpy,
-    'eurusd_winrate':eurusd_winrate,
-    'gbpusd_winrate':gbpusd_winrate,
-    'nzdusd_winrate':nzdusd_winrate,
-    'audjpy_winrate':audjpy_winrate,
-    'eurjpy_winrate':eurjpy_winrate,
-    'winrate':winrate,
-    'lossrate':lossrate,
-    'expectancy':expectancy,
-    'avg_rr_value':avg_rr_value,
-    'avg_rvs':avg_rvs,
+    #'eurusd_wins':eurusd_wins,
+    #'eurusd_lost':eurusd_lost,
+    #'gbpusd_wins':gbpusd_wins,
+    #'gbpusd_lost':gbpusd_lost,
+    #'nzdusd_wins':nzdusd_wins,
+    #'nzdusd_lost':nzdusd_lost,
+    #'audjpy_wins':audjpy_wins,
+    #'audjpy_lost':audjpy_lost,
+    #'eurjpy_wins':eurjpy_wins,
+    #'eurjpy_lost':eurjpy_lost,
+    #'total_wins_all':total_wins_all,
+    #'total_lost_all':total_lost_all,
+    #'all_trades':all_trades,
+    #'rr_eurusd':rr_eurusd,
+    #'rr_gbpusd':rr_gbpusd,
+    #'rr_nzdusd':rr_nzdusd,
+    #'rr_audjpy':rr_audjpy,
+    #'rr_eurjpy':rr_eurjpy,
+    #'eurusd_winrate':eurusd_winrate,
+    #'gbpusd_winrate':gbpusd_winrate,
+    #'nzdusd_winrate':nzdusd_winrate,
+    #'audjpy_winrate':audjpy_winrate,
+    #'eurjpy_winrate':eurjpy_winrate,
+    #'winrate':winrate,
+    #'lossrate':lossrate,
+    #'expectancy':expectancy,
+    #'avg_rr_value':avg_rr_value,
+    #'avg_rvs':avg_rvs,
+    
+    "pairs_summary": pairs_summary,
     'messege':messege
     })
 
@@ -500,4 +533,10 @@ def trades_view(request):
 
     return render(request, "trade/trades.html",{
     'trades':trades,
+        })
+
+def home_view(request):
+
+    return  render(request, 'trade/home.html', {
+
         })

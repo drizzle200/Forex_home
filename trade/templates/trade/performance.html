@@ -236,54 +236,19 @@
                 </thead>
 
                 <tbody id="lbord">
+                    {% for pair in pairs_summary %}
                     <tr>
-                        <td data-label="Pair" class="pair">EUR/USD</td>
-                        <td data-label="Won" class="green">{{ eurusd_wins }}+</td>
-                        <td data-label="Lost" class="red">-{{ eurusd_lost }}</td>
-                        <td data-label="Avg RR" class="green">{{ rr_eurusd }}R</td>
-                        <td data-label="Winrate" class="green">{{ eurusd_winrate }}%</td>
+                        <td data-label="Pair" class="pair">{{ pair.pair }}</td>
+                        <td data-label="Won" class="green">{{ pair.won }}+</td>
+                        <td data-label="Lost" class="red">-{{ pair.lost }}</td>
+                        <td data-label="Avg RR" class="green">{{ pair.avg_rr}}R</td>
+                        <td data-label="Winrate" class="green">{{ pair.winrate }}%</td>
                     </tr>
 
-                    <tr>
-                        <td data-label="Pair" class="pair">NZD/USD</td>
-                        <td data-label="Won" class="green">{{ nzdusd_wins }}+</td>
-                        <td data-label="Lost" class="red">-{{ nzdusd_lost }}</td>
-                        <td data-label="Avg RR" class="green">{{ rr_nzdusd }}R</td>
-                        <td data-label="Winrate" class="green">{{ nzdusd_winrate }}%</td>
-                    </tr>
-
+                    {% endfor %}
                 
-                    <tr>
-                        <td data-label="Pair" class="pair">AUD/JPY</td>
-                        <td data-label="Won" class="green">{{ audjpy_wins }}+</td>
-                        <td data-label="Lost" class="red">-{{ audjpy_lost }}</td>
-                        <td data-label="Avg RR" class="green">{{ rr_audjpy }}R</td>
-                        <td data-label="Winrate" class="green">{{ audjpy_winrate }}%</td>
-                    </tr>
-
-                    <tr>
-                        <td data-label="Pair" class="pair">GBP/USD</td>
-                        <td data-label="Won" class="green">{{ gbpusd_wins }}+</td>
-                        <td data-label="Lost" class="red">-{{ gbpusd_lost }}</td>
-                        <td data-label="Avg RR" class="green">{{ rr_gbpusd }}R</td>
-                        <td data-label="Winrate" class="green">{{ gbpusd_winrate }}%</td>
-                    </tr>
-
-                    <tr>
-                        <td data-label="Pair" class="pair">EUR/JPY</td>
-                        <td data-label="Won" class="green">{{ eurjpy_wins }}+</td>
-                        <td data-label="Lost" class="red">-{{ eurjpy_lost }}</td>
-                        <td data-label="Avg RR" class="green">{{ rr_eurjpy }}R</td>
-                        <td data-label="Winrate" class="green">{{ eurjpy_winrate }}%</td>
-                    </tr>
-
-                    <tr>
-                        <td data-label="Pair" class="pair blue"><b>ALL TRADES</b></td>
-                        <td data-label="Won" class="green"><b>{{ total_wins_all }}+</b></td>
-                        <td data-label="Lost" class="red"><b>-{{ total_lost_all }}</b></td>
-                        <td data-label="Avg RR">—</td>
-                        <td data-label="Total" class="blue"><b>{{ all_trades }}</b></td>
-                    </tr>
+                   
+                  
                 </tbody>
             </table>
         </div>

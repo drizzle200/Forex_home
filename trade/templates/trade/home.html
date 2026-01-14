@@ -1,0 +1,150 @@
+{% extends 'trade/base/base.html' %}
+{% load static %}
+
+{% block title %}Home | Journal{% endblock %}
+
+{% block body %}
+<style>
+    :root {
+        --primary: #1abc9c;
+        --primary-dark: #16a085;
+        --bg: #f4f6f8;
+        --card: #ffffff;
+        --text-dark: #2c3e50;
+        --muted: #7f8c8d;
+        --success: #27ae60;
+        --danger: #e74c3c;
+        --info: #2980b9;
+        --border: #e0e0e0;
+    }
+
+    body {
+        background: var(--bg);
+    }
+
+    .journal-container {
+        max-width: 1000px;
+        margin: 40px auto;
+        padding: 10px;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        color: var(--text-dark);
+    }
+
+    .page-title {
+        font-size: 28px;
+        font-weight: 600;
+        margin-bottom: 20px;
+    }
+
+    /* ===== TABLE (DESKTOP) ===== */
+    .table-wrapper {
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    thead tr {
+        background: var(--primary);
+        color: white;
+    }
+
+    th, td {
+        padding: 12px 15px;
+        text-align: left;
+        font-size: 14px;
+    }
+
+    tbody tr:nth-child(even) {
+        background: #ecf0f1;
+    }
+
+    .buy {
+        font-weight: bold;
+        color: var(--success);
+    }
+
+    .sell {
+        font-weight: bold;
+        color: var(--danger);
+    }
+
+    .btn {
+        text-decoration: none;
+        padding: 6px 12px;
+        border-radius: 5px;
+        font-size: 13px;
+        color: white;
+        display: inline-block;
+    }
+
+    .btn-journal {
+        background: var(--info);
+        margin-right: 6px;
+    }
+
+    .btn-delete {
+        background: var(--danger);
+    }
+
+    .empty {
+        font-size: 18px;
+        color: var(--success);
+        margin-top: 20px;
+    }
+
+    /* ===== MOBILE TRANSFORMATION ===== */
+    @media (max-width: 768px) {
+
+        table, thead, tbody, th, tr {
+            display: block;
+        }
+
+        thead {
+            display: none;
+        }
+
+        tbody tr {
+            background: white;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 10px;
+        }
+
+        td {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 10px;
+            border: none;
+            font-size: 14px;
+
+        }
+
+        td::before {
+            content: attr(data-label);
+            font-weight: 600;
+            color: var(--muted);
+
+        }
+
+        .action-cell {
+            justify-content: flex-end;
+            gap: 8px;
+        }
+    }
+</style>
+
+<div class="journal-container">
+
+    <div class="page-title">Home, everything here</div>
+
+   
+</div>
+{% endblock %}

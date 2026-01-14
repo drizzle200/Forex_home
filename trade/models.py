@@ -6,6 +6,12 @@ import string
 
 
 # Create your models here.
+class Pairs(models.Model):
+    name = models.CharField(max_length=50, null=True, blank=True)
+    description = models.CharField(max_length=2000, null=True, blank=True)
+
+    def __str__(self):
+        return self.name
 
 class Trades(models.Model):
     trade_id = models.IntegerField(null=True, blank=True)
@@ -106,7 +112,7 @@ class Trades(models.Model):
 
 
 
-    pair   = models.CharField(max_length=20, null=True, choices=PAIR_CHOICES)
+    pair   = models.ForeignKey(Pairs, on_delete=models.CASCADE, related_name="trades")
     momentum_h4   = models.CharField(max_length=20, null=True, choices=H4_CHOICES)
     momentum_h1   = models.CharField(max_length=20, null=True, choices=H4_CHOICES)
     momentum_15m  = models.CharField(max_length=20, null=True, choices=H4_CHOICES)

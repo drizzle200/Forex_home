@@ -12,7 +12,4 @@ class trade_view(admin.ModelAdmin):
 ##class Course_lessons_view(admin.ModelAdmin):
 #    list_display = ['lesson_name','courses','curriculums']
 admin.site.register(models.Trades, trade_view)
-#admin.site.register(models.Course_curriculums, Course_curriculums_view)
-#admin.site.register(models.Course_lessons,Course_lessons_view)
-#admin.site.register(models.Flight)
-#admin.site.register(models.Passenger
+admin.site.register(models.Pairs)
