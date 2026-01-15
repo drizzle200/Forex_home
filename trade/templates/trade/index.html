@@ -70,6 +70,16 @@
     background: rgba(0,0,0,0.5);
     z-index:1000;
 }
+.error-box {
+    background:#fdecea;
+    color:#a94442;
+    padding:12px;
+    border-radius:6px;
+    margin:15px 0;
+    border:1px solid #f5c6cb;
+    font-weight:600;
+    text-align:center;
+}
 .modal-box {
     background:white;
     width:90%;
@@ -89,6 +99,13 @@
 
 <div class="trade-card">
     <div class="trade-header">Start Trading</div>
+
+        {% if form.non_field_errors %}
+        <div class="error-box">
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+
 
     <form method="post" action="{% url 'index' %}" id="tradeForm">
         {% csrf_token %}

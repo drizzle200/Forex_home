@@ -1,4 +1,6 @@
 import random
+from django.db import transaction
+from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 from datetime import datetime
 from django.utils.timezone import localtime
@@ -14,6 +16,7 @@ from sklearn.impute import SimpleImputer
 from django.db.models import Avg
 from django.views.decorators.http import require_POST
 from .models import Trades, Pairs
+from .services import restrict_trade
 from .forms import NewTradeForm, TradeUpdateForm
 import joblib
 import os
@@ -22,6 +25,7 @@ import pytz
 # ---------------------------
 # Global model cache
 # ---------------------------
+
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "trained_model.pkl")
 MODEL = None
 FEATURES = [
@@ -33,6 +37,7 @@ FEATURES = [
 # ---------------------------
 # Model training / loading
 # ---------------------------
+
 def train_model():
     global MODEL
     trades_qs = Trades.objects.filter(target__in=[0, 1])
@@ -91,8 +96,6 @@ def get_model():
         print("✅ Loaded model from disk.")
         return MODEL
     return train_model()
-
-
 
 def get_trading_session():
     """Returns the current trading session based on local time."""
@@ -163,6 +166,11 @@ def calculate_rvs(trade):
     trade.rvs_grade = rvs_grade
     return trade
 
+############
+
+#restrict trade for correlated pairs
+
+
 
 def export_trades_to_excel(request):
     """
@@ -203,81 +211,116 @@ def export_trades_to_excel(request):
 # ---------------------------
 # Index view
 # ---------------------------[]
+
+
 def index_view(request):
     model = get_model()
 
     if request.method == "POST":
         form = NewTradeForm(request.POST)
+
         if form.is_valid():
             new_trade = form.save(commit=False)
 
-            # Unique ID
-            existing_ids = Trades.objects.values_list("trade_id", flat=True)
-            new_id = random.randint(1000, 9999)
-            while new_id in existing_ids:
-                new_id = random.randint(1000, 9999)
-            new_trade.trade_id = new_id
-            new_trade.timestamp = datetime.now()
+            try:
+                with transaction.atomic():
 
-            if not new_trade.session:
-                new_trade.session = get_trading_session()
+                    # 🔒 Restrict trade BEFORE doing any heavy work
+                    restrict_trade(
+                        pair=new_trade.pair,
+                        new_trade_type=new_trade.trade_type
+                    )
 
-            # Fill empty fields
-            for field in Trades._meta.get_fields():
-                if getattr(new_trade, field.name, None) in ["", None]:
-                    setattr(new_trade, field.name, None)
+                    # Unique trade ID
+                    existing_ids = set(
+                        Trades.objects.values_list("trade_id", flat=True)
+                    )
+                    new_id = random.randint(1000, 9999)
+                    while new_id in existing_ids:
+                        new_id = random.randint(1000, 9999)
 
-            # Prediction
-            probability = None
-            rating = None
-            if model:
-                pred_data = {col: [getattr(new_trade, col, "Blank")] for col in FEATURES}
-                pred_df = pd.DataFrame(pred_data)
-                pred_df["risk_reward"] = pd.to_numeric(pred_df["risk_reward"], errors="coerce").fillna(0)
-                probability = model.predict_proba(pred_df)[0][1] * 100
-                rating = "A" if probability >= 70 else "B" if probability >= 60 else "C" if probability >= 50 else "D"
+                    new_trade.trade_id = new_id
+                    new_trade.timestamp = datetime.now()
 
-            # RVS
-            new_trade = calculate_rvs(new_trade)
+                    if not new_trade.session:
+                        new_trade.session = get_trading_session()
 
-            # Trade preview
-            trade_preview_data = {}
-            exclude_field = [
-                "id","momentum_h4","momentum_h1","momentum_15m","rvs","risk_reward",
-                "momentum_5m","momentum_1m","trade_id","timestamp","trade_type",
-                "buy_or_sell","session","entry_place","confirmation","mood",
-                "tp","tp_reason","setup_quality","target","reason","holding_time_hrs",
-                "holding_time_mns","narration"
-            ]
-            for field in Trades._meta.get_fields():
-                if field.name in exclude_field:
-                    continue
-                trade_preview_data[field.verbose_name.title()] = getattr(new_trade, field.name, None)
+                    # Normalize empty fields
+                    for field in Trades._meta.get_fields():
+                        if hasattr(new_trade, field.name):
+                            if getattr(new_trade, field.name) in ["", None]:
+                                setattr(new_trade, field.name, None)
 
-            trade_preview_data["RVS"] = new_trade.rvs
-            trade_preview_data["RVS Grade"] = new_trade.rvs_grade
-            if probability:
-                trade_preview_data["Win Probability (%)"] = round(probability, 1)
-                trade_preview_data["Trade Rating"] = rating
+                    # Prediction
+                    probability = None
+                    rating = None
+                    if model:
+                        pred_data = {
+                            col: [getattr(new_trade, col, "Blank")]
+                            for col in FEATURES
+                        }
+                        pred_df = pd.DataFrame(pred_data)
+                        pred_df["risk_reward"] = pd.to_numeric(
+                            pred_df["risk_reward"], errors="coerce"
+                        ).fillna(0)
 
-            if "confirm_save" in request.POST:
-                new_trade.save()
-                print(f"✅ New trade saved with ID {new_trade.trade_id}")
-                return redirect("index")
+                        probability = model.predict_proba(pred_df)[0][1] * 100
+                        rating = (
+                            "A" if probability >= 70 else
+                            "B" if probability >= 60 else
+                            "C" if probability >= 50 else
+                            "D"
+                        )
 
-            return render(request, 'trade/index.html', {
-                'form': form,
-                'show_confirm': True,
-                'trade_preview': trade_preview_data,
+                    # RVS calculation
+                    new_trade = calculate_rvs(new_trade)
+
+                    # Trade preview
+                    trade_preview_data = {}
+                    exclude_fields = {
+                        "id", "momentum_h4", "momentum_h1", "momentum_15m",
+                        "momentum_5m", "momentum_1m", "rvs", "risk_reward",
+                        "trade_id", "timestamp", "trade_type", "buy_or_sell",
+                        "session", "entry_place", "confirmation", "mood",
+                        "tp", "tp_reason", "setup_quality", "target",
+                        "reason", "holding_time_hrs", "holding_time_mns",
+                        "narration"
+                    }
+
+                    for field in Trades._meta.get_fields():
+                        if field.name not in exclude_fields:
+                            trade_preview_data[field.verbose_name.title()] = \
+                                getattr(new_trade, field.name, None)
+
+                    trade_preview_data["RVS"] = new_trade.rvs
+                    trade_preview_data["RVS Grade"] = new_trade.rvs_grade
+
+                    if probability is not None:
+                        trade_preview_data["Win Probability (%)"] = round(probability, 1)
+                        trade_preview_data["Trade Rating"] = rating
+
+                    if "confirm_save" in request.POST:
+                        new_trade.save()
+                        return redirect("index")
+
+            except ValidationError as e:
+                form.add_error(None, e.message)
+
+            return render(request, "trade/index.html", {
+                "form": form,
+                "show_confirm": True,
+                "trade_preview": trade_preview_data if "trade_preview_data" in locals() else None,
             })
 
     else:
         form = NewTradeForm()
 
-    return render(request, 'trade/index.html', {
-        'form': form,
-        'show_confirm': False,
+    return render(request, "trade/index.html", {
+        "form": form,
+        "show_confirm": False,
     })
+
+
 
 def journal_view(request):
     trades = Trades.objects.filter(target__isnull=True)
@@ -503,7 +546,9 @@ def performance_view(request):
     #'audjpy_lost':audjpy_lost,
     #'eurjpy_wins':eurjpy_wins,
     #'eurjpy_lost':eurjpy_lost,
-    #'total_wins_all':total_wins_all,
+    #'total_wins_all':total_wins_all,  
+
+
     #'total_lost_all':total_lost_all,
     #'all_trades':all_trades,
     #'rr_eurusd':rr_eurusd,
@@ -520,13 +565,12 @@ def performance_view(request):
     #'lossrate':lossrate,
     #'expectancy':expectancy,
     #'avg_rr_value':avg_rr_value,
-    #'avg_rvs':avg_rvs,
-    
-    "pairs_summary": pairs_summary,
+    #'avg_rvs':avg_rvs,    
+    "pairs_summary": pairs_summary, 
     'messege':messege
     })
 
-
+                                                                                                             
 def trades_view(request):
 
     trades = Trades.objects.filter(target__in=[0, 1]).order_by("-timestamp")[:10]
@@ -539,4 +583,4 @@ def home_view(request):
 
     return  render(request, 'trade/home.html', {
 
-        })
+    })
