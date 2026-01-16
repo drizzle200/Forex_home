@@ -1,0 +1,122 @@
+{% extends 'trade/base/base.html' %}
+{% load static %}
+
+{% block title %} Home | Trade {% endblock %}
+
+{% block body %}
+<style>
+.trade-card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    max-width: 600px;
+    margin: 30px auto;
+}
+.trade-header {
+    background-color: #1abc9c;
+    color: white;
+    padding: 12px 16px;
+    border-radius: 6px 6px 0 0;
+    font-size: 20px;
+    font-weight: 600;
+    text-align: center;
+}
+.step-card { display: none; }
+.step-card.active { display: block; }
+.option {
+    background: #f4f6f6;
+    padding: 10px;
+    margin: 6px 0;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid #ddd;
+}
+.option.selected {
+    border-color: #1abc9c;
+    background: #d1f0eb;
+}
+.btn-nav {
+    background-color: #1abc9c;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    margin: 10px 5px 0 0;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.btn-nav:hover { background-color: #17a589; }
+.btn-submit {
+    display: block;
+    width: 50%;
+    margin: 20px auto 0;
+    background-color: #1abc9c;
+    color: white;
+    border: none;
+    padding: 12px 0;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+}
+.btn-submit:hover { background-color: #17a589; }
+/* Modal for preview */
+.modal-bg {
+    display: none;
+    position: fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background: rgba(0,0,0,0.5);
+    z-index:1000;
+}
+.error-box {
+    background:#fdecea;
+    color:#a94442;
+    padding:12px;
+    border-radius:6px;
+    margin:15px 0;
+    border:1px solid #f5c6cb;
+    font-weight:600;
+    text-align:center;
+}
+.modal-box {
+    background:white;
+    width:90%;
+    max-width:500px;
+    margin:100px auto;
+    border-radius:8px;
+    overflow:hidden;
+}
+.modal-footer {
+    padding:15px;
+    text-align:right;
+}
+.preview-table { width:100%; border-collapse: collapse; }
+.preview-table th { background:#1abc9c; color:white; padding:10px; text-align:left; }
+.preview-table td { padding:10px; background:#f4f6f6; border-bottom:1px solid #ddd; }
+</style>
+<div>    
+ <form>
+    <input type="text" name="">
+    <input type="button" name="" value="Search">
+    
+</form>
+</div>
+<div class="trade-card">
+    <div class="trade-header">Reiview your strategy</div>
+
+    <a href="">1.Market structures</a><br>
+    <a href="">2.Key level</a><br>
+    <a href="">3.Smart moneny concept (SMC)</a><br>
+    <a href="">4.Combine Key level and SMC</a><br>
+    <a href="">5.Investing- inchimoku strategy</a><br>
+    <a href="">6.Trading rules and psychologies</a><br>
+
+</div>
+
+<!-- Trade Preview Modal -->
+
+
+
+{% endblock %}

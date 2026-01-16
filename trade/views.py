@@ -7,6 +7,8 @@ from django.utils.timezone import localtime
 from collections import Counter
 import pandas as pd
 from django.shortcuts import render, redirect, get_object_or_404
+from django.conf import settings
+from django.utils import timezone
 from django.forms.models import model_to_dict
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder
@@ -97,30 +99,36 @@ def get_model():
         return MODEL
     return train_model()
 
-def get_trading_session():
-    """Returns the current trading session based on local time."""
-    
-    # Set timezones
-    london = pytz.timezone("Europe/London")
-    newyork = pytz.timezone("America/New_York")
-    asia = pytz.timezone("Asia/Tokyo")  # You can adjust to your preferred Asia market
 
-    now_utc = datetime.utcnow().replace(tzinfo=pytz.utc)
 
-    # Convert UTC to respective sessions
-    london_time = now_utc.astimezone(london)
-    newyork_time = now_utc.astimezone(newyork)
-    asia_time = now_utc.astimezone(asia)
+def get_trading_session() -> str:
+    """
+    Returns the current trading session based on the user's local timezone,
+    using standard FX market session windows.
+    """
 
-    hour = now_utc.hour  # Use UTC hour for simple logic
+    # --- Get local timezone (your country) ---
+    local_tz = pytz.timezone(settings.TIME_ZONE)
 
-    # Simple mapping based on typical market sessions (adjust as needed)
-    if 8 <= london_time.hour < 16:
-        return "London 10 AM"
-    elif 13 <= newyork_time.hour < 21:
-        return "Newyork 4 PM"
+    # --- Current local time ---
+    now_local = timezone.now().astimezone(local_tz)
+    hour = now_local.hour
+
+    # --- FX Session Windows (LOCAL TIME) ---
+    # These are approximate and intentionally overlapping
+    ASIA = range(0, 9)        # 00:00 – 08:59
+    LONDON = range(8, 17)     # 08:00 – 16:59
+    NEW_YORK = range(13, 22)  # 13:00 – 21:59
+
+    # --- Determine active session ---
+    if hour in LONDON and hour in NEW_YORK:
+        return "London / New York Overlap"
+    elif hour in LONDON:
+        return "London Session"
+    elif hour in NEW_YORK:
+        return "New York Session"
     else:
-        return "Asia 2 AM"
+        return "Asia Session"
 
 
 
@@ -215,7 +223,7 @@ def export_trades_to_excel(request):
 
 def index_view(request):
     model = get_model()
-
+   
     if request.method == "POST":
         form = NewTradeForm(request.POST)
 
@@ -314,7 +322,7 @@ def index_view(request):
 
     else:
         form = NewTradeForm()
-
+   
     return render(request, "trade/index.html", {
         "form": form,
         "show_confirm": False,
@@ -493,6 +501,7 @@ def performance_view(request):
         avg_rr = round(avg_rr, 2)
 
         pairs_summary.append({
+            "id":pair.id,
             "pair": pair.name,
             "won": won,
             "lost": lost,
@@ -581,6 +590,30 @@ def trades_view(request):
 
 def home_view(request):
 
-    return  render(request, 'trade/home.html', {
+    reasons = Trades.objects.filter(target=0).order_by("-timestamp").values_list("reason",flat=True)[:10]
 
+
+    if reasons:
+        most_common_reason = Counter(reasons).most_common(1)[0][0]
+    else:
+        most_common_reason = None
+    trading_session = get_trading_session()
+    return  render(request, 'trade/home.html', {
+    'trading_session':trading_session,
+    'most_common_reason':most_common_reason,
+    })
+
+    
+
+def performance_by_pair_view(request, pair_id):
+
+    pair = get_object_or_404(Pairs, id=pair_id)
+    return  render(request, 'trade/performance_by_pair.html', {
+    'pair':pair,
+    })
+
+def academy_view(request):
+
+    return  render(request, 'trade/academy/academy.html', {
+    
     })

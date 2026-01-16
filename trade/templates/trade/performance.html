@@ -238,7 +238,7 @@
                 <tbody id="lbord">
                     {% for pair in pairs_summary %}
                     <tr>
-                        <td data-label="Pair" class="pair">{{ pair.pair }}</td>
+                        <td data-label="Pair" class="pair"><a href="{% url 'performance_by_pair' pair.id  %}">{{ pair.pair }}</a></td>
                         <td data-label="Won" class="green">{{ pair.won }}+</td>
                         <td data-label="Lost" class="red">-{{ pair.lost }}</td>
                         <td data-label="Avg RR" class="green">{{ pair.avg_rr}}R</td>

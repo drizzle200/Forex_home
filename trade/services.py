@@ -62,3 +62,4 @@ def restrict_trade(pair, new_trade_type) -> None:
                     f"on another {quote}-based pair."
                 )
             )
+            
