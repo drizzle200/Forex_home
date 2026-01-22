@@ -23,8 +23,8 @@
     }
 
     .journal-container {
-        max-width: 1000px;
-        margin: 40px auto;
+        max-width: 1150px;
+        margin: 0px auto;
         padding: 10px;
         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
         color: var(--text-dark);
@@ -144,15 +144,35 @@
 <div class="journal-container">
 
     <div class="page-title">Your performance for {{ pair.name }}</div><hr>
-    <div>Best session </div><br>
-    <div>Best trading style </div><br>
-    <div>Best Entry place </div><br>
-    <div>Best RR </div><br>
-    <div>Consecutive wins </div><br>
-    <div>Consecutive loses </div><br
     
-
+    
+        <table>
+            <thead>
+                <th>Best session</th>
+                <th>Avarage holding time</th>
+                <th>Best trading style</th>
+                <th>Best working strategy</th>
+                <th>Consecutive wins</th>
+                <th>Consecutive loses</th>
+            </thead>
+            <tbody>
+                <td>{{most_winning_session| default:"still not identified"}}</td>
+                <td> {{average_holding_time|default:"Still not identified"}}</td>
+                <td>{{best_trade_type|default:"still not identified"}}</td>
+                <td>{{ best_entry_place| default:"still not identified"}}</td>
+                <td>+{{max_wins}} wins</td>
+                <td>-{{ max_losses }} losses</td>
+            </tbody>
+        </table>
+    </div><br>
+   
 
    
+</div>
+
+<div class="journal-container">
+    <div>
+        Graphs here
+    </div>
 </div>
 {% endblock %}

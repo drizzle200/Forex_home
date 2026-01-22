@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Car Dashboard - Dark Theme</title>
+
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Highcharts -->
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/highcharts-more.js"></script>
+<script src="https://code.highcharts.com/modules/solid-gauge.js"></script>
+
+<style>
+    body {
+        background-color: #121212;
+        color: #fff;
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    h1 {
+        margin: 20px;
+        color: #00ffcc;
+    }
+
+    .dashboard {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 40px;
+        max-width: 1100px;
+    }
+
+    .gauge-container {
+        width: 300px;
+        height: 300px;
+        background: #1c1c1c;
+        border-radius: 20px;
+        box-shadow: 0 0 20px #000;
+        padding: 10px;
+    }
+</style>
+</head>
+<body>
+
+<h1>Car Dashboard - Performance Overview</h1>
+
+<div class="dashboard">
+    <div id="winrate-gauge" class="gauge-container"></div>
+    <div id="lossrate-gauge" class="gauge-container"></div>
+    <div id="expectancy-gauge" class="gauge-container"></div>
+    <div id="avg-rr-gauge" class="gauge-container"></div>
+    <div id="avg-risk-gauge" class="gauge-container"></div>
+    <div id="rvs-gauge" class="gauge-container"></div>
+</div>
+
+<script>
+function createDarkGauge(container, value, title, maxValue, unit='') {
+    Highcharts.chart(container, {
+        chart: {
+            type: 'gauge',
+            backgroundColor: '#1c1c1c',
+            plotBorderWidth: 0,
+            plotShadow: false
+        },
+        title: { text: title, style: { color: '#00ffcc', fontSize: '16px' } },
+        pane: { 
+            startAngle: -150, 
+            endAngle: 150, 
+            background: { backgroundColor: '#222', borderWidth: 0, shape: 'arc' }
+        },
+        yAxis: [{
+            min: 0,
+            max: maxValue,
+            lineColor: '#00ffcc',
+            tickColor: '#00ffcc',
+            minorTickColor: '#00ffcc',
+            offset: -25,
+            lineWidth: 2,
+            labels: { distance: -20, rotation: 'auto', style: { color: '#00ffcc', fontWeight: 'bold' } },
+            tickLength: 7,
+            minorTickLength: 5,
+            endOnTick: false
+        }],
+        tooltip: { enabled: false },
+        series: [{
+            name: title,
+            data: [value],
+            dataLabels: {
+                format: '<span style="color:#00ffcc; font-size:18px">{y}'+unit+'</span>',
+                style: { textOutline: 'none' }
+            },
+            dial: { backgroundColor: '#00ffcc', baseLength: '70%', baseWidth: 4, radius: '90%' }
+        }]
+    });
+}
+
+$(document).ready(function() {
+    $.getJSON("/api/performance/overview/", function(data) {
+        createDarkGauge('winrate-gauge', data.winrate, 'Win Rate', 100, '%');
+        createDarkGauge('lossrate-gauge', data.lossrate, 'Loss Rate', 100, '%');
+        createDarkGauge('expectancy-gauge', data.expectancy, 'Expectancy', 5, ' R');
+        createDarkGauge('avg-rr-gauge', data.avg_rr, 'Avg R/R', 5, ' R');
+        createDarkGauge('avg-risk-gauge', data.avg_risk, 'Avg Risk', 5, ' R');
+        createDarkGauge('rvs-gauge', data.rvs, 'Sample Size', 50, ' trades');
+    });
+});
+</script>
+
+</body>
+</html>

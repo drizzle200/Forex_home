@@ -79,8 +79,7 @@
 <!-- Hidden fields -->
 <input type="hidden" name="target" id="target">
 <input type="hidden" name="reason" id="reason">
-<input type="hidden" name="holding_time_hrs" id="holding_time_hrs">
-<input type="hidden" name="holding_time_mns" id="holding_time_mns">
+
 <input type="hidden" name="narration" id="narration">
 
 <!-- STEP 1 -->
@@ -90,17 +89,17 @@
     <div class="choice target-choice" data-value="0">Lose</div>
 </div>
 
-<!-- STEP 2 -->
+<!-- STEP 2 
 <div class="step">
     <h4>Holding Time (Hours) *</h4>
     <input type="number" min="0" id="hrs" class="form-control">
 </div>
 
-<!-- STEP 3 -->
+<!-- STEP 3 
 <div class="step">
     <h4>Holding Time (Minutes) *</h4>
     <input type="number" min="0" max="59" id="mins" class="form-control">
-</div>
+</div>-->
 
 <!-- STEP 4 -->
 <div class="step">
@@ -209,8 +208,7 @@ backBtn.onclick = ()=>{
 
 /* SUBMIT */
 document.getElementById('journalForm').onsubmit = ()=>{
-    document.getElementById('holding_time_hrs').value = hrs.value;
-    document.getElementById('holding_time_mns').value = mins.value;
+    
     document.getElementById('narration').value = note.value;
     return true;
 };

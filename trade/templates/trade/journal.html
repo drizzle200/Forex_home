@@ -154,7 +154,8 @@
                     <th>Pair</th>
                     <th>Buy/Sell</th>
                     <th>Trade Type</th>
-                    <th>Time</th>
+                    <th>Excecuted</th>
+                    <th>Holding time</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -175,7 +176,9 @@
                     <td data-label="Time" style="border-bottom: 1px solid #eee;">
                         {{ trade.timestamp|date:"Y-m-d H:i" }}
                     </td>
-
+                    <td>
+                        {{ trade.timestamp|timesince }}
+                    </td>
                     <td data-label="Action" class="action-cell">
                         <a href="{% url 'update_trade' trade.trade_id %}" class="btn btn-journal">
                             Journal

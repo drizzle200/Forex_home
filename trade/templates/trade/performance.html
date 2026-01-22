@@ -95,6 +95,8 @@
     .red { color: var(--danger); font-weight: 600; }
     .blue { color: var(--info); font-weight: 600; }
 
+
+    
     /* ===== OVERALL PERFORMANCE ===== */
     .overall-box {
         padding: 15px;
@@ -212,8 +214,93 @@
             text-align: right;
         }
     }
-
-</style>
+    
+    /* ===== CAR DASHBOARD THEME ===== */
+    .dashboard-dark {
+        background: radial-gradient(circle at center, #fffbfb 0%, #fffbfb 70%);
+        color: #eaeaea;
+    }
+    
+    .cluster {
+        padding: 20px;
+    }
+    
+    .hud-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+    
+    .hud-box {
+        background: #f8dbdb;
+        border-radius: 6px;
+        padding: 10px;
+        text-align: center;
+        font-size: 12px;
+        text-transform: uppercase;
+        color: #999;
+    }
+    
+    .hud-box b {
+        display: block;
+        font-size: 12px;
+        margin-top: 5px;
+    }
+    
+    .hud-green { color: #2ecc71; }
+    .hud-red { color: #e74c3c; }
+    .hud-blue { color: #3498db; }
+    .hud-yellow{ color: #ffab23;}
+    
+    .gauge-wrap {
+        width: 100%;
+        height: 260px;
+        margin: 10px auto;
+    }
+    
+    .digital-readout {
+        text-align: center;
+        margin-top: -10px;
+        font-size: 14px;
+        color: #582a2a;
+    }
+    
+    .digital-readout span {
+        display: block;
+        font-size: 20px;
+        color: #00ffcc;
+        font-weight: bold;
+    }
+    
+    .expectancy-led {
+        background: linear-gradient(135deg, #1f4037, #2ecc71);
+        border-radius: 8px;
+        padding: 14px;
+        margin-top: 12px;
+        text-align: center;
+        font-weight: bold;
+    }
+    .message-box {
+    position: absolute;
+    display: none;
+    max-width: 260px;
+    background: #fffdfd;
+    color: #3a3838;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    z-index: 1000;
+    pointer-events: none;
+    }
+    
+    .hover-text {
+        cursor: help;
+        text-decoration: underline dotted;
+    }
+    
+        
+    </style>
 
 <div class="dashboard">
     <!--<div class="dashboard-title">PERFORMANCE DASHBOARD</div>-->
@@ -257,41 +344,159 @@
         <div class="card">
             <div class="section-title">Overall Performance</div>
 
-            <div class="overall-box">
-                <div class="overall-header">
-                    <div>Winrate</div>
-                    <div>Loss Rate</div>
-                    <div>RVS</div>
-                </div>
+            <div class="overall-box dashboard-dark cluster">
 
-                <div class="overall-values">
-                    <div class="green">{{ winrate }}%</div>
-                    <div class="red">{{ lossrate }}%</div>
-                    <div class="blue">{{ avg_rvs }}/12</div>
-                </div>
-
-                <div class="expectancy-box">
-                    <div class="expectancy-message">
-                        {{ messege }}
+                <!-- HUD TOP -->
+                <div class="hud-row">
+                    <div class="hud-box">
+                        Winrate
+                        <b class="{% if overallwinrate >= 70 %}
+                          hud-green {% elif overallwinrate < 40 %} 
+                          hud-red {% else  %} hud-yellow {% endif %}">{{ overallwinrate }}%</b>
                     </div>
-                    <div class="expectancy-value">
-                        EXPECTANCY<br><br>{{ expectancy }}%
+                    <div class="hud-box">
+                        Lossrate
+                        <b class="hud-red">{{ overalllossrate}}%</b>
+                    </div>
+                    <div class="hud-box">
+                        RVS
+                        <b class="hud-blue">{{ avg_rvs|default:"0" }}/12</b>
                     </div>
                 </div>
+            
+                <!-- GAUGE -->
+                <div id="winrate-gauge" class="gauge-wrap"></div>
+            
+                <!-- DIGITAL -->
+                <div class="digital-readout">
+                    {{ messege }}
+                <span></span>
+                </div>
+            
+                <!-- EXPECTANCY -->
+                <div class="expectancy-led">
+                    EXPECTANCY {{ expectancy|default:"0" }}%
+                </div>
+            
+                <!-- LOWER STATS -->
+                <div class="hud-row" style="margin-top:12px;">
+                    <div class="hud-box">
+                    <div class="hover-text" data-message="Reduce RVS, fix Risk Reward, limit repeated mistakes, don't overtrade">
+                        Consistency
+                          <b class="{% if grade_consistency.consistency_level == 4 or grade_consistency.consistency_level == 3 %}
+                          hud-green {% elif grade_consistency.consistency_level == 2 %} 
+                          hud-yellow {% else  %} hud-red {% endif %}">
+                              {{ grade_consistency.consistency_tier }}
+                          </b>
+                          
+                          <div id="message-box" class="message-box"></div>
 
-                <div class="small-metrics">
-                    <div class="metric-box">
-                        Avg Risk Reward
-                        <b class="green">+{{ avg_rr_value }}R</b>
                     </div>
-                    <div class="metric-box">
+                    </div>
+                    <div class="hud-box">
+                        Avg RR
+                        <b class="hud-green">+{{ avg_risk_reward|default:"0" }}R</b>
+                    </div>
+                    <div class="hud-box">
                         Avg Risk
-                        <b class="red">-1R</b>
+                        <b class="hud-red">-1R</b>
                     </div>
+                    
                 </div>
+            
             </div>
+            
         </div>
 
     </div>
 </div>
+
+
+
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/highcharts-more.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const tooltip = document.getElementById("message-box");
+
+    document.querySelectorAll(".hover-text").forEach(el => {
+
+        el.addEventListener("mouseenter", function () {
+            tooltip.textContent = el.dataset.message;
+            tooltip.style.display = "block";
+        });
+
+        el.addEventListener("mousemove", function (e) {
+            tooltip.style.left = (e.pageX + 12) + "px";
+            tooltip.style.top = (e.pageY + 12) + "px";
+        });
+
+        el.addEventListener("mouseleave", function () {
+            tooltip.style.display = "none";
+        });
+
+        });
+        });
+
+Highcharts.chart('winrate-gauge', {
+
+    chart: {
+        type: 'gauge',
+        backgroundColor: 'transparent',
+        plotShadow: false
+    },
+
+    title: { text: null },
+
+    pane: {
+        startAngle: -130,
+        endAngle: 130,
+        background: [{
+            backgroundColor: '#eaeaea   ',
+            borderWidth: 20,
+            outerRadius: '105%'
+        }]
+    },
+
+    yAxis: {
+        min: 0,
+        max: 100,
+
+        tickPixelInterval: 30,
+        tickColor: '#00ffcc',
+        lineColor: '#00ffcc',
+        labels: {
+            style: { color: '#aaa' }
+        },
+
+        plotBands: [{
+            from: 0,
+            to: 40,
+            color: '#e74c3c'
+        }, {
+            from: 40,
+            to: 70,
+            color: '#f1c40f'
+        }, {
+            from: 70,
+            to: 100,
+            color: '#2ecc71'
+        }]
+    },
+
+    series: [{
+        name: 'Winrate',
+        data: [{{ overallwinrate| default:"0" }}],
+        dataLabels: {
+            format: '<span style="font-size:20px;color:#black">{y}%</span>',
+            borderWidth: 0
+        },
+        tooltip: { enabled: false }
+    }]
+
+    });
+</script>
+
 {% endblock %}

@@ -8,7 +8,7 @@ import string
 # Create your models here.
 class Pairs(models.Model):
     name = models.CharField(max_length=50, null=True, blank=True)
-    description = models.CharField(max_length=2000, null=True, blank=True)
+     
 
     def __str__(self):
         return self.name
@@ -132,52 +132,23 @@ class Trades(models.Model):
     rvs_grade   = models.CharField(max_length=20, null=True)
     target 		   = models.IntegerField(null=True, blank=True, choices=TARGET_CHOICES)
     reason 		   = models.CharField(max_length=20, null=True, choices=REASON_CHOICES)
-    holding_time_hrs   = models.IntegerField(null=True, blank=True)
-    holding_time_mns   = models.IntegerField(null=True, blank=True)
+    holding_time   = models.IntegerField(null=True, blank=True)
     narration   = models.CharField(max_length=500, null=True)
     timestamp   = models.DateTimeField(auto_now_add=True)
+    
 
+    @property
+    def holding_time_display(self):
+        if not self.holding_time:
+            return ""
+
+        hours, minutes = divmod(self.holding_time, 60)
+
+        if hours and minutes:
+            return f"{hours}h {minutes}m"
+        if hours:
+            return f"{hours}h"
+        return f"{minutes}m"
 
     def __str__(self):
         return f'{self.trade_id} - {self.buy_or_sell}'
-#    user = models.ManyToManyField(User, related_name="students")
-#
-#class Course_curriculums(models.Model):
-#    name = models.CharField(max_length=30, blank=False)   
-#    courses = models.ForeignKey(Courses, on_delete=models.CASCADE, related_name="days")
-#    def __str__(self) -> str:
-#        return self.name
-#
-#class Course_lessons(models.Model):
-#    id = models.CharField(primary_key=True,unique=True, max_length=22)
-#    lesson_name =  models.CharField(max_length=70, blank=False, null=False)
-#    lesson_file= models.FileField(upload_to='uploads/tutorials/videos/', null=True)
-#    key_points = models.TextField(max_length=1000, blank=False, null=False)
-#    courses = models.ForeignKey(Courses, on_delete=models.CASCADE, related_name="thetop")
-#    curriculums = models.ForeignKey(Course_curriculums, on_delete=models.CASCADE)
-#    visited = models.BooleanField(default=False)
-#
-#
-#    def __str__(self) -> str:
-#        return self.lesson_name
-#    
-#class Home_contents(models.Model):
-#    image = models.ImageField(upload_to='uploads/%Y/%m/%d/', blank=True, default="uploads/default-thumbnail.jpg")
-#    discription = models.TextField(max_length=1000)
-#    time        = models.TimeField(auto_now=True)
-#
-#    def __str__(self) -> str:
-#        return self.discription
-#
-#class Flight(models.Model):
-#    f_from = models.CharField(max_length=24)
-#    f_to = models.CharField(max_length=45)
-#    duration =models.IntegerField()
-#
-#class Passengers(models.Model):
-#    flight = models.ForeignKey(Flight, on_delete=models.CASCADE, related_name='passengers')
-#    name = models.CharField(max_length=24)
-#
-#class laguage(models.Model):
-#    owner = models.ForeignKey(Passengers, on_delete=models.CASCADE, related_name="pass_lag")
-#    kg = models.IntegerField()

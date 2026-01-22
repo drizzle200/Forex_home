@@ -1,9 +1,9 @@
 import random
 from django.db import transaction
 from django.core.exceptions import ValidationError
-from django.http import HttpResponse
-from datetime import datetime
-from django.utils.timezone import localtime
+from django.http import HttpResponse, JsonResponse
+from datetime import datetime, time
+from django.utils.timezone import localtime,now
 from collections import Counter
 import pandas as pd
 from django.shortcuts import render, redirect, get_object_or_404
@@ -15,8 +15,8 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
-from django.db.models import Avg
-from django.views.decorators.http import require_POST
+from django.db.models import Avg,Sum,Count, StdDev
+from django.views.decorators.http import require_POST,require_GET
 from .models import Trades, Pairs
 from .services import restrict_trade
 from .forms import NewTradeForm, TradeUpdateForm
@@ -340,18 +340,31 @@ def journal_view(request):
 def update_trade_view(request, trade_id):
     trade = get_object_or_404(Trades, trade_id=trade_id)
 
+    old_target = trade.target
+
     if request.method == "POST":
         form = TradeUpdateForm(request.POST, instance=trade)
 
         if form.is_valid():
             updated_trade = form.save(commit=False)
 
-            # Convert empty strings to NULL (skip relations)
+            # Convert empty strings to NULL
             for field in Trades._meta.fields:
                 if field.is_relation:
                     continue
                 if getattr(updated_trade, field.name) == "":
                     setattr(updated_trade, field.name, None)
+
+            # ✅ SET holding time ONLY when target is updated first time
+            if (
+                old_target is None
+                and updated_trade.target is not None
+                and updated_trade.holding_time is None
+            ):
+                delta = now() - updated_trade.timestamp
+                updated_trade.holding_time = int(
+                    delta.total_seconds() // 60
+                )
 
             updated_trade.save()
             return redirect("journal")
@@ -359,10 +372,14 @@ def update_trade_view(request, trade_id):
     else:
         form = TradeUpdateForm(instance=trade)
 
-    return render(request, "trade/update_trade.html", {
-        "form": form,
-        "trade": trade,
-    })
+    return render(
+        request,
+        "trade/update_trade.html",
+        {
+            "form": form,
+            "trade": trade,
+        }
+    )
 
 
 def delete_trade_confirm(request, trade_id):
@@ -379,107 +396,33 @@ def delete_trade(request, trade_id):
     return redirect("journal")
 
 def performance_view(request):
-    #eurusd_wins = Trades.objects.filter(
-    #pair="EUR/USD",
-    #target=1
-    #).count()
-    #eurusd_lost = Trades.objects.filter(
-    #pair="EUR/USD",
-    #target=0
-    #).count()
-    #eurusd_winrate = round(eurusd_wins/(eurusd_wins+eurusd_lost)*100,2)
-#
-    #gbpusd_wins = Trades.objects.filter(
-    #pair="GBP/USD",
-    #target=1
-    #).count()
-    #gbpusd_lost = Trades.objects.filter(
-    #pair="GBP/USD",
-    #target=0
-    #).count()
-    #gbpusd_winrate = round(gbpusd_wins/(gbpusd_wins+gbpusd_lost)*100,2)
-#
-    #nzdusd_wins = Trades.objects.filter(
-    #pair="NZD/USD",
-    #target=1
-    #).count()
-    #nzdusd_lost = Trades.objects.filter(
-    #pair="NZD/USD",
-    #target=0
-    #).count()
-    #nzdusd_winrate = round(nzdusd_wins/(nzdusd_wins+nzdusd_lost)*100,2) 
-#
-    #audjpy_wins = Trades.objects.filter(
-    #pair="AUD/JPY",
-    #target=1
-    #).count()
-    #audjpy_lost = Trades.objects.filter(
-    #pair="AUD/JPY",
-    #target=0
-    #).count()
-    #audjpy_winrate = round(audjpy_wins/(audjpy_wins+audjpy_lost)*100,2) 
-#
-    #eurjpy_wins = Trades.objects.filter(
-    #pair="EUR/JPY",
-    #target=1
-    #).count()
-    #eurjpy_lost = Trades.objects.filter(
-    #pair="EUR/JPY",
-    #target=0
-    #).count()
-    #eurjpy_winrate = round(eurjpy_wins/(eurjpy_wins+eurjpy_lost)*100,2)
-#
-    #total_wins_all = Trades.objects.filter(
-    #target=1
-    #).count()
-    #total_lost_all = Trades.objects.filter(
-    #target=0
-    #).count()
-    #
-    #all_trades = total_wins_all + total_lost_all
-    #
-    #####  avg RR per pair  ######
-    #rr_eurusd = round(Trades.objects.filter(target=1, pair="EUR/USD").aggregate(rr_eurusd=Avg('risk_reward'))["rr_eurusd"] or 0,2)
-    #rr_gbpusd = round(Trades.objects.filter(target=1, pair="GBP/USD").aggregate(rr_gbpusd=Avg("risk_reward"))["rr_gbpusd"] or 0,2)
-    #rr_nzdusd = round(Trades.objects.filter(target=1, pair="NZD/USD").aggregate(rr_nzdusd=Avg("risk_reward"))["rr_nzdusd"] or 0,2)
-    #rr_audjpy = round(Trades.objects.filter(target=1, pair="AUD/JPY").aggregate(rr_audjpy=Avg("risk_reward"))["rr_audjpy"] or 0,2)
-    #rr_eurjpy = round(Trades.objects.filter(target=1, pair="EUR/JPY").aggregate(rr_eurjpy=Avg("risk_reward"))["rr_eurjpy"] or 0,2)
-    #
-#
-#
-    #trades_qs = Trades.objects.filter(target__in=[0, 1]).order_by("-timestamp")[:30]
-    #
-    #df = pd.DataFrame.from_records(trades_qs.values(
-    #    "target",        # 1 = win, 0 = loss
-    #    "risk_reward",   # RR value
-    #    "rvs"            # Rule Violation Score
-    #))
-#
-    #total_trades = len(df)
-#
-    #if total_trades == 0:
-    #    winrate = lossrate = expectancy = avg_rr_value = avg_rvs = 0
-    #else:
-    #    wins = df[df["target"] == 1]
-    #    losses = df[df["target"] == 0]
-    #
-    #    winrate = round((len(wins) / total_trades) * 100, 2)
-    #    lossrate = round((len(losses) / total_trades) * 100, 2)
-    #
-    #    avg_rr_value = round(df["risk_reward"].mean(), 2)
+    
+    total_trades = Trades.objects.filter(target__in=[0, 1]).order_by("-timestamp")[:20].aggregate(total_trades=Count("id"))["total_trades"] or 0
+    all_won =  Trades.objects.filter(target=1).order_by("-timestamp")[:20].aggregate(all_won=Count("id"))["all_won"] or 0
+    all_lost =  Trades.objects.filter(target=0).order_by("-timestamp")[:20].aggregate(all_lost=Count("id"))["all_lost"] or 0
+    avg_risk_reward  = Trades.objects.filter(target=1).order_by("-timestamp")[:20].aggregate(avg_risk_reward=Avg("risk_reward"))["avg_risk_reward"] or 0
+    std_dev_rr  = Trades.objects.filter(target__in=[0,1],  risk_reward__isnull = False).order_by("-timestamp")[:20].aggregate(std_dev_rr=StdDev("risk_reward"))["std_dev_rr"] or 0
+
+    avg_rvs  = Trades.objects.filter(target__in=[1,0]).order_by("-timestamp")[:20].aggregate(avg_rvs=Avg("rvs"))["avg_rvs"] or 0
+    if avg_rvs:
+        avg_rvs = round(avg_rvs, 2)
+    if avg_risk_reward:
+        avg_risk_reward = round(avg_risk_reward,2)
+    if std_dev_rr:
+        std_dev_rr = round(std_dev_rr,2)
+    try:
+        overallwinrate = round((all_won / total_trades) * 100, 2)
+        overalllossrate = round((all_lost / total_trades) * 100, 2)   
+    except ZeroDivisionError:
+        overallwinrate = 0
+        overalllossrate = 0
     #    avg_rvs = round(df["rvs"].mean(), 2)
-    #
-    #    # Expectancy formula:
-    #    # E = (Win% × Avg Win RR) − (Loss% × Avg Loss RR)
-    #    avg_win_rr = wins["risk_reward"].mean() if not wins.empty else 0
-    #    #avg_loss_rr = losses["risk_reward"].mean() if not losses.empty else 0
-    #    avg_loss_rr = 1
-    #
-    #    expectancy = round(
-    #        ((winrate / 100) * avg_win_rr) -
-    #        ((lossrate / 100) * avg_loss_rr),
-    #        2
-    #    )
+
+    expectancy = round(
+        ((overallwinrate / 100) * avg_risk_reward) -
+        ((overalllossrate / 100) * 1),
+        2
+    )
     
     pairs_summary = []
 
@@ -494,8 +437,11 @@ def performance_view(request):
         won = trades.filter(target=1).count()
         lost = trades.exclude(target=1).count()
         total = won + lost
-
-        winrate = round((won / total) * 100, 2) if total > 0 else 0
+        
+        try:
+            winrate = round((won / total) * 100, 2) if total > 0 else 0
+        except ZeroDivisionError:
+            winrate = 0
 
         avg_rr = trades.filter(target=1).aggregate(avg_rr=Avg("risk_reward"))["avg_rr"] or 0
         avg_rr = round(avg_rr, 2)
@@ -507,6 +453,7 @@ def performance_view(request):
             "lost": lost,
             "avg_rr": avg_rr,
             "winrate": winrate,
+            
         })
 
     reasons = Trades.objects.filter(target=0).order_by("-timestamp").values_list("reason",flat=True)[:10]
@@ -542,48 +489,86 @@ def performance_view(request):
     else:
         messege="You are doing great!" 
 
+    #################### geting today's trades
+    local_now = timezone.localtime(timezone.now())
+    today = local_now.date()
+    
+    todays_trades = Trades.objects.filter(timestamp__date=today).count()
+    
+    
+    
+    def grade_consistency(
+        todays_trades: int,
+        avg_rvs: float,
+        std_dev_rr: float,
+        most_common_reason
+        ):
+        score = 0
+        max_score = 4
+    
+        # Rule 1: Overtrading 
+        if todays_trades <= 2:
+            score += 1
+    
+        # Rule 2: RVS control
+        if avg_rvs < 4:
+            score += 1
+    
+        # Rule 3: RR execution consistency
+        if std_dev_rr <= 1:
+            score += 1
+    
+        # Rule 4: no strategy breaking
+        if most_common_reason is None:
+            score += 1
+    
+        # ---- Tier mapping ----
+        if score == 4:
+            tier = "Mastery"
+            level = 4
+        elif score == 3:
+            tier = "High"
+            level = 3
+        elif score == 2:
+            tier = "Medium"
+            level = 2
+        else:
+            tier = "Low"
+            level = 1
+    
+        return {
+            "consistency_score": score,
+            "consistency_max": max_score,
+            "consistency_level": level,
+            "consistency_tier": tier,
+            "consistency_percent": int((score / max_score) * 100),
+        }
 
+    grade_consistency= grade_consistency( 
+        todays_trades,
+        avg_rvs,
+        std_dev_rr,
+        most_common_reason)
+    
 
+        
     return render(request, 'trade/performance.html', {
-    #'eurusd_wins':eurusd_wins,
-    #'eurusd_lost':eurusd_lost,
-    #'gbpusd_wins':gbpusd_wins,
-    #'gbpusd_lost':gbpusd_lost,
-    #'nzdusd_wins':nzdusd_wins,
-    #'nzdusd_lost':nzdusd_lost,
-    #'audjpy_wins':audjpy_wins,
-    #'audjpy_lost':audjpy_lost,
-    #'eurjpy_wins':eurjpy_wins,
-    #'eurjpy_lost':eurjpy_lost,
-    #'total_wins_all':total_wins_all,  
-
-
-    #'total_lost_all':total_lost_all,
-    #'all_trades':all_trades,
-    #'rr_eurusd':rr_eurusd,
-    #'rr_gbpusd':rr_gbpusd,
-    #'rr_nzdusd':rr_nzdusd,
-    #'rr_audjpy':rr_audjpy,
-    #'rr_eurjpy':rr_eurjpy,
-    #'eurusd_winrate':eurusd_winrate,
-    #'gbpusd_winrate':gbpusd_winrate,
-    #'nzdusd_winrate':nzdusd_winrate,
-    #'audjpy_winrate':audjpy_winrate,
-    #'eurjpy_winrate':eurjpy_winrate,
-    #'winrate':winrate,
-    #'lossrate':lossrate,
-    #'expectancy':expectancy,
-    #'avg_rr_value':avg_rr_value,
-    #'avg_rvs':avg_rvs,    
+   
+    'grade_consistency': grade_consistency,
+    'expectancy':expectancy,
+    'avg_rvs':avg_rvs,
+    'avg_risk_reward':avg_risk_reward,    
     "pairs_summary": pairs_summary, 
-    'messege':messege
+    'messege':messege,
+    "overallwinrate":overallwinrate,
+    "overalllossrate":overalllossrate,
     })
 
                                                                                                              
 def trades_view(request):
 
     trades = Trades.objects.filter(target__in=[0, 1]).order_by("-timestamp")[:10]
-
+    
     return render(request, "trade/trades.html",{
     'trades':trades,
         })
@@ -608,12 +593,111 @@ def home_view(request):
 def performance_by_pair_view(request, pair_id):
 
     pair = get_object_or_404(Pairs, id=pair_id)
-    return  render(request, 'trade/performance_by_pair.html', {
-    'pair':pair,
-    })
+
+    # ✅ last 20 winning trades with holding_time
+    trades = pair.trades.filter(
+        target=1,
+        holding_time__isnull=False
+    ).order_by("-timestamp")
+    trades = pair.trades.filter(target__isnull=False).order_by("-timestamp")[:20]
+    # --- categorical stats ---
+    session = trades.values_list("session", flat=True)
+    trade_type = trades.values_list("trade_type", flat=True)
+    entry_place = trades.values_list("entry_place", flat=True)
+
+    # --- average holding time (minutes) ---
+    average_minutes = trades.aggregate(
+        avg_ht=Avg("holding_time")
+    )["avg_ht"]
+
+    # --- format holding time ---
+    average_holding_time = ""
+
+    if average_minutes:
+        average_minutes = int(average_minutes)
+        hours, minutes = divmod(average_minutes, 60)
+
+        if hours and minutes:
+            average_holding_time = f"{hours}h {minutes}m"
+        elif hours:
+            average_holding_time = f"{hours}h"
+        else:
+            average_holding_time = f"{minutes}m"
+    
+ 
+    # --- most common values ---
+    try:
+        best_trade_type = Counter(trade_type).most_common(1)[0][0]
+    except IndexError:
+        best_trade_type = "N/A"
+
+    try:
+        most_winning_session = Counter(session).most_common(1)[0][0]
+    except IndexError:
+        most_winning_session = "N/A"
+
+    try:
+        best_entry_place = Counter(entry_place).most_common(1)[0][0]
+    except IndexError:
+        best_entry_place = "N/A"
+    
+
+    def get_max_treaks(trades):
+        max_wins = 0
+        max_losses = 0
+        current_wins = 0
+        current_losses = 0
+        for trade in trades:
+            if trade.target == 1:
+                current_wins += 1
+                current_losses =0
+                max_wins = max(max_wins,current_wins)
+            elif trade.target == 0:
+                current_losses += 1
+                current_wins = 0
+                max_losses = max(max_losses,current_losses)
+        return max_wins,max_losses
+    max_wins, max_losses = get_max_treaks(trades)    
+
+    return render(
+        request,
+        "trade/performance_by_pair.html",
+        {
+            "max_wins":max_wins,
+            "max_losses":max_losses,
+            "average_holding_time": average_holding_time,
+            "best_entry_place": best_entry_place,
+            "best_trade_type": best_trade_type,
+            "most_winning_session": most_winning_session,
+            "pair": pair,
+        }
+    )
 
 def academy_view(request):
 
     return  render(request, 'trade/academy/academy.html', {
     
     })
+
+
+def p(request):
+
+    return render(request, 'trade/p.html', {
+
+    })
+@require_GET
+def performance_overview(request):
+    """
+    Returns overall performance metrics for dashboard.
+    """
+
+    data = {
+        "winrate": 62,          # %
+        "lossrate": 38,         # %
+        "expectancy": 1.8,      # R
+        "avg_rr": 2.4,          # R
+        "avg_risk": -1.0,       # R
+        "rvs": 12,              # sample size
+    }
+
+    return JsonResponse(data)

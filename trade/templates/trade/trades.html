@@ -22,7 +22,7 @@
 
     .history-container {
         max-width: 1100px;
-        margin: 40px auto;
+        margin: 0px auto;
         padding: 10px;
         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
         color: var(--text-dark);
@@ -61,7 +61,7 @@
 
     }
 
-    tbody tr:nth-child(even) {
+    tbody tr:nth-child(even) {                         
         background: #ecf0f1;
     }
 
@@ -140,7 +140,8 @@
                     <th>Pair</th>
                     <th>Buy / Sell</th>
                     <th>Trade Type</th>
-                    <th>Time</th>
+                    <th>Executed</th>
+                    <th>Holding time</th>
                     <th>Win / Lose</th>
                     <th>Why</th>
                     <th>Description</th>
@@ -161,16 +162,21 @@
 
                     <td data-label="Trade Type"  style="border-bottom: 1px solid #eee;">{{ trade.trade_type }}</td>
 
-                    <td data-label="Time" style="border-bottom: 1px solid #eee;">
+                    <td data-label="Executed" style="border-bottom: 1px solid #eee;">
                         {{ trade.timestamp|date:"Y-m-d H:i" }}
                     </td>
 
-                    <td data-label="Win / Lose" style="border-bottom: 1px solid #eee;">{{ trade.target }}</td>
-
-                    <td data-label="Why" class="long-text" style="border-bottom: 1px solid #eee;">
-                        {{ trade.reason }}
+                    <td data-label="Holding time" style="border-bottom: 1px solid #eee;">
+                        {{ trade.holding_time_display|default:"0m"}}
                     </td>
 
+                    <td data-label="Win / Lose" style="border-bottom: 1px solid #eee;" class="{% if trade.target == 1  %} buy {% else %} sell {% endif %}" >
+                        {% if trade.target == 1  %} +win {% else %} -lose{% endif %}
+                    </td>
+
+                    <td data-label="Why" style="border-bottom: 1px solid #eee;">
+                        {% if trade.reason == None  %} - {% else %} {{trade.reason}}{% endif %}
+                    </td>
                     <td data-label="Description" class="long-text">
                         {{ trade.narration }}
                     </td>
