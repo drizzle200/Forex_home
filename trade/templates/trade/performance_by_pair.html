@@ -1,0 +1,253 @@
+{% extends 'trade/base/base.html' %}
+{% load static %}
+
+{% block title %}Home | Journal{% endblock %}
+
+{% block body %}
+<style>
+    :root {
+        --primary: #1abc9c;
+        --primary-dark: #16a085;
+
+        --bg: #0f172a;
+        --card: #1e293b;
+        --card-light: #334155;
+
+        --text-dark: #e2e8f0;
+        --muted: #94a3b8;
+
+        --success: #22c55e;
+        --danger: #ef4444;
+        --info: #3b82f6;
+
+        --border: #334155;
+    }
+
+    body {
+        background: var(--bg);
+        color: var(--text-dark);
+    }
+
+    .journal-container {
+        max-width: 1150px;
+        margin: 0px auto;
+        padding: 10px;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        color: var(--text-dark);
+    }
+
+    .page-title {
+        font-size: 28px;
+        font-weight: 600;
+        margin-bottom: 20px;
+        color: var(--text-dark);
+    }
+
+    /* ===== TABLE (DESKTOP) ===== */
+    .table-wrapper {
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--card);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+        border: 1px solid var(--border);
+    }
+
+    thead tr {
+        background: var(--primary);
+        color: white;
+    }
+
+    th, td {
+        padding: 12px 15px;
+        text-align: left;
+        font-size: 14px;
+    }
+
+    tbody tr {
+        border-bottom: 1px solid var(--border);
+    }
+
+    tbody tr:nth-child(even) {
+        background: var(--card-light);
+    }
+
+    tbody tr:hover {
+        background: #2c3e50;
+        transition: 0.2s ease;
+    }
+
+    .buy {
+        font-weight: bold;
+        color: var(--success);
+    }
+
+    .sell {
+        font-weight: bold;
+        color: var(--danger);
+    }
+
+    .btn {
+        text-decoration: none;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 13px;
+        color: white;
+        display: inline-block;
+        transition: 0.2s ease;
+    }
+
+    .btn-journal {
+        background: var(--info);
+        margin-right: 6px;
+    }
+
+    .btn-journal:hover {
+        opacity: 0.85;
+    }
+
+    .btn-delete {
+        background: var(--danger);
+    }
+
+    .btn-delete:hover {
+        opacity: 0.85;
+    }
+
+    .empty {
+        font-size: 18px;
+        color: var(--success);
+        margin-top: 20px;
+    }
+
+    /* ===== MOBILE TRANSFORMATION ===== */
+    @media (max-width: 768px) {
+
+        table, thead, tbody, th, tr {
+            display: block;
+        }
+
+        thead {
+            display: none;
+        }
+
+        tbody tr {
+            background: var(--card);
+            margin-bottom: 15px;
+            border-radius: 10px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+            padding: 10px;
+            border: 1px solid var(--border);
+        }
+
+        td {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 10px;
+            border: none;
+            font-size: 14px;
+        }
+
+        td::before {
+            content: attr(data-label);
+            font-weight: 600;
+            color: var(--muted);
+        }
+
+        .action-cell {
+            justify-content: flex-end;
+            gap: 8px;
+        }
+    }
+
+    /* ===== CHART CONTAINER ===== */
+    #performanceChart {
+        background: var(--card);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+    }
+</style>
+
+<div class="journal-container">
+    <div class="page-title">Your performance for {{ pair.name }}</div>
+    <hr>
+    
+    <table>
+        <thead>
+            <th>Best session</th>
+            <th>Avarage holding time</th>
+            <th>Best trading style</th>
+            <th>Best working strategy</th>
+            <th>Consecutive wins</th>
+            <th>Consecutive loses</th>
+        </thead>
+        <tbody>
+            <td>{{most_winning_session| default:"still not identified"}}</td>
+            <td>{{average_holding_time|default:"Still not identified"}}</td>
+            <td>{{best_trade_type|default:"still not identified"}}</td>
+            <td>{{best_entry_place| default:"still not identified"}}</td>
+            <td>+{{max_wins}} wins</td>
+            <td>-{{ max_losses }} losses</td>
+        </tbody>
+    </table>
+</div><br>
+
+<div class="journal-container">
+    <div class="page-title">Performance Graph</div>
+    <canvas id="performanceChart" width="800" height="400"></canvas>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Get data from Django context
+    const labels = {{ dates|safe }};
+    const dataPoints = {{ performance|safe }};
+
+    const ctx = document.getElementById('performanceChart').getContext('2d');
+    const performanceChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Performance',
+                data: dataPoints,
+                borderColor: '#1abc9c',
+                backgroundColor: 'rgba(26, 188, 156, 0.2)',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 5,
+                pointBackgroundColor: '#1abc9c'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#e2e8f0'
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: '#e2e8f0' },
+                    grid: { color: '#334155' }
+                },
+                y: {
+                    ticks: { color: '#e2e8f0' },
+                    grid: { color: '#334155' },
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+
+{% endblock %}

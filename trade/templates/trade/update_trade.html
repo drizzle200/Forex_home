@@ -1,0 +1,250 @@
+{% extends 'trade/base/base.html' %}
+{% load static %}
+
+{% block title %}Update Trade Journal{% endblock %}
+
+{% block body %}
+<style>
+:root{
+    --bg: #0f172a;
+    --card: #1e293b;
+    --card-light: #334155;
+    --border: #334155;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --primary: #1abc9c;
+    --primary-dark: #16a085;
+}
+
+body{
+    background: var(--bg);
+    color: var(--text);
+}
+
+.trade-card{
+    max-width:520px;
+    margin:30px auto;
+    background:var(--card);
+    border-radius:8px;
+    box-shadow:0 6px 16px rgba(0,0,0,.4);
+    padding:20px;
+    border:1px solid var(--border);
+}
+
+.trade-header{
+    background:var(--primary);
+    color:#fff;
+    padding:12px;
+    text-align:center;
+    border-radius:6px 6px 0 0;
+    font-size:20px;
+    font-weight:600;
+}
+
+.step{display:none;}
+.step.active{display:block;}
+
+.choice{
+    padding:10px;
+    border:1px solid var(--border);
+    border-radius:6px;
+    margin-bottom:8px;
+    cursor:pointer;
+    background:var(--card-light);
+    color:var(--text);
+    transition:0.2s ease;
+}
+
+.choice:hover{
+    background:#3b5168;
+}
+
+.choice.selected{
+    background:rgba(26,188,156,0.15);
+    border-color:var(--primary);
+}
+
+.btn{
+    background:var(--primary);
+    color:#fff;
+    border:none;
+    padding:10px 18px;
+    border-radius:6px;
+    cursor:pointer;
+    transition:0.2s ease;
+}
+
+.btn:hover{
+    background:var(--primary-dark);
+}
+
+.btn-row{
+    text-align:center;
+    margin-top:15px;
+}
+
+/* MODAL */
+.modal-bg{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.7);
+    display:none;
+    z-index:1000;
+}
+
+.modal-box{
+    background:var(--card);
+    max-width:420px;
+    margin:60px auto;
+    border-radius:8px;
+    max-height:80vh;
+    overflow:auto;
+    border:1px solid var(--border);
+    box-shadow:0 8px 20px rgba(0,0,0,.5);
+}
+</style>
+
+<div class="trade-card">
+<div class="trade-header">Journal Trade</div>
+
+<form method="post" action="{% url 'update_trade' trade.trade_id %}" id="journalForm">
+{% csrf_token %}
+
+<!-- Hidden fields -->
+<input type="hidden" name="target" id="target">
+<input type="hidden" name="reason" id="reason">
+
+<input type="hidden" name="narration" id="narration">
+
+<!-- STEP 1 -->
+<div class="step active">
+    <h4>Target *</h4>
+    <div class="choice target-choice" data-value="1">Win</div>
+    <div class="choice target-choice" data-value="0">Lose</div>
+</div>
+
+<!-- STEP 2 
+<div class="step">
+    <h4>Holding Time (Hours) *</h4>
+    <input type="number" min="0" id="hrs" class="form-control">
+</div>
+
+<!-- STEP 3 
+<div class="step">
+    <h4>Holding Time (Minutes) *</h4>
+    <input type="number" min="0" max="59" id="mins" class="form-control">
+</div>-->
+
+<!-- STEP 4 -->
+<div class="step">
+    <h4>Narration *</h4>
+    <textarea id="note" class="form-control"></textarea>
+</div>
+
+<div class="btn-row">
+    <button type="button" class="btn" id="backBtn" style="display:none;">Back</button>
+    <button type="button" class="btn" id="nextBtn">Next</button>
+    <button type="submit" class="btn" id="submitBtn" style="display:none;">Save</button>
+</div>
+</form>
+</div>
+
+<!-- REASON MODAL -->
+<div class="modal-bg" id="reasonModal">
+<div class="modal-box">
+    <div class="trade-header">Reason for Loss</div>
+    <div style="padding:15px;">
+        {% for v,l in form.fields.reason.choices %}
+        <div class="choice reason-choice" data-value="{{ v }}">{{ l }}</div>
+        {% endfor %}
+    </div>
+    <div style="text-align:right;padding:15px;">
+        <button class="btn" type="button" onclick="closeReason()">Done</button>
+    </div>
+</div>
+</div>
+
+<script>
+let step = 0;
+const steps = document.querySelectorAll('.step');
+const backBtn = document.getElementById('backBtn');
+const nextBtn = document.getElementById('nextBtn');
+const submitBtn = document.getElementById('submitBtn');
+const reasonModal = document.getElementById('reasonModal');
+
+const target = document.getElementById('target');
+const reason = document.getElementById('reason');
+
+function showStep(){
+    steps.forEach((s,i)=>s.classList.toggle('active',i===step));
+    backBtn.style.display = step===0?'none':'inline-block';
+    nextBtn.style.display = step===steps.length-1?'none':'inline-block';
+    submitBtn.style.display = step===steps.length-1?'inline-block':'none';
+}
+
+/* TARGET */
+document.querySelectorAll('.target-choice').forEach(el=>{
+    el.onclick = ()=>{
+        document.querySelectorAll('.target-choice')
+            .forEach(e=>e.classList.remove('selected'));
+        el.classList.add('selected');
+
+        target.value = el.dataset.value;
+
+        if(target.value === '0'){
+            reasonModal.style.display = 'block';
+        }else{
+            reason.value = '';
+            document.querySelectorAll('.reason-choice')
+                .forEach(r=>r.classList.remove('selected'));
+        }
+    };
+});
+
+/* REASON */
+document.querySelectorAll('.reason-choice').forEach(el=>{
+    el.onclick = ()=>{
+        document.querySelectorAll('.reason-choice')
+            .forEach(e=>e.classList.remove('selected'));
+        el.classList.add('selected');
+        reason.value = el.dataset.value;
+    };
+});
+
+function closeReason(){
+    if(!reason.value){
+        alert('Please select a reason');
+        return;
+    }
+    reasonModal.style.display = 'none';
+}
+
+/* NAV */
+nextBtn.onclick = ()=>{
+    if(step === 0){
+        if(!target.value){
+            alert('Select Win or Lose');
+            return;
+        }
+        if(target.value === '0' && !reason.value){
+            alert('Select reason for loss');
+            return;
+        }
+    }
+    step++;
+    showStep();
+};
+
+backBtn.onclick = ()=>{
+    step--;
+    showStep();
+};
+
+/* SUBMIT */
+document.getElementById('journalForm').onsubmit = ()=>{
+    
+    document.getElementById('narration').value = note.value;
+    return true;
+};
+</script>
+{% endblock %}

@@ -1,0 +1,559 @@
+{% extends 'trade/base/base.html' %}
+{% block title %}Performance Dashboard{% endblock %}
+
+{% block body %}
+<style>
+:root {
+    --primary: #1abc9c;
+    --primary-dark: #16a085;
+
+    --bg: #0f172a;
+    --card: #1e293b;
+    --card-light: #334155;
+
+    --text-dark: #e2e8f0;
+    --muted: #94a3b8;
+
+    --success: #22c55e;
+    --danger: #ef4444;
+    --info: #3b82f6;
+    --warning: #f59e0b;
+
+    --border: #334155;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text-dark);
+}
+
+/* ===== DASHBOARD ===== */
+.dashboard {
+    padding: 20px;
+    font-family: "Segoe UI", Arial, sans-serif;
+    color: var(--text-dark);
+}
+
+.dashboard-title {
+    background: var(--primary);
+    color: #fff;
+    padding: 16px;
+    font-size: 20px;
+    font-weight: 600;
+    border-radius: 8px;
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 25px;
+}
+
+.card {
+    background: var(--card);
+    border-radius: 10px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+.section-title {
+    background: var(--primary-dark);
+    color: white;
+    padding: 12px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 15px;
+}
+
+/* ===== TABLE ===== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th {
+    background: var(--card-light);
+    padding: 10px;
+    font-size: 13px;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+td {
+    padding: 10px;
+    text-align: center;
+    font-size: 14px;
+    border-bottom: 1px solid var(--border);
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+tr:hover {
+    background: #2c3e50;
+    transition: 0.2s ease;
+}
+
+.pair {
+    font-weight: 600;
+    
+}
+
+.green { color: var(--success); font-weight: 600; }
+.red { color: var(--danger); font-weight: 600; }
+.blue { color: var(--info); font-weight: 600; }
+
+/* ===== OVERALL PERFORMANCE ===== */
+.overall-box {
+    padding: 15px;
+}
+
+.overall-header,
+.overall-values {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    text-align: center;
+}
+
+.overall-header {
+    background: var(--card-light);
+    border-radius: 6px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.overall-header div {
+    padding: 10px;
+}
+
+.overall-values div {
+    padding: 18px 0;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.expectancy-box {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.expectancy-message {
+    background: var(--card-light);
+    border-radius: 6px;
+    padding: 15px;
+    font-size: 14px;
+    color: var(--muted);
+}
+
+.expectancy-value {
+    background: var(--success);
+    color: #fff;
+    border-radius: 6px;
+    padding: 15px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.small-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.metric-box {
+    background: var(--card-light);
+    border-radius: 6px;
+    padding: 12px;
+    text-align: center;
+    font-size: 14px;
+}
+
+.metric-box b {
+    display: block;
+    margin-top: 5px;
+    font-size: 16px;
+}
+
+/* ===== HUD / CAR DASHBOARD DARK ===== */
+.dashboard-dark {
+    background: radial-gradient(circle at center, #1e293b 0%, #0f172a 80%);
+    color: var(--text-dark);
+}
+
+.cluster {
+    padding: 20px;
+}
+
+.hud-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.hud-box {
+    background: var(--card-light);
+    border-radius: 6px;
+    padding: 10px;
+    text-align: center;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.hud-box b {
+    display: block;
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+.hud-green { color: var(--success); }
+.hud-red { color: var(--danger); }
+.hud-blue { color: var(--info); }
+.hud-yellow{ color: var(--warning); }
+
+.gauge-wrap {
+    width: 100%;
+    height: 260px;
+    margin: 10px auto;
+}
+
+.digital-readout {
+    text-align: center;
+    margin-top: -10px;
+    font-size: 14px;
+    color: var(--muted);
+}
+
+.digital-readout span {
+    display: block;
+    font-size: 20px;
+    color: var(--primary);
+    font-weight: bold;
+}
+
+.expectancy-led {
+    background: linear-gradient(135deg, #134e4a, #1abc9c);
+    border-radius: 8px;
+    padding: 14px;
+    margin-top: 12px;
+    text-align: center;
+    font-weight: bold;
+}
+
+/* Tooltip */
+.message-box {
+    position: absolute;
+    display: none;
+    max-width: 260px;
+    background: var(--card);
+    color: var(--text-dark);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    z-index: 1000;
+    pointer-events: none;
+    border: 1px solid var(--border);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+}
+
+.hover-text {
+    cursor: help;
+    text-decoration: underline dotted;
+}
+
+a.custom-link {
+    color: #4fd1c5;        /* soft teal, easy on dark bg */
+    text-decoration: underline dotted;
+    transition: color 0.2s ease;
+}
+
+/* Hover effect */
+a.custom-link:hover {
+    color: #1abc9c;        /* slightly brighter teal */
+    text-decoration: underline;
+}
+
+/* Active (clicked) */
+a.custom-link:active {
+    color: #16a085;        /* darker teal */
+}
+
+/* Visited link */
+a.custom-link:visited {
+    color: #38b2ac;        /* muted teal so it doesn't clash */
+}
+
+/* ===== MOBILE ===== */
+@media (max-width: 768px) {
+    .grid-2 {
+        grid-template-columns: 1fr;
+    }
+
+    table, thead, tbody, th, tr {
+        display: block;
+    }
+
+    thead {
+        display: none;
+    }
+
+    tr {
+        background: var(--card);
+        margin: 12px;
+        border-radius: 8px;
+        box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+        padding: 10px;
+        border: 1px solid var(--border);
+    }
+
+    td {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px;
+        border: none;
+        font-size: 14px;
+    }
+
+    td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: var(--muted);
+    }
+
+    .pair {
+        text-align: right;
+        
+    }
+}
+
+a.custom-link {
+    color: #4fd1c5;        /* soft teal, easy on dark bg */
+    text-decoration: underline dotted;
+    transition: color 0.2s ease;
+}
+
+/* Hover effect */
+a.custom-link:hover {
+    color: #1abc9c;        /* slightly brighter teal */
+    text-decoration: underline;
+}
+
+/* Active (clicked) */
+a.custom-link:active {
+    color: #16a085;        /* darker teal */
+}
+
+/* Visited link */
+a.custom-link:visited {
+    color: #38b2ac;        /* muted teal so it doesn't clash */
+}
+</style>
+<div class="dashboard">
+    <!--<div class="dashboard-title">PERFORMANCE DASHBOARD</div>-->
+
+    <div class="grid-2">
+
+        <!-- TRADES SUMMARY -->
+        <div class="card">
+            <div class="section-title">Trades Summary</div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Pair</th>
+                        <th>Won</th>
+                        <th>Lost</th>
+                        <th>Avg RR</th>
+                        <th>Winrate</th>
+                    </tr>
+                </thead>
+
+                <tbody id="lbord">
+                    {% for pair in pairs_summary %}
+                    <tr>
+                        <td data-label="Pair" class="pair"><a href="{% url 'performance_by_pair' pair.id  %}" class="custom-link">{{ pair.pair }}</a></td>
+                        <td data-label="Won" class="green">{{ pair.won }}+</td>
+                        <td data-label="Lost" class="red">-{{ pair.lost }}</td>
+                        <td data-label="Avg RR" class="green">{{ pair.avg_rr}}R</td>
+                        <td data-label="Winrate" class="green">{{ pair.winrate }}%</td>
+                    </tr>
+
+                    {% endfor %}
+                
+                   
+                  
+                </tbody>
+            </table>
+        </div>
+
+        <!-- OVERALL PERFORMANCE -->
+        <div class="card">
+            <div class="section-title">Overall Performance</div>
+
+            <div class="overall-box dashboard-dark cluster">
+
+                <!-- HUD TOP -->
+                <div class="hud-row">
+                    <div class="hud-box">
+                        Winrate
+                        <b class="{% if overallwinrate >= 70 %}
+                          hud-green {% elif overallwinrate < 40 %} 
+                          hud-red {% else  %} hud-yellow {% endif %}">{{ overallwinrate }}%</b>
+                    </div>
+                    <div class="hud-box">
+                        Lossrate
+                        <b class="hud-red">{{ overalllossrate}}%</b>
+                    </div>
+                    <div class="hud-box">
+                        RVS
+                        <b class="hud-blue">{{ avg_rvs|default:"0" }}/12</b>
+                    </div>
+                </div>
+            
+                <!-- GAUGE -->
+                <div id="winrate-gauge" class="gauge-wrap"></div>
+            
+                <!-- DIGITAL -->
+                <div class="digital-readout">
+                    {{ messege }}
+                <span></span>
+                </div>
+            
+                <!-- EXPECTANCY -->
+                <div class="expectancy-led">
+                    EXPECTANCY {{ expectancy|default:"0" }}%
+                </div>
+            
+                <!-- LOWER STATS -->
+                <div class="hud-row" style="margin-top:12px;">
+                    <div class="hud-box">
+                    <div class="hover-text" data-message="Reduce RVS, fix Risk Reward, limit repeated mistakes, don't overtrade">
+                        Consistency
+                          <b class="{% if grade_consistency.consistency_level == 4 or grade_consistency.consistency_level == 3 %}
+                          hud-green {% elif grade_consistency.consistency_level == 2 %} 
+                          hud-yellow {% else  %} hud-red {% endif %}">
+                              {{ grade_consistency.consistency_tier }}
+                          </b>
+                          
+                          <div id="message-box" class="message-box"></div>
+
+                    </div>
+                    </div>
+                    <div class="hud-box">
+                        Avg RR
+                        <b class="hud-green">+{{ avg_risk_reward|default:"0" }}R</b>
+                    </div>
+                    <div class="hud-box">
+                        Avg Risk
+                        <b class="hud-red">-1R</b>
+                    </div>
+                    
+                </div>
+            
+            </div>
+            
+        </div>
+
+    </div>
+</div>
+
+
+
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/highcharts-more.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const tooltip = document.getElementById("message-box");
+
+    document.querySelectorAll(".hover-text").forEach(el => {
+
+        el.addEventListener("mouseenter", function () {
+            tooltip.textContent = el.dataset.message;
+            tooltip.style.display = "block";
+        });
+
+        el.addEventListener("mousemove", function (e) {
+            tooltip.style.left = (e.pageX + 12) + "px";
+            tooltip.style.top = (e.pageY + 12) + "px";
+        });
+
+        el.addEventListener("mouseleave", function () {
+            tooltip.style.display = "none";
+        });
+
+        });
+        });
+
+Highcharts.chart('winrate-gauge', {
+
+    chart: {
+        type: 'gauge',
+        backgroundColor: 'transparent',
+        plotShadow: false
+    },
+
+    title: { text: null },
+
+    pane: {
+        startAngle: -130,
+        endAngle: 130,
+        background: [{
+            backgroundColor: '#eaeaea   ',
+            borderWidth: 20,
+            outerRadius: '105%'
+        }]
+    },
+
+    yAxis: {
+        min: 0,
+        max: 100,
+
+        tickPixelInterval: 30,
+        tickColor: '#00ffcc',
+        lineColor: '#00ffcc',
+        labels: {
+            style: { color: '#aaa' }
+        },
+
+        plotBands: [{
+            from: 0,
+            to: 40,
+            color: '#e74c3c'
+        }, {
+            from: 40,
+            to: 70,
+            color: '#f1c40f'
+        }, {
+            from: 70,
+            to: 100,
+            color: '#2ecc71'
+        }]
+    },
+
+    series: [{
+        name: 'Winrate',
+        data: [{{ overallwinrate| default:"0" }}],
+        dataLabels: {
+            format: '<span style="font-size:20px;color:#black">{y}%</span>',
+            borderWidth: 0
+        },
+        tooltip: { enabled: false }
+    }]
+
+    });
+</script>
+
+{% endblock %}

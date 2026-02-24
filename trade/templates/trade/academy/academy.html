@@ -1,0 +1,208 @@
+{% extends 'trade/base/base.html' %}
+{% load static %}
+
+{% block title %} Home | Trade {% endblock %}
+
+{% block body %}
+<style>
+:root{
+    --bg: #0f172a;
+    --card: #1e293b;
+    --card-light: #334155;
+    --border: #334155;
+
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+
+    --primary: #1abc9c;
+    --primary-dark: #16a085;
+
+    --danger-bg: #3b1f1f;
+    --danger-border: #7f1d1d;
+    --danger-text: #f87171;
+}
+
+body{
+    background: var(--bg);
+    color: var(--text);
+}
+
+.trade-card {
+    background: var(--card);
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+    max-width: 600px;
+    margin: 30px auto;
+    border: 1px solid var(--border);
+}
+
+.trade-header {
+    background-color: var(--primary);
+    color: white;
+    padding: 12px 16px;
+    border-radius: 6px 6px 0 0;
+    font-size: 20px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.step-card { display: none; }
+.step-card.active { display: block; }
+
+.option {
+    background: var(--card-light);
+    padding: 10px;
+    margin: 6px 0;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    transition: 0.2s ease;
+}
+
+.option:hover {
+    background: #3b5168;
+}
+
+.option.selected {
+    border-color: var(--primary);
+    background: rgba(26,188,156,0.15);
+}
+
+.btn-nav {
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    margin: 10px 5px 0 0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.btn-nav:hover { 
+    background-color: var(--primary-dark); 
+}
+
+.btn-submit {
+    display: block;
+    width: 50%;
+    margin: 20px auto 0;
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    padding: 12px 0;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.btn-submit:hover { 
+    background-color: var(--primary-dark); 
+}
+
+/* Modal */
+.modal-bg {
+    display: none;
+    position: fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background: rgba(0,0,0,0.7);
+    z-index:1000;
+}
+
+.error-box {
+    background: var(--danger-bg);
+    color: var(--danger-text);
+    padding:12px;
+    border-radius:6px;
+    margin:15px 0;
+    border:1px solid var(--danger-border);
+    font-weight:600;
+    text-align:center;
+}
+
+.modal-box {
+    background: var(--card);
+    width:90%;
+    max-width:500px;
+    margin:100px auto;
+    border-radius:8px;
+    overflow:hidden;
+    border: 1px solid var(--border);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+}
+
+.modal-footer {
+    padding:15px;
+    text-align:right;
+}
+
+.preview-table { 
+    width:100%; 
+    border-collapse: collapse; 
+}
+
+.preview-table th { 
+    background: var(--primary); 
+    color:white; 
+    padding:10px; 
+    text-align:left; 
+}
+
+.preview-table td { 
+    padding:10px; 
+    background: var(--card-light); 
+    border-bottom:1px solid var(--border); 
+}
+
+a.custom-link {
+    color: #4fd1c5;        /* soft teal, easy on dark bg */
+    text-decoration: underline dotted;
+    transition: color 0.2s ease;
+}
+
+/* Hover effect */
+a.custom-link:hover {
+    color: #1abc9c;        /* slightly brighter teal */
+    text-decoration: underline;
+}
+
+/* Active (clicked) */
+a.custom-link:active {
+    color: #16a085;        /* darker teal */
+}
+
+/* Visited link */
+a.custom-link:visited {
+    color: #38b2ac;        /* muted teal so it doesn't clash */
+}
+
+</style>
+<div>    
+ <form>
+    <input type="text" name="">
+    <input type="button" name="" value="Search">
+    
+</form>
+</div>
+<div class="trade-card">
+    <div class="trade-header" >Reiview your strategy</div>
+
+    <a href="" class="custom-link">1.Market structures</a><br>
+    <a href="" class="custom-link">2.Key level</a><br>
+    <a href="" class="custom-link">3.Smart moneny concept (SMC)</a><br>
+    <a href="" class="custom-link">4.Combine Key level and SMC</a><br>
+    <a href="" class="custom-link">5.Investing- inchimoku strategy</a><br>
+    <a href="" class="custom-link">6.Trading rules and psychologies</a><br>
+
+</div>
+
+<!-- Trade Preview Modal -->
+
+
+
+{% endblock %}
