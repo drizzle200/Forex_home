@@ -175,7 +175,7 @@
 </style>
 
 <div class="journal-container">
-    <div class="page-title">Your performance for {{ pair.name }}</div>
+    <div class="page-title">Performance for {{ pair.name }}</div>
     <hr>
     
     <table>
@@ -219,11 +219,12 @@
                 label: 'Performance',
                 data: dataPoints,
                 borderColor: '#1abc9c',
+                borderWidth: 1,
                 backgroundColor: 'rgba(26, 188, 156, 0.2)',
                 fill: true,
-                tension: 0.3,
-                pointRadius: 5,
-                pointBackgroundColor: '#1abc9c'
+                tension: 0.4,
+                pointRadius: 3,
+                pointBackgroundColor: '#e2e8f0'
             }]
         },
         options: {

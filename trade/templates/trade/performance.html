@@ -337,13 +337,30 @@ a.custom-link:visited {
     }
     
     .gauges-row {
-        flex-direction: column;
+        flex-direction: row;       
+        justify-content: center;
+        align-items: center;
+        gap: 10px;                 /* smaller spacing */
     }
+
+    /* Make them shrink to fit screen */
+    .gauge-wrap {
+        flex: 1;                   /* share available width */
+        max-width: 50%;            /* each takes half screen */
+        height: auto;
+    }
+
+    .gauge-wrap canvas {
+        width: 100% !important;    /* responsive width */
+        height: auto !important;   /* auto height */
+    }
+
     .grid-2 {
         display: flex;
-        flex-direction: column; /* stack vertically */
+        flex-direction: column;
         gap: 20px; 
     }
+
      .overall-performance {
         order: -1;
     }
@@ -429,7 +446,6 @@ a.custom-link:visited {
                         <th>Lost</th>
                         <th>Avg RR</th>
                         <th>Winrate</th>
-
                         <th>Profit</th>
                     </tr>
                 </thead>
@@ -477,11 +493,12 @@ a.custom-link:visited {
                 label: 'Performance',
                 data: dataPoints,
                 borderColor: '#1abc9c',
+                borderWidth: 1,
                 backgroundColor: 'rgba(26, 188, 156, 0.2)',
                 fill: true,
-                tension: 0.3,
-                pointRadius: 5,
-                pointBackgroundColor: '#1abc9c'
+                tension: 0.4,
+                pointRadius: 3,
+                pointBackgroundColor: '#e2e8f0'
             }]
         },
         options: {
@@ -589,7 +606,7 @@ a.custom-link:visited {
                         <b class="hud-red">{{std_dev_rr}}</b>
                     </div>
                     <div class="hud-box">
-                        Profit
+                        Today Profit
                         {%  if todays_profit > 0%}
                         <b class="hud-green">+{{todays_profit}}%</b>
                         {%else%}
