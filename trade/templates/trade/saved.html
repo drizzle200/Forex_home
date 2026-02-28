@@ -29,9 +29,7 @@ body {
 
 /* ===== DASHBOARD ===== */
 .dashboard {
-    width: 100%;
-    margin: 0;
-    padding: 0;
+    padding: 20px;
     font-family: "Segoe UI", Arial, sans-serif;
     color: var(--text-dark);
 }
@@ -53,11 +51,10 @@ body {
     grid-template-areas:
         "summary overall"
         "chart chart";
-    gap: 20px;
-    max-width: 100%;
+    gap: 28px;
+    max-width: 1300px;
     margin: 0 auto;
     padding: 20px;
-    box-sizing: border-box;
 }
 .card {
     background: linear-gradient(145deg, #1e293b, #18212f);
@@ -243,14 +240,14 @@ tr:hover {
 }
 
 .cluster {
-    padding: 14px 18px;
+    padding: 20px;
 }
 
 .hud-row {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
-    margin-bottom: 10px;
+    gap: 8px;
+    margin-bottom: 12px;
 }
 
 .hud-box {
@@ -276,14 +273,14 @@ tr:hover {
 
 .gauge-wrap {
     width: 100%;
-    height: 200px;
+    height: 260px;
     margin: 10px auto;
 }
 
 .digital-readout {
     text-align: center;
-    margin-top: 4px;
-    font-size: 12px;
+    margin-top: -10px;
+    font-size: 14px;
     color: var(--muted);
 }
 
@@ -297,10 +294,10 @@ tr:hover {
 .expectancy-led {
     background: linear-gradient(135deg, #134e4a, #1abc9c);
     border-radius: 8px;
-    padding: 10px;
-    margin-top: 8px;
+    padding: 14px;
+    margin-top: 12px;
     text-align: center;
-    font-size: 14px;
+    font-weight: bold;
 }
 
 /* Tooltip */
@@ -350,7 +347,7 @@ a.custom-link:visited {
     align-items: flex-start;  /* align gauges from top */
     gap: 0px;                /* spacing between gauges */
     flex-wrap: wrap;          /* allow wrapping on small screens */
-    margin-top: 8px;         /* space above gauges */
+    margin-top: 20px;         /* space above gauges */
 }
 
 .gauge-wrap {
@@ -380,13 +377,6 @@ a.custom-link:visited {
 /* ===== MOBILE ===== */
 @media (max-width: 768px) {
      /* ===== CHART CONTAINER ===== */
-     .dashboard-layout {
-        grid-template-columns: 1fr;
-        grid-template-areas:
-            "summary"
-            "overall"
-            "chart";
-    }
     #performanceChart {
         background: var(--card);
         border-radius: 8px;
@@ -487,17 +477,40 @@ a.custom-link:visited {
     color: #38b2ac;        /* muted teal so it doesn't clash */
 }
 </style>
-
 <div class="dashboard">
+    <!--<div class="dashboard-title">PERFORMANCE DASHBOARD</div>-->
 
-    <div class="dashboard-layout">
 
-        <!-- TOP LEFT -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="dashboard-layout">
+
+        <!-- TRADES SUMMARY -->
         <div class="card trades-summary">
             <div class="section-title">Trades Summary</div>
-            <div class="card-body">
-                <table>
-                    <thead>
+            <div style="card-body">
+            <table>
+                <thead>
                     <tr>
                         <th>Pair</th>
                         <th>Won</th>
@@ -529,19 +542,101 @@ a.custom-link:visited {
                    
                   
                 </tbody>
-                </table>
+            </table>
             </div>
-   
-            <div class="card-body">
-                <canvas id="performanceChart"></canvas>
-            </div>
+            
+</div>
+
+
+
+ <div class="card chart-card">
+        <div class="section-title">Performance Curve</div>
+        <div class="card-body">
+        <canvas id="performanceChart"></canvas>
+        </div>
+    </div>
+
+    
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Get data from Django context
+    const labels = {{ dates|safe }};
+    const dataPoints = {{ performance|safe }};
+
+    const ctx = document.getElementById('performanceChart').getContext('2d');
+    const performanceChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Performance',
+                data: dataPoints,
+                borderColor: '#1abc9c',
+                borderWidth: 1,
+                backgroundColor: 'rgba(26, 188, 156, 0.2)',
+                fill: true,
+                tension: 0.4,
+                pointRadius: 3,
+                pointBackgroundColor: '#e2e8f0'
+            }]
+        },
+        options: {
+            responsive: true,
+             animation: {
+            duration: 1500,
+            easing: 'easeOutQuart'
+            },
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#e2e8f0'
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: '#e2e8f0' },
+                    grid: { color: '#334155' }
+                },
+                y: {
+                    ticks: { color: '#e2e8f0' },
+                    grid: { color: '#334155' },
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
         </div>
 
-        <!-- TOP RIGHT -->
+        <!-- OVERALL PERFORMANCE -->
         <div class="card overall-performance">
             <div class="section-title">Overall Performance</div>
+
             <div class="overall-box dashboard-dark cluster">
-                 <div class="gauges-row">
+
+                <!-- HUD TOP -->
+                 <!--<div class="hud-row">
+                   <div class="hud-box">
+                        Winrate
+                        <b class="{% if overallwinrate >= 70 %}
+                          hud-green {% elif overallwinrate < 40 %} 
+                          hud-red {% else  %} hud-yellow {% endif %}">{{ overallwinrate }}%</b>
+                    </div>
+                    <div class="hud-box">
+                        Lossrate
+                        <b class="hud-red">{{ overalllossrate}}%</b>
+                    </div>
+                    <div class="hud-box">
+                        RVS
+                        <b class="hud-blue">{{ avg_rvs|default:"0" }}/12</b>
+                    </div>
+                </div>-->
+            
+                <!-- GAUGE -->
+                <div class="gauges-row">
                 <div class="gauge-wrap">
                     <canvas id="winrate-gauge"></canvas>
                     
@@ -607,12 +702,27 @@ a.custom-link:visited {
                 </div>
             
             </div>
+            
         </div>
-
-       
 
     </div>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
 </div>
 
 <!-- Include Canvas Gauges -->
@@ -721,59 +831,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }).draw();
 
 });
-</script>
-
-
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    // Get data from Django context
-    const labels = {{ dates|safe }};
-    const dataPoints = {{ performance|safe }};
-
-    const ctx = document.getElementById('performanceChart').getContext('2d');
-    const performanceChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Performance',
-                data: dataPoints,
-                borderColor: '#1abc9c',
-                borderWidth: 1,
-                backgroundColor: 'rgba(26, 188, 156, 0.2)',
-                fill: true,
-                tension: 0.4,
-                pointRadius: 3,
-                pointBackgroundColor: '#e2e8f0'
-            }]
-        },
-        options: {
-            responsive: true,
-             animation: {
-            duration: 1500,
-            easing: 'easeOutQuart'
-            },
-            plugins: {
-                legend: {
-                    labels: {
-                        color: '#e2e8f0'
-                    }
-                }
-            },
-            scales: {
-                x: {
-                    ticks: { color: '#e2e8f0' },
-                    grid: { color: '#334155' }
-                },
-                y: {
-                    ticks: { color: '#e2e8f0' },
-                    grid: { color: '#334155' },
-                    beginAtZero: true
-                }
-            }
-        }
-    });
 </script>
 
 

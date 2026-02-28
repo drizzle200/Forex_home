@@ -614,7 +614,7 @@ def performance_view(request):
     
     risk_rewards = [t.risk_reward for t in trades_list]
     targets = [t.target for t in trades_list]
-    dates = [t.timestamp.strftime("%Y-%m-%d") for t in trades_list]  # now oldest → newest
+    dates = [t.timestamp.strftime("%#m/%#d") for t in trades_list]  # now oldest → newest
     
     # Build cumulative performance
     performance = []
