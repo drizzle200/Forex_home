@@ -103,9 +103,9 @@ tr:hover {
     
 }
 
-.green { color: var(--success); font-weight: 600; }
-.red { color: var(--danger); font-weight: 600; }
-.blue { color: var(--info); font-weight: 600; }
+.green { color: var(--success); }
+.red { color: var(--danger); }
+.blue { color: var(--info);  }
 
 /* ===== OVERALL PERFORMANCE ===== */
 .overall-box {
@@ -293,11 +293,64 @@ a.custom-link:active {
 a.custom-link:visited {
     color: #38b2ac;        /* muted teal so it doesn't clash */
 }
+.gauges-row {
+    display: flex;
+    justify-content: center; /* horizontal center */
+    align-items: flex-start;  /* align gauges from top */
+    gap: 0px;                /* spacing between gauges */
+    flex-wrap: wrap;          /* allow wrapping on small screens */
+    margin-top: 20px;         /* space above gauges */
+}
+
+.gauge-wrap {
+    flex: 0 1 280px;          /* fixed width per gauge */
+    height: 260px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;      /* center gauge canvas horizontally */
+    pointer-events: none;     /* disable hover / clicks on gauge */
+}
+
+/* Digital readout styling */
+.digital-readout {
+    text-align: center;
+    margin-top: 8px;           /* separate from gauge */
+    font-size: 14px;
+    color: var(--muted);
+}
+
+.digital-readout span {
+    display: block;
+    font-size: 20px;
+    color: var(--primary);
+    font-weight: bold;
+}
 
 /* ===== MOBILE ===== */
 @media (max-width: 768px) {
+     /* ===== CHART CONTAINER ===== */
+    #performanceChart {
+        background: var(--card);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+    }
+    
+    .gauges-row {
+        flex-direction: column;
+    }
     .grid-2 {
-        grid-template-columns: 1fr;
+        display: flex;
+        flex-direction: column; /* stack vertically */
+        gap: 20px; 
+    }
+     .overall-performance {
+        order: -1;
+    }
+
+    /* Trades Summary comes second */
+    .trades-summary {
+        order: 0;
     }
 
     table, thead, tbody, th, tr {
@@ -365,7 +418,7 @@ a.custom-link:visited {
     <div class="grid-2">
 
         <!-- TRADES SUMMARY -->
-        <div class="card">
+        <div class="card trades-summary">
             <div class="section-title">Trades Summary</div>
 
             <table>
@@ -376,6 +429,8 @@ a.custom-link:visited {
                         <th>Lost</th>
                         <th>Avg RR</th>
                         <th>Winrate</th>
+
+                        <th>Profit</th>
                     </tr>
                 </thead>
 
@@ -387,6 +442,12 @@ a.custom-link:visited {
                         <td data-label="Lost" class="red">-{{ pair.lost }}</td>
                         <td data-label="Avg RR" class="green">{{ pair.avg_rr}}R</td>
                         <td data-label="Winrate" class="green">{{ pair.winrate }}%</td>
+                        
+                        {%  if pair.profit_r > 0%}
+                        <td data-label="Profit" class="green">+{{ pair.profit_r }}%</td>
+                        {%else%}
+                        <td data-label="Profit" class="red">{{ pair.profit_r }}%</td>
+                        {% endif %}
                     </tr>
 
                     {% endfor %}
@@ -395,17 +456,68 @@ a.custom-link:visited {
                   
                 </tbody>
             </table>
+            <div class="journal-container">
+    <div class="page-title"></div>
+    <canvas id="performanceChart" width="800" height="400"></canvas>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Get data from Django context
+    const labels = {{ dates|safe }};
+    const dataPoints = {{ performance|safe }};
+
+    const ctx = document.getElementById('performanceChart').getContext('2d');
+    const performanceChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Performance',
+                data: dataPoints,
+                borderColor: '#1abc9c',
+                backgroundColor: 'rgba(26, 188, 156, 0.2)',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 5,
+                pointBackgroundColor: '#1abc9c'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#e2e8f0'
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: '#e2e8f0' },
+                    grid: { color: '#334155' }
+                },
+                y: {
+                    ticks: { color: '#e2e8f0' },
+                    grid: { color: '#334155' },
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
         </div>
 
         <!-- OVERALL PERFORMANCE -->
-        <div class="card">
+        <div class="card overall-performance">
             <div class="section-title">Overall Performance</div>
 
             <div class="overall-box dashboard-dark cluster">
 
                 <!-- HUD TOP -->
-                <div class="hud-row">
-                    <div class="hud-box">
+                 <!--<div class="hud-row">
+                   <div class="hud-box">
                         Winrate
                         <b class="{% if overallwinrate >= 70 %}
                           hud-green {% elif overallwinrate < 40 %} 
@@ -419,10 +531,20 @@ a.custom-link:visited {
                         RVS
                         <b class="hud-blue">{{ avg_rvs|default:"0" }}/12</b>
                     </div>
-                </div>
+                </div>-->
             
                 <!-- GAUGE -->
-                <div id="winrate-gauge" class="gauge-wrap"></div>
+                <div class="gauges-row">
+                <div class="gauge-wrap">
+                    <canvas id="winrate-gauge"></canvas>
+                    
+                </div>
+            
+                <div class="gauge-wrap">
+                    <canvas id="expectancy-gauge"></canvas>
+                   
+                </div>
+            </div>
             
                 <!-- DIGITAL -->
                 <div class="digital-readout">
@@ -455,8 +577,24 @@ a.custom-link:visited {
                         <b class="hud-green">+{{ avg_risk_reward|default:"0" }}R</b>
                     </div>
                     <div class="hud-box">
-                        Avg Risk
-                        <b class="hud-red">-1R</b>
+                        RVS
+                        <b class="hud-blue">{{ avg_rvs|default:"0" }}</b>
+                    </div>
+                    <div class="hud-box">
+                        Today trades
+                        <b class="hud-blue">{{todays_trades}}</b>
+                    </div>
+                    <div class="hud-box">
+                        RR deviation
+                        <b class="hud-red">{{std_dev_rr}}</b>
+                    </div>
+                    <div class="hud-box">
+                        Profit
+                        {%  if todays_profit > 0%}
+                        <b class="hud-green">+{{todays_profit}}%</b>
+                        {%else%}
+                        <b class="hud-red">{{todays_profit}}%</b>
+                        {% endif %}
                     </div>
                     
                 </div>
@@ -468,14 +606,13 @@ a.custom-link:visited {
     </div>
 </div>
 
-
-
-<script src="https://code.highcharts.com/highcharts.js"></script>
-<script src="https://code.highcharts.com/highcharts-more.js"></script>
+<!-- Include Canvas Gauges -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-gauges/gauge.min.js"></script>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
 
+    // Tooltip logic (keep yours)
     const tooltip = document.getElementById("message-box");
 
     document.querySelectorAll(".hover-text").forEach(el => {
@@ -494,66 +631,88 @@ document.addEventListener("DOMContentLoaded", function () {
             tooltip.style.display = "none";
         });
 
-        });
-        });
-
-Highcharts.chart('winrate-gauge', {
-
-    chart: {
-        type: 'gauge',
-        backgroundColor: 'transparent',
-        plotShadow: false
-    },
-
-    title: { text: null },
-
-    pane: {
-        startAngle: -130,
-        endAngle: 130,
-        background: [{
-            backgroundColor: '#eaeaea   ',
-            borderWidth: 20,
-            outerRadius: '105%'
-        }]
-    },
-
-    yAxis: {
-        min: 0,
-        max: 100,
-
-        tickPixelInterval: 30,
-        tickColor: '#00ffcc',
-        lineColor: '#00ffcc',
-        labels: {
-            style: { color: '#aaa' }
-        },
-
-        plotBands: [{
-            from: 0,
-            to: 40,
-            color: '#e74c3c'
-        }, {
-            from: 40,
-            to: 70,
-            color: '#f1c40f'
-        }, {
-            from: 70,
-            to: 100,
-            color: '#2ecc71'
-        }]
-    },
-
-    series: [{
-        name: 'Winrate',
-        data: [{{ overallwinrate| default:"0" }}],
-        dataLabels: {
-            format: '<span style="font-size:20px;color:#black">{y}%</span>',
-            borderWidth: 0
-        },
-        tooltip: { enabled: false }
-    }]
-
     });
+
+    // ===============================
+    // CANVAS GAUGES
+    // ===============================
+
+    // WINRATE GAUGE
+    var winrateGauge = new RadialGauge({
+        renderTo: 'winrate-gauge',
+        width: 280,
+        height: 240,
+        minValue: 0,
+        maxValue: 100,
+        majorTicks: ['0','20','40','60','80','100'],
+        minorTicks: 4,
+        value: {{ overallwinrate|default:"0" }},
+        units: "winrate",
+        startAngle: 60,
+        ticksAngle: 240,
+        colorPlate: "#111827",
+        borderShadowWidth: 0,
+        borders: false,
+        needleType: "arrow",
+        needleWidth: 2,
+        needleCircleSize: 7,
+        needleCircleOuter: true,
+        needleCircleInner: false,
+        animationDuration: 800,
+        animationRule: "easeOutExpo",
+        colorMajorTicks: "#e5e7eb",
+        colorMinorTicks: "#9ca3af",
+        colorNeedle: "#f59e0b",
+        colorNeedleEnd: "#f59e0b",
+        colorUnits: "#e5e7eb",
+        colorNumbers: "#e5e7eb",
+        colorNeedleShadowUp: "#000000",
+        colorNeedleShadowDown: "#000000",
+        highlights: [
+            { from: 0, to: 40, color: 'rgba(239,68,68,0.3)' },    // red
+            { from: 40, to: 70, color: 'rgba(251,191,36,0.3)' },  // yellow
+            { from: 70, to: 100, color: 'rgba(34,197,94,0.3)' }   // green
+        ]
+    }).draw();
+
+    // CONSISTENCY GAUGE
+    var consistencyGauge = new RadialGauge({
+        renderTo: 'expectancy-gauge',
+        width: 280,
+        height: 240,
+        minValue: 0,
+        maxValue: 4,
+        majorTicks: ['0','1','2','3','4'],
+        minorTicks: 4,
+        value: {{ grade_consistency.consistency_score|default:"0" }},
+        units: "Consistency",
+        startAngle: 60,
+        ticksAngle: 240,
+        colorPlate: "#111827",
+        borderShadowWidth: 0,
+        borders: false,
+        needleType: "arrow",
+        needleWidth: 2,
+        needleCircleSize: 7,
+        needleCircleOuter: true,
+        needleCircleInner: false,
+        animationDuration: 800,
+        animationRule: "easeOutExpo",
+        colorMajorTicks: "#e5e7eb",
+        colorMinorTicks: "#9ca3af",
+        colorNeedle: "#f59e0b",
+        colorNeedleEnd: "#f59e0b",
+        colorUnits: "#e5e7eb",
+        colorNumbers: "#e5e7eb",
+        highlights: [
+            { from: 0, to: 1.3, color: 'rgba(239,68,68,0.3)' },    // red
+            { from: 1.3, to: 2.7, color: 'rgba(251,191,36,0.3)' }, // yellow
+            { from: 2.7, to: 4, color: 'rgba(34,197,94,0.3)' }     // green
+        ]
+    }).draw();
+
+});
 </script>
+
 
 {% endblock %}

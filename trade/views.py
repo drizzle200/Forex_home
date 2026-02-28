@@ -8,14 +8,14 @@ from collections import Counter
 import pandas as pd
 from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
-from django.utils import timezone
 from django.forms.models import model_to_dict
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
-from django.db.models import Avg,Sum,Count, StdDev, Q
+from django.db.models import Avg,Sum,Count, StdDev, Q, Case, When, Value, FloatField
+from django.utils import timezone
 from django.views.decorators.http import require_POST,require_GET
 from .models import Trades, Pairs
 from .services import restrict_trade
@@ -413,6 +413,9 @@ def performance_view(request):
     last_20_trades = Trades.objects.filter(
         target__in=[0, 1]
     ).order_by("-timestamp")[:20]
+    last_2_trades = Trades.objects.filter(
+        target__in=[0, 1]
+    ).order_by("-timestamp")[:2]
     
     # 2️⃣ Aggregate everything from the SAME queryset
     stats = last_20_trades.aggregate(
@@ -423,13 +426,16 @@ def performance_view(request):
         std_dev_rr=StdDev("risk_reward"),
         avg_rvs=Avg("rvs"),
     )
+    stat = last_2_trades.aggregate(        
+        avg_rvs=Avg("rvs"),
+    )
     
     total_trades = stats["total_trades"] or 0
     all_won = stats["all_won"] or 0
     all_lost = stats["all_lost"] or 0
     avg_risk_reward = round(stats["avg_risk_reward"] or 0, 2)
     std_dev_rr = round(stats["std_dev_rr"] or 0, 2)
-    avg_rvs = round(stats["avg_rvs"] or 0, 2)
+    avg_rvs = round(stat["avg_rvs"] or 0, 2)
     
     # 3️⃣ Calculate winrate safely
     if total_trades > 0:
@@ -451,31 +457,43 @@ def performance_view(request):
     pairs = Pairs.objects.all()
 
     for pair in pairs:
-        trades = pair.trades.all()
-
+        trades = pair.trades.filter(target__in=[0, 1])
+    
         if not trades.exists():
             continue
-
+    
         won = trades.filter(target=1).count()
-        lost = trades.exclude(target=1).count()
+        lost = trades.filter(target=0).count()
         total = won + lost
-        
-        try:
-            winrate = round((won / total) * 100, 2) if total > 0 else 0
-        except ZeroDivisionError:
-            winrate = 0
-
-        avg_rr = trades.filter(target=1).aggregate(avg_rr=Avg("risk_reward"))["avg_rr"] or 0
+    
+        winrate = round((won / total) * 100, 2) if total > 0 else 0
+    
+        # ✅ Sum of winning RR
+        total_win_rr = trades.filter(target=1).aggregate(
+            total_rr=Sum("risk_reward")
+        )["total_rr"] or 0
+    
+        # ✅ Total loss R (each loss = -1R)
+        total_loss_rr = lost * 1
+    
+        # ✅ Net Profit in R
+        net_profit = round(total_win_rr - total_loss_rr, 2)
+      
+    
+        avg_rr = trades.filter(target=1).aggregate(
+            avg_rr=Avg("risk_reward")
+        )["avg_rr"] or 0
+    
         avg_rr = round(avg_rr, 2)
-
+    
         pairs_summary.append({
-            "id":pair.id,
+            "id": pair.id,
             "pair": pair.name,
             "won": won,
             "lost": lost,
             "avg_rr": avg_rr,
             "winrate": winrate,
-            
+            "profit_r": net_profit,   
         })
 
     reasons = Trades.objects.filter(target=0).order_by("-timestamp").values_list("reason",flat=True)[:10]
@@ -572,8 +590,43 @@ def performance_view(request):
         std_dev_rr,
         most_common_reason)
     
+    # Today's closed trades only
+    todays_profit = Trades.objects.filter(
+        timestamp__date=today,
+        target__in=[0, 1]
+    ).aggregate(
+        total_profit=Sum(
+            Case(
+                When(target=1, then="risk_reward"),  # Win = +RR
+                When(target=0, then=Value(-1)),      # Loss = -1R
+                output_field=FloatField(),
+            )
+        )
+    )["total_profit"] or 0
+    todays_profit = round(todays_profit, 2)
+    
+    last_16_trades = Trades.objects.filter(
+        target__in=[0, 1]
+    ).order_by("-timestamp")[:40]  # latest first
+    
+    # Reverse the lists for chronological plotting
+    trades_list = list(last_16_trades)[::-1]
+    
+    risk_rewards = [t.risk_reward for t in trades_list]
+    targets = [t.target for t in trades_list]
+    dates = [t.timestamp.strftime("%Y-%m-%d") for t in trades_list]  # now oldest → newest
+    
+    # Build cumulative performance
+    performance = []
+    cum_value = 0
+    for rr, t in zip(risk_rewards, targets):
+        if t == 1:
+            cum_value += rr
+        else:
+            cum_value -= 1
+        performance.append(cum_value)
+  
 
-        
     return render(request, 'trade/performance.html', {
    
     'grade_consistency': grade_consistency,
@@ -584,6 +637,11 @@ def performance_view(request):
     'messege':messege,
     "overallwinrate":overallwinrate,
     "overalllossrate":overalllossrate,
+    'todays_trades':todays_trades,
+    'todays_profit':todays_profit,
+    'std_dev_rr':std_dev_rr,
+    'performance':performance,
+    'dates':dates,
     })
 
                                                                                                              
@@ -616,25 +674,25 @@ def performance_by_pair_view(request, pair_id):
 
     pair = get_object_or_404(Pairs, id=pair_id)
     ###############
-
-    trades = pair.trades.filter(target__isnull=False).order_by("-timestamp")[:40]  
-
+    # Get trades (ascending timestamp)
+    trades = list(pair.trades.filter(target__isnull=False).order_by("timestamp")[:40])
+    
     # Prepare lists
-    risk_rewards = list(trades.values_list("risk_reward", flat=True))
-    targets = list(trades.values_list("target", flat=True))
+    risk_rewards = [t.risk_reward for t in trades]
+    targets = [t.target for t in trades]
     dates = [t.timestamp.strftime("%Y-%m-%d") for t in trades]
     
-    # Build cumulative performance
+    # Build cumulative performance in chronological order
     performance = []
     cum_value = 0
+    
     for rr, t in zip(risk_rewards, targets):
         if t == 1:
             cum_value += rr
         elif t == 0:
             cum_value -= 1
         performance.append(cum_value)
-
-
+    
     # ✅ last 20 winning trades with holding_time    
     trades = pair.trades.filter(target__isnull=False).order_by("-timestamp")[:20]
     # --- categorical stats ---
