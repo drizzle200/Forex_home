@@ -673,6 +673,11 @@ def home_view(request):
 def performance_by_pair_view(request, pair_id):
 
     pair = get_object_or_404(Pairs, id=pair_id)
+    # Get next pair
+    next_pair = Pairs.objects.filter(id__gt=pair.id).order_by("id").first()
+    
+    # Get previous pair
+    previous_pair = Pairs.objects.filter(id__lt=pair.id).order_by("-id").first()
     ###############
     # Get trades (ascending timestamp)
     trades = list(pair.trades.filter(target__isnull=False).order_by("timestamp")[:40])
@@ -693,7 +698,7 @@ def performance_by_pair_view(request, pair_id):
             cum_value -= 1
         performance.append(cum_value)
     
-    # ✅ last 20 winning trades with holding_time    
+    #  last 20 winning trades with holding_time    
     trades = pair.trades.filter(target__isnull=False).order_by("-timestamp")[:20]
     # --- categorical stats ---
     session = trades.values_list("session", flat=True)
@@ -758,6 +763,8 @@ def performance_by_pair_view(request, pair_id):
         request,
         "trade/performance_by_pair.html",
         {
+            "next_pair": next_pair,
+            "previous_pair": previous_pair,
             "max_wins":max_wins,
             "max_losses":max_losses,
             "average_holding_time": average_holding_time,

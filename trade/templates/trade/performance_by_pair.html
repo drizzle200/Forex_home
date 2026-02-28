@@ -124,7 +124,26 @@
         color: var(--success);
         margin-top: 20px;
     }
-
+    /* ===== PAIR NAVIGATION ===== */
+    .pair-navigation {
+        margin-top: 20px;
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+    }
+    
+    .nav-btn {
+        padding: 8px 18px;
+        background: var(--primary);
+        border-radius: 6px;
+        color: white;
+        text-decoration: none;
+        transition: 0.2s ease;
+    }
+    
+    .nav-btn:hover {
+        background: var(--primary-dark);
+    }
     /* ===== MOBILE TRANSFORMATION ===== */
     @media (max-width: 768px) {
 
@@ -201,6 +220,21 @@
 <div class="journal-container">
     <div class="page-title">Performance Graph</div>
     <canvas id="performanceChart" width="800" height="400"></canvas>
+    <div class="pair-navigation">
+
+    {% if previous_pair %}
+        <a href="{% url 'performance_by_pair' previous_pair.id %}" class="nav-btn">
+            ⬅ Previous Pair
+        </a>
+    {% endif %}
+
+    {% if next_pair %}
+        <a href="{% url 'performance_by_pair' next_pair.id %}" class="nav-btn">
+            Next Pair ➡
+        </a>
+    {% endif %}
+
+</div>
 </div>
 
 <!-- Chart.js -->
