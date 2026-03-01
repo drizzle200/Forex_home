@@ -749,191 +749,222 @@
 document.addEventListener("DOMContentLoaded", function () {
     // Performance Chart with ECharts
     const labels = {{ dates|safe }};
-    const dataPoints = {{ performance|safe }};
+const dataPoints = {{ performance|safe }};
 
-    // FIXED: Initialize chart on the div element
-    const performanceChart = echarts.init(document.getElementById('performanceChart'));
-    
-    performanceChart.setOption({
-        backgroundColor: 'transparent',
-        grid: {
-            left: '6%',
-            right: '6%',
-            bottom: '12%',
-            top: '8%',
-            containLabel: true
+const performanceChart = echarts.init(document.getElementById('performanceChart'));
+
+performanceChart.setOption({
+    backgroundColor: 'transparent',
+    grid: {
+        left: '6%',
+        right: '6%',
+        bottom: '12%',
+        top: '8%',
+        containLabel: true
+    },
+    tooltip: {
+        trigger: 'axis',
+        axisPointer: { 
+            type: 'shadow',
+            shadowStyle: { color: 'rgba(16, 185, 129, 0.1)' }
         },
-        tooltip: {
-            trigger: 'axis',
-            axisPointer: { 
-                type: 'shadow',
-                shadowStyle: { color: 'rgba(16, 185, 129, 0.1)' }
+        backgroundColor: '#1e293b',
+        borderColor: '#10b981',
+        borderWidth: 2,
+        textStyle: { color: '#f3f4f6', fontSize: 12 },
+        formatter: function(params) {
+            const value = params[0].value;
+            // Format to one decimal place
+            const formattedValue = value.toFixed(1);
+            const color = value >= 0 ? '#34d399' : '#f87171';
+            const sign = value >= 0 ? '+' : '';
+            return `
+                <div style="font-weight:600; margin-bottom:5px;">${params[0].name}</div>
+                <div style="color:${color}">
+                    <span style="font-size:16px; font-weight:700;">${sign}${formattedValue}%</span>
+                </div>
+            `;
+        }
+    },
+    xAxis: {
+        type: 'category',
+        data: labels,
+        axisLine: { lineStyle: { color: '#2d3748' } },
+        axisLabel: { 
+            color: '#9ca3af', 
+            rotate: labels.length > 10 ? 35 : 0,
+            fontSize: 11,
+            margin: 10
+        },
+        axisTick: { show: false }
+    },
+    yAxis: {
+        type: 'value',
+        axisLine: { show: false },
+        axisLabel: { 
+            color: '#9ca3af', 
+            formatter: function(value) {
+                return value.toFixed(1) + '%'; // Y-axis labels with one decimal
             },
-            backgroundColor: '#1e293b',
+            fontSize: 11
+        },
+        splitLine: { 
+            lineStyle: { 
+                color: '#2d3748', 
+                type: 'dashed',
+                opacity: 0.5
+            } 
+        }
+    },
+    series: [{
+        data: dataPoints,
+        type: 'line',
+        smooth: true,
+        symbol: 'circle',
+        symbolSize: 8,
+        lineStyle: { 
+            width: 3, 
+            color: '#10b981',
+            shadowColor: 'rgba(16, 185, 129, 0.3)',
+            shadowBlur: 10,
+            shadowOffsetY: 4
+        },
+        areaStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: 'rgba(16, 185, 129, 0.4)' },
+                { offset: 0.5, color: 'rgba(16, 185, 129, 0.1)' },
+                { offset: 1, color: 'rgba(16, 185, 129, 0)' }
+            ])
+        },
+        itemStyle: {
+            color: '#f3f4f6',
             borderColor: '#10b981',
             borderWidth: 2,
-            textStyle: { color: '#f3f4f6', fontSize: 12 },
-            formatter: function(params) {
-                const value = params[0].value;
-                const color = value >= 0 ? '#34d399' : '#f87171';
-                const sign = value >= 0 ? '+' : '';
-                return `
-                    <div style="font-weight:600; margin-bottom:5px;">${params[0].name}</div>
-                    <div style="color:${color}">
-                        <span style="font-size:16px; font-weight:700;">${sign}${value}%</span>
-                    </div>
-                `;
-            }
+            shadowColor: 'rgba(16, 185, 129, 0.5)',
+            shadowBlur: 10
         },
-        xAxis: {
-            type: 'category',
-            data: labels,
-            axisLine: { lineStyle: { color: '#2d3748' } },
-            axisLabel: { 
-                color: '#9ca3af', 
-                rotate: labels.length > 10 ? 35 : 0,
-                fontSize: 11,
-                margin: 10
-            },
-            axisTick: { show: false }
-        },
-        yAxis: {
-            type: 'value',
-            axisLine: { show: false },
-            axisLabel: { 
-                color: '#9ca3af', 
-                formatter: '{value}%',
-                fontSize: 11
-            },
-            splitLine: { 
-                lineStyle: { 
-                    color: '#2d3748', 
-                    type: 'dashed',
-                    opacity: 0.5
-                } 
-            }
-        },
-        series: [{
-            data: dataPoints,
-            type: 'line',
-            smooth: true,
-            symbol: 'circle',
-            symbolSize: 8,
-            lineStyle: { 
-                width: 3, 
-                color: '#10b981',
-                shadowColor: 'rgba(16, 185, 129, 0.3)',
-                shadowBlur: 10,
-                shadowOffsetY: 4
-            },
-            areaStyle: {
-                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                    { offset: 0, color: 'rgba(16, 185, 129, 0.4)' },
-                    { offset: 0.5, color: 'rgba(16, 185, 129, 0.1)' },
-                    { offset: 1, color: 'rgba(16, 185, 129, 0)' }
-                ])
-            },
+        emphasis: {
             itemStyle: {
-                color: '#f3f4f6',
-                borderColor: '#10b981',
-                borderWidth: 2,
-                shadowColor: 'rgba(16, 185, 129, 0.5)',
-                shadowBlur: 10
+                color: '#10b981',
+                borderColor: '#f3f4f6',
+                borderWidth: 3,
+                shadowBlur: 15
             },
-            emphasis: {
-                itemStyle: {
-                    color: '#10b981',
-                    borderColor: '#f3f4f6',
-                    borderWidth: 3,
-                    shadowBlur: 15
-                },
-                lineStyle: {
-                    width: 4,
-                    shadowBlur: 15
-                }
-            },
-            markPoint: {
-                data: [
-                    { type: 'max', name: 'Peak Performance', symbolSize: 50 },
-                    { type: 'min', name: 'Low Point', symbolSize: 50 }
-                ],
-                symbol: 'circle',
-                symbolSize: 40,
-                label: { 
-                    color: 'white', 
-                    fontWeight: 'bold',
-                    fontSize: 11,
-                    backgroundColor: 'rgba(0,0,0,0.6)',
-                    padding: [4, 8],
-                    borderRadius: 4
-                },
-                itemStyle: {
-                    color: {
-                        type: 'radial',
-                        colorStops: [
-                            { offset: 0, color: '#fbbf24' },
-                            { offset: 1, color: '#f59e0b' }
-                        ]
-                    }
-                }
-            },
-            markLine: {
-                data: [
-                    { 
-                        type: 'average', 
-                        name: 'Average Performance', 
-                        lineStyle: { 
-                            color: '#fbbf24', 
-                            type: 'dashed',
-                            width: 2,
-                            shadowColor: 'rgba(251, 191, 36, 0.3)',
-                            shadowBlur: 8
-                        } 
-                    },
-                    {
-                        yAxis: 0,
-                        name: 'Break Even',
-                        lineStyle: {
-                            color: '#f87171',
-                            type: 'dashed',
-                            width: 1,
-                            opacity: 0.5
+            lineStyle: {
+                width: 4,
+                shadowBlur: 15
+            }
+        },
+        markPoint: {
+            data: [
+                { 
+                    type: 'max', 
+                    name: 'Peak Performance', 
+                    symbolSize: 25,
+                    label: {
+                        formatter: function(params) {
+                            return params.value.toFixed(1) + '%'; // MarkPoint with one decimal
                         }
                     }
-                ],
-                label: { 
-                    color: '#fbbf24',
-                    fontSize: 11,
-                    backgroundColor: 'rgba(0,0,0,0.6)',
-                    padding: [4, 8],
-                    borderRadius: 4
+                },
+                { 
+                    type: 'min', 
+                    name: 'Low Point', 
+                    symbolSize: 25,
+                    label: {
+                        formatter: function(params) {
+                            return params.value.toFixed(1) + '%'; // MarkPoint with one decimal
+                        }
+                    }
+                }
+            ],
+            symbol: 'circle',
+            symbolSize: 40,
+            label: { 
+                color: 'white', 
+                fontWeight: 'bold',
+                fontSize: 11,
+                backgroundColor: 'rgba(0,0,0,0.6)',
+                padding: [4, 8],
+                borderRadius: 4
+            },
+            itemStyle: {
+                color: {
+                    type: 'radial',
+                    colorStops: [
+                        { offset: 0, color: '#fbbf24' },
+                        { offset: 1, color: '#f59e0b' }
+                    ]
                 }
             }
-        }],
-        dataZoom: [
-            { 
-                type: 'slider', 
-                show: true, 
-                start: 0, 
-                end: 100, 
-                backgroundColor: '#1f2937',
-                borderColor: '#2d3748',
-                fillerColor: 'rgba(16, 185, 129, 0.2)',
-                handleStyle: {
-                    color: '#10b981',
-                    borderColor: '#10b981'
+        },
+        markLine: {
+            data: [
+                { 
+                    type: 'average', 
+                    name: 'Average Performance', 
+                    lineStyle: { 
+                        color: '#fbbf24', 
+                        type: 'dashed',
+                        width: 2,
+                        shadowColor: 'rgba(251, 191, 36, 0.3)',
+                        shadowBlur: 8
+                    },
+                    label: {
+                        formatter: function(params) {
+                            return params.value.toFixed(1) + '%'; // Average line label with one decimal
+                        }
+                    }
                 },
-                textStyle: { color: '#9ca3af' }
+                {
+                    yAxis: 0,
+                    name: 'Break Even',
+                    lineStyle: {
+                        color: '#f87171',
+                        type: 'dashed',
+                        width: 1,
+                        opacity: 0.5
+                    }
+                }
+            ],
+            label: { 
+                color: '#fbbf24',
+                fontSize: 11,
+                backgroundColor: 'rgba(0,0,0,0.6)',
+                padding: [4, 8],
+                borderRadius: 4
             }
-        ]
-    });
+        }
+    }],
+    dataZoom: [
+        { 
+            type: 'slider', 
+            show: true, 
+            start: 0, 
+            end: 100, 
+            backgroundColor: '#1f2937',
+            borderColor: '#2d3748',
+            fillerColor: 'rgba(16, 185, 129, 0.2)',
+            handleStyle: {
+                color: '#10b981',
+                borderColor: '#10b981'
+            },
+            textStyle: { color: '#9ca3af' }
+        }
+    ]
+});
 
-    // Handle window resize
-    window.addEventListener('resize', function() {
-        performanceChart.resize();
-    });
+// Handle resize
+window.addEventListener('resize', () => {
+    winrateChart.resize();
+    consistencyChart.resize();
+    performanceChart.resize();
+});
 
-    // FIXED: Removed references to winrateChart and consistencyChart which don't exist in this page
+// Auto-refresh data every 60 seconds (optional)
+// setInterval(() => {
+//     location.reload();
+// }, 60000);
 });
 </script>
 {% endblock %}
