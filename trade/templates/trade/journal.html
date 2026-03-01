@@ -8,212 +8,1067 @@
     :root {
         --primary: #1abc9c;
         --primary-dark: #16a085;
-
+        --primary-glow: rgba(26, 188, 156, 0.3);
+        --primary-soft: rgba(26, 188, 156, 0.1);
+        
         --bg: #0f172a;
         --card: #1e293b;
         --card-light: #334155;
-
+        --card-hover: #2c3e50;
+        
         --text-dark: #e2e8f0;
-        --muted: #94a3b8;
-
+        --text-muted: #94a3b8;
+        
         --success: #22c55e;
+        --success-soft: rgba(34, 197, 94, 0.1);
         --danger: #ef4444;
+        --danger-soft: rgba(239, 68, 68, 0.1);
         --info: #3b82f6;
-
+        --info-soft: rgba(59, 130, 246, 0.1);
+        --warning: #f59e0b;
+        --purple: #a855f7;
+        
         --border: #334155;
+        --border-light: #475569;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
     }
 
     body {
         background: var(--bg);
+        color: var(--text-dark);
+        font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+        min-height: 100vh;
+        line-height: 1.5;
     }
 
     .journal-container {
-        max-width: 1000px;
+        max-width: 1200px;
         margin: 40px auto;
-        padding: 10px;
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        color: var(--text-dark);
+        padding: 0 24px;
     }
 
-    .page-title {
-        font-size: 28px;
-        font-weight: 600;
-        margin-bottom: 20px;
-        color: var(--text-dark);
+    /* Header Section */
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32px;
+        flex-wrap: wrap;
+        gap: 20px;
     }
 
-    /* ===== TABLE (DESKTOP) ===== */
-    .table-wrapper {
-        overflow-x: auto;
+    .title-section {
+        display: flex;
+        align-items: center;
+        gap: 16px;
     }
 
-    table {
-        width: 100%;
-        border-collapse: collapse;
+    .title-icon {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        border-radius: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 30px;
+        color: white;
+        box-shadow: 0 10px 20px -5px var(--primary-glow);
+    }
+
+    .title-content h1 {
+        font-size: 32px;
+        font-weight: 700;
+        color: white;
+        margin-bottom: 4px;
+    }
+
+    .title-content p {
+        color: var(--text-muted);
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .title-content p i {
+        color: var(--primary);
+    }
+
+    .stats-badge {
         background: var(--card);
-        border-radius: 8px;
-        overflow: hidden;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.4);
         border: 1px solid var(--border);
+        border-radius: 100px;
+        padding: 12px 24px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
     }
 
-    thead tr {
-        background: var(--primary);
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+        background: var(--primary-soft);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary);
+        font-size: 18px;
+    }
+
+    .stat-info {
+        text-align: left;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+        font-size: 20px;
+        font-weight: 700;
         color: white;
     }
 
-    th, td {
-        padding: 12px 15px;
-        text-align: left;
-        font-size: 14px;
+    /* Empty State */
+    .empty-state {
+        background: var(--card);
+        border-radius: 30px;
+        padding: 60px 40px;
+        text-align: center;
+        border: 1px solid var(--border);
+        box-shadow: 0 20px 40px -15px rgba(0,0,0,0.5);
+        animation: slideIn 0.5s ease;
     }
 
-    tbody tr {
+    .empty-icon {
+        width: 120px;
+        height: 120px;
+        background: var(--primary-soft);
+        border-radius: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 24px;
+        font-size: 48px;
+        color: var(--primary);
+        border: 2px solid var(--primary-glow);
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 var(--primary-glow); }
+        70% { box-shadow: 0 0 0 15px rgba(26, 188, 156, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(26, 188, 156, 0); }
+    }
+
+    .empty-state h3 {
+        font-size: 28px;
+        font-weight: 700;
+        color: white;
+        margin-bottom: 12px;
+    }
+
+    .empty-state p {
+        color: var(--text-muted);
+        font-size: 16px;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    /* Table Card (Desktop) */
+    .table-card {
+        background: var(--card);
+        border-radius: 30px;
+        border: 1px solid var(--border);
+        box-shadow: 0 20px 40px -15px rgba(0,0,0,0.5);
+        overflow: hidden;
+        animation: slideIn 0.5s ease;
+    }
+
+    .table-header {
+        padding: 24px 28px;
+        background: linear-gradient(90deg, rgba(26, 188, 156, 0.1), transparent);
         border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
     }
 
-    tbody tr:nth-child(even) {
+    .table-header h2 {
+        font-size: 20px;
+        font-weight: 600;
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .table-header h2 i {
+        color: var(--primary);
+        font-size: 24px;
+    }
+
+    .table-header h2 span {
+        background: var(--primary);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 100px;
+        font-size: 14px;
+        margin-left: 10px;
+    }
+
+    .filter-badge {
+        display: flex;
+        gap: 8px;
+    }
+
+    .filter-btn {
         background: var(--card-light);
+        border: 1px solid var(--border);
+        color: var(--text-muted);
+        padding: 8px 16px;
+        border-radius: 100px;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
     }
 
-    .buy {
-        font-weight: bold;
+    .filter-btn:hover {
+        border-color: var(--primary);
+        color: white;
+        background: var(--primary-soft);
+    }
+
+    .filter-btn.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+
+    /* Desktop Table */
+    .desktop-table {
+        display: block;
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .desktop-table th {
+        background: var(--card-light);
+        padding: 18px 20px;
+        font-size: 13px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-muted);
+        text-align: left;
+        border-bottom: 2px solid var(--border);
+    }
+
+    .desktop-table td {
+        padding: 18px 20px;
+        font-size: 14px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: middle;
+    }
+
+    .desktop-table tbody tr {
+        transition: all 0.2s ease;
+    }
+
+    .desktop-table tbody tr:hover {
+        background: var(--card-hover);
+        transform: scale(1.01);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+
+    /* Trade ID Badge */
+    .trade-id {
+        background: var(--card-light);
+        padding: 6px 12px;
+        border-radius: 100px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--primary);
+        border: 1px solid var(--border);
+        display: inline-block;
+        font-family: monospace;
+    }
+
+    /* Pair Badge */
+    .pair-badge {
+        background: linear-gradient(135deg, var(--primary-soft), transparent);
+        padding: 6px 14px;
+        border-radius: 100px;
+        font-weight: 600;
+        color: white;
+        border: 1px solid var(--primary-glow);
+        display: inline-block;
+        font-size: 13px;
+    }
+
+    /* Buy/Sell Indicators */
+    .direction-badge {
+        padding: 6px 14px;
+        border-radius: 100px;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .direction-badge.buy {
+        background: var(--success-soft);
         color: var(--success);
+        border: 1px solid var(--success);
     }
 
-    .sell {
-        font-weight: bold;
+    .direction-badge.buy::before {
+        content: '▲';
+        font-size: 10px;
+    }
+
+    .direction-badge.sell {
+        background: var(--danger-soft);
         color: var(--danger);
+        border: 1px solid var(--danger);
+    }
+
+    .direction-badge.sell::before {
+        content: '▼';
+        font-size: 10px;
+    }
+
+    /* Trade Type */
+    .trade-type {
+        padding: 6px 12px;
+        border-radius: 8px;
+        background: var(--card-light);
+        color: var(--text-muted);
+        font-size: 12px;
+        border: 1px solid var(--border);
+    }
+
+    /* Time Badge */
+    .time-badge {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .time-main {
+        font-weight: 600;
+        color: white;
+        font-size: 13px;
+    }
+
+    .time-ago {
+        font-size: 11px;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .time-ago i {
+        color: var(--primary);
+        font-size: 10px;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
     }
 
     .btn {
         text-decoration: none;
-        padding: 6px 12px;
-        border-radius: 5px;
+        padding: 10px 18px;
+        border-radius: 12px;
         font-size: 13px;
-        color: white;
-        display: inline-block;
-        transition: 0.2s ease;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn i {
+        font-size: 14px;
     }
 
     .btn-journal {
-        background: var(--info);
-        margin-right: 6px;
+        background: linear-gradient(135deg, var(--info), #2563eb);
+        color: white;
+        box-shadow: 0 5px 15px -5px var(--info);
     }
 
     .btn-journal:hover {
-        opacity: 0.85;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px -5px var(--info);
     }
 
     .btn-delete {
-        background: var(--danger);
+        background: linear-gradient(135deg, var(--danger), #dc2626);
+        color: white;
+        box-shadow: 0 5px 15px -5px var(--danger);
     }
 
     .btn-delete:hover {
-        opacity: 0.85;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px -5px var(--danger);
     }
 
-    .empty {
-        font-size: 18px;
+    /* ===== MOBILE CARD VIEW ===== */
+    .mobile-cards {
+        display: none;
+        flex-direction: column;
+        gap: 16px;
+        padding: 16px;
+    }
+
+    .trade-card {
+        background: var(--card-light);
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        overflow: hidden;
+        animation: slideIn 0.3s ease;
+        transition: all 0.2s ease;
+    }
+
+    .trade-card:hover {
+        transform: translateY(-2px);
+        border-color: var(--primary);
+        box-shadow: 0 10px 20px -10px var(--primary-glow);
+    }
+
+    .trade-card-header {
+        padding: 16px;
+        background: linear-gradient(90deg, rgba(26, 188, 156, 0.1), transparent);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .trade-card-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .trade-card-icon {
+        width: 40px;
+        height: 40px;
+        background: var(--primary-soft);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        color: var(--primary);
+    }
+
+    .trade-card-info h4 {
+        font-size: 16px;
+        font-weight: 600;
+        color: white;
+        margin-bottom: 2px;
+    }
+
+    .trade-card-info p {
+        font-size: 12px;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .trade-card-badge {
+        display: flex;
+        gap: 8px;
+    }
+
+    .trade-card-body {
+        padding: 16px;
+    }
+
+    .trade-card-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .trade-card-row:last-child {
+        border-bottom: none;
+    }
+
+    .trade-card-label {
+        font-size: 13px;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .trade-card-value {
+        font-size: 14px;
+        font-weight: 600;
+        color: white;
+    }
+
+    .trade-card-footer {
+        padding: 16px;
+        background: linear-gradient(90deg, rgba(0,0,0,0.2), transparent);
+        border-top: 1px solid var(--border);
+        display: flex;
+        gap: 12px;
+    }
+
+    .trade-card-footer .btn {
+        flex: 1;
+        justify-content: center;
+        padding: 12px;
+    }
+
+    /* Mobile-specific badges */
+    .mobile-pair-badge {
+        background: linear-gradient(135deg, var(--primary-soft), transparent);
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        color: var(--primary);
+        border: 1px solid var(--primary-glow);
+    }
+
+    .mobile-direction-badge {
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .mobile-direction-badge.buy {
+        background: var(--success-soft);
         color: var(--success);
-        margin-top: 20px;
     }
 
-    /* ===== MOBILE TRANSFORMATION ===== */
+    .mobile-direction-badge.sell {
+        background: var(--danger-soft);
+        color: var(--danger);
+    }
+
+    /* Tooltip */
+    .message-box {
+        position: fixed;
+        display: none;
+        max-width: 300px;
+        background: var(--card);
+        color: var(--text-dark);
+        padding: 12px 16px;
+        border-radius: 12px;
+        font-size: 13px;
+        z-index: 1000;
+        border: 1px solid var(--primary);
+        box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5);
+        pointer-events: none;
+        backdrop-filter: blur(10px);
+    }
+
+    .hover-text {
+        cursor: help;
+        text-decoration: underline dotted;
+        text-decoration-color: var(--primary);
+    }
+
+    /* Animations */
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    /* ===== MOBILE BREAKPOINT ===== */
     @media (max-width: 768px) {
-
-        table, thead, tbody, th, tr {
-            display: block;
+        .journal-container {
+            padding: 0 16px;
+            margin: 20px auto;
         }
 
-        thead {
-            display: none;
+        .page-header {
+            flex-direction: column;
+            align-items: stretch;
+            margin-bottom: 20px;
         }
 
-        tbody tr {
-            background: var(--card);
-            margin-bottom: 15px;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        .title-section {
+            gap: 12px;
+        }
+
+        .title-icon {
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+        }
+
+        .title-content h1 {
+            font-size: 24px;
+        }
+
+        .title-content p {
+            font-size: 12px;
+        }
+
+        .stats-badge {
+            width: 100%;
+            justify-content: space-around;
             padding: 10px;
-            border: 1px solid var(--border);
+            gap: 10px;
         }
 
-        td {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 10px;
-            border: none;
+        .stat-item {
+            gap: 6px;
+        }
+
+        .stat-icon {
+            width: 32px;
+            height: 32px;
             font-size: 14px;
         }
 
-        td::before {
-            content: attr(data-label);
-            font-weight: 600;
-            color: var(--muted);
+        .stat-value {
+            font-size: 16px;
         }
 
-        .action-cell {
-            justify-content: flex-end;
-            gap: 8px;
+        .stat-label {
+            font-size: 10px;
+        }
+
+        .table-header {
+            padding: 16px;
+        }
+
+        .table-header h2 {
+            font-size: 18px;
+        }
+
+        .filter-badge {
+            width: 100%;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            gap: 6px;
+        }
+
+        .filter-btn {
+            flex: 0 0 auto;
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        /* Hide desktop table, show mobile cards */
+        .desktop-table {
+            display: none;
+        }
+
+        .mobile-cards {
+            display: flex;
+        }
+    }
+
+    /* Small phones */
+    @media (max-width: 480px) {
+        .journal-container {
+            padding: 0 12px;
+        }
+
+        .stats-badge {
+            flex-direction: column;
+            align-items: stretch;
+            border-radius: 20px;
+        }
+
+        .stat-item {
+            justify-content: center;
+        }
+
+        .trade-card-footer {
+            flex-direction: column;
+        }
+
+        .trade-card-footer .btn {
+            width: 100%;
+        }
+    }
+
+    /* Touch-friendly improvements */
+    @media (hover: none) and (pointer: coarse) {
+        .filter-btn,
+        .btn,
+        .filter-btn {
+            cursor: default;
+            -webkit-tap-highlight-color: var(--primary-soft);
+        }
+
+        .filter-btn:active,
+        .btn:active {
+            transform: scale(0.98);
+            opacity: 0.9;
         }
     }
 </style>
 
-<div class="journal-container">
+<!-- Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
-    <div class="page-title">Pending Trades to Journal</div>
+<div class="journal-container">
+    <!-- Header Section -->
+    <div class="page-header">
+        <div class="title-section">
+            <div class="title-icon">
+                <i class="fas fa-book"></i>
+            </div>
+            <div class="title-content">
+                <h1>Trade Journal</h1>
+                <p>
+                    <i class="fas fa-pen"></i> Record & analyze your trades
+                </p>
+            </div>
+        </div>
+
+        <div class="stats-badge">
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-label">Pending</div>
+                    <div class="stat-value">{{ trades|length }}</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="fas fa-hourglass-half"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-label">To Journal</div>
+                    <div class="stat-value">{{ trades|length }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     {% if trades %}
-    <div class="table-wrapper">
-        <table>
-            <thead>
-                <tr>
-                    <th>Reference No</th>
-                    <th>Pair</th>
-                    <th>Buy/Sell</th>
-                    <th>Trade Type</th>
-                    <th>Excecuted</th>
-                    <th>Holding time</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
+    <!-- Table Card -->
+    <div class="table-card">
+        <div class="table-header">
+            <h2>
+                <i class="fas fa-list"></i> Pending Trades
+                <span id="tradeCount">{{ trades|length }}</span>
+            </h2>
+            <div class="filter-badge">
+                <button class="filter-btn active" data-filter="all">
+                    <i class="fas fa-list-ul"></i> All
+                </button>
+                <button class="filter-btn" data-filter="buy">
+                    <i class="fas fa-arrow-up"></i> Buy
+                </button>
+                <button class="filter-btn" data-filter="sell">
+                    <i class="fas fa-arrow-down"></i> Sell
+                </button>
+            </div>
+        </div>
 
-            <tbody>
-                {% for trade in trades %}
-                <tr>
-                    <td data-label="Reference No" style="border-bottom: 1px solid #eee;">{{ trade.trade_id }}</td>
-                    <td data-label="Pair" style="border-bottom: 1px solid #eee;">{{ trade.pair }}</td>
+        <!-- Desktop Table View -->
+        <div class="desktop-table">
+            <table class="desktop-table">
+                <thead>
+                    <tr>
+                        <th>Reference</th>
+                        <th>Pair</th>
+                        <th>Direction</th>
+                        <th>Type</th>
+                        <th>Executed</th>
+                        <th>Holding</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="desktopTableBody">
+                    {% for trade in trades %}
+                    <tr data-direction="{{ trade.buy_or_sell|lower }}">
+                        <td>
+                            <span class="trade-id">{{ trade.trade_id|truncatechars:8 }}</span>
+                        </td>
+                        <td>
+                            <span class="pair-badge">{{ trade.pair }}</span>
+                        </td>
+                        <td>
+                            <span class="direction-badge {% if trade.buy_or_sell == 'Buy' %}buy{% else %}sell{% endif %}">
+                                {{ trade.buy_or_sell }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="trade-type">{{ trade.trade_type|truncatechars:10 }}</span>
+                        </td>
+                        <td>
+                            <div class="time-badge">
+                                <span class="time-main">{{ trade.timestamp|date:"m/d H:i" }}</span>
+                                <span class="time-ago">
+                                    <i class="fas fa-bolt"></i> {{ trade.timestamp|date:"H:i" }}
+                                </span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="time-badge">
+                                <span class="time-main">{{ trade.timestamp|timesince|truncatechars:10 }}</span>
+                                <span class="time-ago">
+                                    <i class="fas fa-hourglass-start"></i> ago
+                                </span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <a href="{% url 'update_trade' trade.trade_id %}" class="btn btn-journal">
+                                    <i class="fas fa-edit"></i> Journal
+                                </a>
+                                <a href="{% url 'delete_trade_confirm' trade.trade_id %}" class="btn btn-delete">
+                                    <i class="fas fa-trash"></i> Delete
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
-                    <td data-label="Buy / Sell" style="border-bottom: 1px solid #eee;"
-                        class="{% if trade.buy_or_sell == 'Buy' %}buy{% else %}sell{% endif %}">
-                        {{ trade.buy_or_sell }}
-                    </td>
+        <!-- Mobile Cards View -->
+        <div class="mobile-cards" id="mobileCardsContainer">
+            {% for trade in trades %}
+            <div class="trade-card" data-direction="{{ trade.buy_or_sell|lower }}">
+                <!-- Card Header -->
+                <div class="trade-card-header">
+                    <div class="trade-card-title">
+                        <div class="trade-card-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="trade-card-info">
+                            <h4>{{ trade.pair }}</h4>
+                            <p>
+                                <i class="fas fa-hashtag"></i> {{ trade.trade_id|truncatechars:8 }}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="trade-card-badge">
+                        <span class="mobile-direction-badge {% if trade.buy_or_sell == 'Buy' %}buy{% else %}sell{% endif %}">
+                            {{ trade.buy_or_sell }}
+                        </span>
+                    </div>
+                </div>
 
-                    <td data-label="Trade Type" style="border-bottom: 1px solid #eee;">{{ trade.trade_type }}</td>
+                <!-- Card Body -->
+                <div class="trade-card-body">
+                    <div class="trade-card-row">
+                        <span class="trade-card-label">
+                            <i class="fas fa-tag"></i> Trade Type
+                        </span>
+                        <span class="trade-card-value">{{ trade.trade_type }}</span>
+                    </div>
+                    
+                    <div class="trade-card-row">
+                        <span class="trade-card-label">
+                            <i class="fas fa-calendar"></i> Executed
+                        </span>
+                        <span class="trade-card-value">{{ trade.timestamp|date:"M d, Y" }}</span>
+                    </div>
+                    
+                    <div class="trade-card-row">
+                        <span class="trade-card-label">
+                            <i class="fas fa-clock"></i> Time
+                        </span>
+                        <span class="trade-card-value">{{ trade.timestamp|date:"H:i" }}</span>
+                    </div>
+                    
+                    <div class="trade-card-row">
+                        <span class="trade-card-label">
+                            <i class="fas fa-hourglass-half"></i> Holding
+                        </span>
+                        <span class="trade-card-value">{{ trade.timestamp|timesince|truncatechars:15 }}</span>
+                    </div>
+                </div>
 
-                    <td data-label="Time" style="border-bottom: 1px solid #eee;">
-                        {{ trade.timestamp|date:"Y-m-d H:i" }}
-                    </td>
-                    <td>
-                        {{ trade.timestamp|timesince }}
-                    </td>
-                    <td data-label="Action" class="action-cell">
-                        <a href="{% url 'update_trade' trade.trade_id %}" class="btn btn-journal">
-                            Journal
-                        </a>
-                        <a href="{% url 'delete_trade_confirm' trade.trade_id %}" class="btn btn-delete">
-                            Delete
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                <!-- Card Footer with Actions -->
+                <div class="trade-card-footer">
+                    <a href="{% url 'update_trade' trade.trade_id %}" class="btn btn-journal">
+                        <i class="fas fa-edit"></i> Journal
+                    </a>
+                    <a href="{% url 'delete_trade_confirm' trade.trade_id %}" class="btn btn-delete">
+                        <i class="fas fa-trash"></i> Delete
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
     </div>
-    {% else %}
-        <p class="empty">✅ No trade to journal</p>
-    {% endif %}
 
+    {% else %}
+    <!-- Empty State -->
+    <div class="empty-state">
+        <div class="empty-icon">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <h3>All Caught Up!</h3>
+        <p>No pending trades to journal. Take a break or start a new trade.</p>
+    </div>
+    {% endif %}
 </div>
+
+<!-- Tooltip -->
+<div id="message-box" class="message-box"></div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // Tooltip functionality
+    const tooltip = document.getElementById("message-box");
+    
+    document.querySelectorAll("[data-tooltip]").forEach(el => {
+        el.addEventListener("mouseenter", function (e) {
+            tooltip.textContent = this.dataset.tooltip;
+            tooltip.style.display = "block";
+            updateTooltipPosition(e);
+        });
+
+        el.addEventListener("mousemove", function (e) {
+            updateTooltipPosition(e);
+        });
+
+        el.addEventListener("mouseleave", function () {
+            tooltip.style.display = "none";
+        });
+    });
+
+    function updateTooltipPosition(e) {
+        tooltip.style.left = (e.pageX + 20) + "px";
+        tooltip.style.top = (e.pageY + 20) + "px";
+    }
+
+    // Filter functionality for both desktop and mobile
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const desktopRows = document.querySelectorAll('#desktopTableBody tr');
+    const mobileCards = document.querySelectorAll('.trade-card');
+    const tradeCountSpan = document.getElementById('tradeCount');
+
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Remove active class from all buttons
+            filterBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+
+            const filter = this.dataset.filter;
+
+            // Filter desktop rows
+            let visibleCount = 0;
+            desktopRows.forEach(row => {
+                const direction = row.dataset.direction;
+                if (filter === 'all' || direction === filter) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            // Filter mobile cards
+            mobileCards.forEach(card => {
+                const direction = card.dataset.direction;
+                if (filter === 'all' || direction === filter) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            // Update count
+            if (filter === 'all') {
+                tradeCountSpan.textContent = desktopRows.length;
+            } else {
+                const count = document.querySelectorAll(`[data-direction="${filter}"]`).length;
+                tradeCountSpan.textContent = count;
+            }
+        });
+    });
+
+    // Touch-friendly improvements
+    if ('ontouchstart' in window) {
+        document.body.classList.add('touch-device');
+        
+        // Add active state for touch
+        document.querySelectorAll('.filter-btn, .btn').forEach(el => {
+            el.addEventListener('touchstart', function() {
+                this.classList.add('touch-active');
+            });
+            el.addEventListener('touchend', function() {
+                this.classList.remove('touch-active');
+            });
+        });
+    }
+
+    // Prevent zoom on double tap for better mobile experience
+    document.addEventListener('touchend', function(e) {
+        const now = Date.now();
+        const lastTap = document.lastTap || now;
+        const tapDelay = now - lastTap;
+        
+        if (tapDelay < 300 && tapDelay > 0) {
+            e.preventDefault();
+        }
+        
+        document.lastTap = now;
+    }, { passive: false });
+
+    // Handle orientation change
+    window.addEventListener('orientationchange', function() {
+        setTimeout(() => {
+            // Recalculate any dynamic heights if needed
+        }, 200);
+    });
+});
+</script>
 {% endblock %}

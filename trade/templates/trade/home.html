@@ -1,184 +1,905 @@
 {% extends 'trade/base/base.html' %}
 {% load static %}
 
-{% block title %}Home | Journal{% endblock %}
+{% block title %}Home | Trading Dashboard{% endblock %}
+
+{% block page_title %}Trading Dashboard{% endblock %}
+{% block breadcrumb %}Home{% endblock %}
 
 {% block body %}
 <style>
     :root {
         --primary: #1abc9c;
         --primary-dark: #16a085;
-
+        --primary-glow: rgba(26, 188, 156, 0.3);
+        --primary-soft: rgba(26, 188, 156, 0.1);
+        
         --bg: #0f172a;
         --card: #1e293b;
         --card-light: #334155;
-
+        --card-hover: #2c3e50;
+        
         --text-dark: #e2e8f0;
-        --muted: #94a3b8;
-
+        --text-muted: #94a3b8;
+        --text-light: #f8fafc;
+        
         --success: #22c55e;
+        --success-soft: rgba(34, 197, 94, 0.1);
         --danger: #ef4444;
+        --danger-soft: rgba(239, 68, 68, 0.1);
         --info: #3b82f6;
-
+        --info-soft: rgba(59, 130, 246, 0.1);
+        --warning: #f59e0b;
+        --warning-soft: rgba(245, 158, 11, 0.1);
+        --purple: #a855f7;
+        --purple-soft: rgba(168, 85, 247, 0.1);
+        
         --border: #334155;
+        --border-light: #475569;
     }
 
-    body {
-        background: var(--bg);
-        color: var(--text-dark);
+    .dashboard-container {
+        max-width: 1300px;
+        margin: 0 auto;
+        padding: 0;
     }
 
-    .journal-container {
-        max-width: 1000px;
-        margin: 40px auto;
-        padding: 10px;
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        color: var(--text-dark);
-    }
-
-    .page-title {
-        font-size: 28px;
-        font-weight: 600;
-        margin-bottom: 20px;
-        color: var(--text-dark);
-    }
-
-    /* ===== TABLE (DESKTOP) ===== */
-    .table-wrapper {
-        overflow-x: auto;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        background: var(--card);
-        border-radius: 8px;
-        overflow: hidden;
-        box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+    /* Welcome Section */
+    .welcome-section {
+        background: linear-gradient(135deg, var(--card), var(--card-light));
+        border-radius: 30px;
+        padding: 40px;
+        margin-bottom: 30px;
         border: 1px solid var(--border);
+        box-shadow: 0 20px 40px -15px rgba(0,0,0,0.5);
+        position: relative;
+        overflow: hidden;
+        animation: slideIn 0.5s ease;
     }
 
-    thead tr {
-        background: var(--primary);
+    .welcome-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary), var(--purple), var(--info));
+    }
+
+    .welcome-section::after {
+        content: '📈';
+        position: absolute;
+        bottom: -20px;
+        right: -20px;
+        font-size: 150px;
+        opacity: 0.05;
+        transform: rotate(-10deg);
+    }
+
+    .welcome-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 30px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .welcome-text h1 {
+        font-size: 36px;
+        font-weight: 700;
+        color: white;
+        margin-bottom: 10px;
+    }
+
+    .welcome-text h1 span {
+        background: linear-gradient(135deg, var(--primary), var(--purple));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .welcome-text p {
+        color: var(--text-muted);
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .welcome-text p i {
+        color: var(--primary);
+    }
+
+    .quote-card {
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 20px 30px;
+        border: 1px solid rgba(255,255,255,0.1);
+        max-width: 400px;
+    }
+
+    .quote-text {
+        font-size: 18px;
+        font-style: italic;
+        color: white;
+        margin-bottom: 10px;
+    }
+
+    .quote-author {
+        color: var(--primary);
+        font-weight: 600;
+        text-align: right;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 24px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        background: var(--card);
+        border-radius: 24px;
+        padding: 24px;
+        border: 1px solid var(--border);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        animation: slideIn 0.5s ease forwards;
+    }
+
+    .stat-card:nth-child(1) { animation-delay: 0.1s; }
+    .stat-card:nth-child(2) { animation-delay: 0.15s; }
+    .stat-card:nth-child(3) { animation-delay: 0.2s; }
+    .stat-card:nth-child(4) { animation-delay: 0.25s; }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, var(--primary-soft), transparent);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--primary);
+        box-shadow: 0 15px 30px -10px var(--primary-glow);
+    }
+
+    .stat-card:hover::before {
+        opacity: 1;
+    }
+
+    .stat-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+
+    .stat-icon {
+        width: 56px;
+        height: 56px;
+        background: linear-gradient(135deg, var(--primary-soft), transparent);
+        border-radius: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        color: var(--primary);
+        border: 1px solid var(--primary-glow);
+    }
+
+    .stat-title {
+        font-size: 16px;
+        color: var(--text-muted);
+    }
+
+    .stat-value {
+        font-size: 32px;
+        font-weight: 700;
+        color: white;
+        margin: 10px 0 5px;
+    }
+
+    .stat-trend {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--text-muted);
+    }
+
+    .trend-up { color: var(--success); }
+    .trend-down { color: var(--danger); }
+
+    /* Session Card */
+    .session-card {
+        background: var(--card);
+        border-radius: 24px;
+        padding: 24px;
+        border: 1px solid var(--border);
+        margin-bottom: 24px;
+        animation: slideIn 0.5s ease 0.2s forwards;
+        opacity: 0;
+        animation-fill-mode: forwards;
+    }
+
+    .session-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    .session-icon {
+        width: 48px;
+        height: 48px;
+        background: var(--primary-soft);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: var(--primary);
+    }
+
+    .session-header h3 {
+        font-size: 18px;
+        font-weight: 600;
         color: white;
     }
 
-    th, td {
-        padding: 12px 15px;
-        text-align: left;
+    .session-info {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .session-badge {
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        color: white;
+        padding: 12px 24px;
+        border-radius: 100px;
+        font-size: 16px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 8px 16px -8px var(--primary-glow);
+    }
+
+    .session-time {
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 8px;
         font-size: 14px;
     }
 
-    tbody tr {
-        border-bottom: 1px solid var(--border);
+    /* Mood Section */
+    .mood-section {
+        background: var(--card);
+        border-radius: 24px;
+        padding: 24px;
+        border: 1px solid var(--border);
+        margin-bottom: 24px;
+        animation: slideIn 0.5s ease 0.3s forwards;
+        opacity: 0;
+        animation-fill-mode: forwards;
     }
 
-    tbody tr:nth-child(even) {
-        background: var(--card-light);
+    .mood-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 20px;
     }
 
-    tbody tr:hover {
-        background: #2c3e50;
-        transition: 0.2s ease;
+    .mood-icon {
+        width: 48px;
+        height: 48px;
+        background: var(--warning-soft);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: var(--warning);
     }
 
-    .buy {
-        font-weight: bold;
-        color: var(--success);
-    }
-
-    .sell {
-        font-weight: bold;
-        color: var(--danger);
-    }
-
-    .btn {
-        text-decoration: none;
-        padding: 6px 12px;
-        border-radius: 6px;
-        font-size: 13px;
-        color: white;
-        display: inline-block;
-        transition: 0.2s ease;
-    }
-
-    .btn-journal {
-        background: var(--info);
-        margin-right: 6px;
-    }
-
-    .btn-journal:hover {
-        opacity: 0.85;
-    }
-
-    .btn-delete {
-        background: var(--danger);
-    }
-
-    .btn-delete:hover {
-        opacity: 0.85;
-    }
-
-    .empty {
+    .mood-header h3 {
         font-size: 18px;
-        color: var(--success);
-        margin-top: 20px;
+        font-weight: 600;
+        color: white;
     }
 
-    /* ===== MOBILE TRANSFORMATION ===== */
+    .mood-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 16px;
+    }
+
+    .mood-option {
+        background: var(--card-light);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 16px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .mood-option:hover {
+        border-color: var(--primary);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px -8px var(--primary-glow);
+    }
+
+    .mood-option.selected {
+        background: var(--primary-soft);
+        border-color: var(--primary);
+    }
+
+    .mood-emoji {
+        font-size: 32px;
+        margin-bottom: 8px;
+    }
+
+    .mood-label {
+        font-size: 14px;
+        color: var(--text-muted);
+    }
+
+    .mood-option.selected .mood-label {
+        color: var(--primary);
+    }
+
+    /* News Section */
+    .news-section {
+        background: var(--card);
+        border-radius: 24px;
+        padding: 24px;
+        border: 1px solid var(--border);
+        margin-bottom: 24px;
+        animation: slideIn 0.5s ease 0.4s forwards;
+        opacity: 0;
+        animation-fill-mode: forwards;
+    }
+
+    .news-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    .news-icon {
+        width: 48px;
+        height: 48px;
+        background: var(--info-soft);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: var(--info);
+    }
+
+    .news-header h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: white;
+    }
+
+    .news-ticker {
+        background: var(--card-light);
+        border-radius: 100px;
+        padding: 16px 24px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .news-ticker::after {
+        content: '';
+        position: absolute;
+        right: 0;
+        top: 0;
+        height: 100%;
+        width: 50px;
+        background: linear-gradient(90deg, transparent, var(--card-light));
+    }
+
+    .ticker-label {
+        background: var(--danger);
+        color: white;
+        padding: 6px 16px;
+        border-radius: 100px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .ticker-content {
+        color: var(--text-muted);
+        font-size: 14px;
+        white-space: nowrap;
+        animation: ticker 20s linear infinite;
+    }
+
+    @keyframes ticker {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-100%); }
+    }
+
+    /* Alert Section */
+    .alert-section {
+        background: linear-gradient(135deg, var(--danger-soft), transparent);
+        border: 1px solid var(--danger);
+        border-radius: 24px;
+        padding: 24px;
+        margin-bottom: 24px;
+        animation: slideIn 0.5s ease 0.5s forwards;
+        opacity: 0;
+        animation-fill-mode: forwards;
+    }
+
+    .alert-content {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .alert-icon {
+        width: 56px;
+        height: 56px;
+        background: var(--danger);
+        border-radius: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        color: white;
+    }
+
+    .alert-text {
+        flex: 1;
+    }
+
+    .alert-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: white;
+        margin-bottom: 4px;
+    }
+
+    .alert-description {
+        color: var(--text-muted);
+        font-size: 14px;
+    }
+
+    .alert-badge {
+        background: var(--danger);
+        color: white;
+        padding: 8px 20px;
+        border-radius: 100px;
+        font-size: 14px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    /* Quick Actions */
+    .quick-actions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-top: 30px;
+        animation: slideIn 0.5s ease 0.6s forwards;
+        opacity: 0;
+        animation-fill-mode: forwards;
+    }
+
+    .quick-action-btn {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 20px;
+        text-decoration: none;
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        transition: all 0.2s ease;
+    }
+
+    .quick-action-btn:hover {
+        border-color: var(--primary);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px -10px var(--primary-glow);
+    }
+
+    .quick-action-icon {
+        width: 48px;
+        height: 48px;
+        background: var(--primary-soft);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: var(--primary);
+    }
+
+    .quick-action-text {
+        flex: 1;
+    }
+
+    .quick-action-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+
+    .quick-action-subtitle {
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
+    /* Animations */
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 var(--primary-glow); }
+        70% { box-shadow: 0 0 0 10px rgba(26, 188, 156, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(26, 188, 156, 0); }
+    }
+
+    /* Mobile Responsive */
     @media (max-width: 768px) {
-
-        table, thead, tbody, th, tr {
-            display: block;
+        .welcome-section {
+            padding: 30px 20px;
         }
 
-        thead {
-            display: none;
+        .welcome-text h1 {
+            font-size: 28px;
         }
 
-        tbody tr {
-            background: var(--card);
-            margin-bottom: 15px;
-            border-radius: 10px;
-            box-shadow: 0 6px 16px rgba(0,0,0,0.5);
-            padding: 10px;
-            border: 1px solid var(--border);
+        .quote-card {
+            max-width: 100%;
         }
 
-        td {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 10px;
-            border: none;
-            font-size: 14px;
+        .stats-grid {
+            grid-template-columns: 1fr;
         }
 
-        td::before {
-            content: attr(data-label);
-            font-weight: 600;
-            color: var(--muted);
+        .session-info {
+            flex-direction: column;
+            align-items: flex-start;
         }
 
-        .action-cell {
-            justify-content: flex-end;
-            gap: 8px;
+        .mood-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .alert-content {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .quick-actions-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .news-ticker {
+            border-radius: 16px;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .ticker-content {
+            animation: none;
+            white-space: normal;
         }
     }
 </style>
-<div class="journal-container">
 
-    <div class="page-title">Lets trade for living</div>
-    <div> Current session: {{trading_session }}</div><hr>
-    <div> What is your mood today</div> <hr>
-    <div> Upcomming news</div><hr>
+<div class="dashboard-container">
+    <!-- Welcome Section -->
+    <div class="welcome-section">
+        <div class="welcome-content">
+            <div class="welcome-text">
+                <h1>Welcome back, <span>Trader</span> 👋</h1>
+                <p>
+                    <i class="fas fa-calendar"></i> {{ current_date|date:"l, F j, Y" }}
+                </p>
+            </div>
+            <div class="quote-card">
+                <div class="quote-text">
+                    "The goal of a successful trader is to make the best trades. Money is secondary."
+                </div>
+                <div class="quote-author">- Alexander Elder</div>
+            </div>
+        </div>
+    </div>
 
-    {% if not most_common_reason %}
-    <div> Displine is a key to profitability</div><hr>
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-header">
+                <div class="stat-icon">📊</div>
+                <div class="stat-title">Today's P&L</div>
+            </div>
+            <div class="stat-value {% if today_pl > 0 %}trend-up{% elif today_pl < 0 %}trend-down{% endif %}">
+                {% if today_pl > 0 %}+{% endif %}{{ today_pl|default:"0" }}%
+            </div>
+            <div class="stat-trend">
+                <i class="fas {% if today_pl > 0 %}fa-arrow-up trend-up{% elif today_pl < 0 %}fa-arrow-down trend-down{% else %}fa-minus{% endif %}"></i>
+                vs yesterday
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-header">
+                <div class="stat-icon">📈</div>
+                <div class="stat-title">Win Rate</div>
+            </div>
+            <div class="stat-value">{{ win_rate|default:"0" }}%</div>
+            <div class="stat-trend">
+                <i class="fas fa-chart-line"></i> Last 30 days
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-header">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-title">Total Trades</div>
+            </div>
+            <div class="stat-value">{{ total_trades|default:"0" }}</div>
+            <div class="stat-trend">
+                <i class="fas fa-clock"></i> All time
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-header">
+                <div class="stat-icon">⚡</div>
+                <div class="stat-title">Best Streak</div>
+            </div>
+            <div class="stat-value">+{{ best_streak|default:"0" }}</div>
+            <div class="stat-trend">
+                <i class="fas fa-fire trend-up"></i> Consecutive wins
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Session Card -->
+    <div class="session-card">
+        <div class="session-header">
+            <div class="session-icon">⏰</div>
+            <h3>Trading Session</h3>
+        </div>
+        <div class="session-info">
+            <div class="session-badge">
+                <i class="fas fa-clock"></i>
+                {{ trading_session|default:"London Session" }}
+            </div>
+            <div class="session-time">
+                <i class="fas fa-globe"></i>
+                Market is {% if market_open %}Open <span class="trend-up">●</span>{% else %}Closed <span class="trend-down">●</span>{% endif %}
+            </div>
+            <div class="session-time">
+                <i class="fas fa-hourglass-half"></i>
+                Next session: {{ next_session|default:"Asian (2h)" }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Mood Tracker -->
+    <div class="mood-section">
+        <div class="mood-header">
+            <div class="mood-icon">😊</div>
+            <h3>How are you feeling today?</h3>
+        </div>
+        <div class="mood-grid">
+            <div class="mood-option" onclick="selectMood(this)">
+                <div class="mood-emoji">😊</div>
+                <div class="mood-label">Confident</div>
+            </div>
+            <div class="mood-option" onclick="selectMood(this)">
+                <div class="mood-emoji">🤔</div>
+                <div class="mood-label">Cautious</div>
+            </div>
+            <div class="mood-option" onclick="selectMood(this)">
+                <div class="mood-emoji">😐</div>
+                <div class="mood-label">Neutral</div>
+            </div>
+            <div class="mood-option" onclick="selectMood(this)">
+                <div class="mood-emoji">😓</div>
+                <div class="mood-label">Stressed</div>
+            </div>
+            <div class="mood-option" onclick="selectMood(this)">
+                <div class="mood-emoji">⚡</div>
+                <div class="mood-label">Energetic</div>
+            </div>
+            <div class="mood-option" onclick="selectMood(this)">
+                <div class="mood-emoji">😴</div>
+                <div class="mood-label">Tired</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- News Section -->
+    <div class="news-section">
+        <div class="news-header">
+            <div class="news-icon">📰</div>
+            <h3>Market News</h3>
+        </div>
+        <div class="news-ticker">
+            <span class="ticker-label">HOT</span>
+            <span class="ticker-content">
+                {{ news_headline|default:"Fed maintains interest rates • EURUSD volatility expected • Oil prices surge • Bitcoin above $50k • Gold steady ahead of NFP" }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Alert Section -->
+    {% if most_common_reason %}
+    <div class="alert-section">
+        <div class="alert-content">
+            <div class="alert-icon">⚠️</div>
+            <div class="alert-text">
+                <div class="alert-title">Watch Out!</div>
+                <div class="alert-description">
+                    Your most common loss reason is <strong>"{{ most_common_reason }}"</strong>. 
+                    Review your strategy and avoid repeating this mistake.
+                </div>
+            </div>
+            <div class="alert-badge">{{ most_common_reason_count }} times</div>
+        </div>
+    </div>
     {% else %}
-    <div> Watch out for {{most_common_reason}}</div><hr>
+    <div class="session-card">
+        <div class="session-header">
+            <div class="session-icon" style="background: var(--success-soft); color: var(--success);">💪</div>
+            <h3>Discipline Reminder</h3>
+        </div>
+        <div class="session-info">
+            <div class="session-badge" style="background: var(--success);">
+                <i class="fas fa-check-circle"></i>
+                Discipline is key to profitability
+            </div>
+            <div class="session-time">
+                <i class="fas fa-brain"></i>
+                Stay focused, follow your plan
+            </div>
+        </div>
+    </div>
     {% endif %}
 
+    <!-- Quick Actions -->
+    <div class="quick-actions-grid">
+        <a href="{% url 'index' %}" class="quick-action-btn">
+            <div class="quick-action-icon">📝</div>
+            <div class="quick-action-text">
+                <div class="quick-action-title">New Trade</div>
+                <div class="quick-action-subtitle">Record a trade</div>
+            </div>
+            <i class="fas fa-chevron-right" style="color: var(--primary);"></i>
+        </a>
 
-   
+        <a href="{% url 'journal' %}" class="quick-action-btn">
+            <div class="quick-action-icon">📓</div>
+            <div class="quick-action-text">
+                <div class="quick-action-title">Journal</div>
+                <div class="quick-action-subtitle">Pending trades</div>
+            </div>
+            <i class="fas fa-chevron-right" style="color: var(--primary);"></i>
+        </a>
+
+        <a href="{% url 'performance' %}" class="quick-action-btn">
+            <div class="quick-action-icon">📊</div>
+            <div class="quick-action-text">
+                <div class="quick-action-title">Performance</div>
+                <div class="quick-action-subtitle">View analytics</div>
+            </div>
+            <i class="fas fa-chevron-right" style="color: var(--primary);"></i>
+        </a>
+
+        <a href="{% url 'academy' %}" class="quick-action-btn">
+            <div class="quick-action-icon">🎓</div>
+            <div class="quick-action-text">
+                <div class="quick-action-title">Academy</div>
+                <div class="quick-action-subtitle">Learn & improve</div>
+            </div>
+            <i class="fas fa-chevron-right" style="color: var(--primary);"></i>
+        </a>
+    </div>
 </div>
+
+<script>
+    // Mood selection
+    function selectMood(element) {
+        // Remove selected class from all mood options
+        document.querySelectorAll('.mood-option').forEach(opt => {
+            opt.classList.remove('selected');
+        });
+        
+        // Add selected class to clicked element
+        element.classList.add('selected');
+        
+        // Here you can save the mood to backend via AJAX
+        const mood = element.querySelector('.mood-label').textContent;
+        console.log('Selected mood:', mood);
+        
+        // Optional: Show feedback
+        showNotification(`Mood set to: ${mood}`);
+    }
+
+    // Simple notification function
+    function showNotification(message) {
+        // You can implement a toast notification here
+        console.log(message);
+    }
+
+    // Auto-refresh news ticker (optional)
+    setInterval(() => {
+        // Fetch latest news via AJAX
+        console.log('Refreshing news...');
+    }, 60000); // Every minute
+
+    // Market open/close simulation
+    function updateMarketStatus() {
+        const now = new Date();
+        const hours = now.getUTCHours();
+        // Simple logic for major sessions
+        let session = "London Session";
+        let isOpen = false;
+        
+        if (hours >= 8 && hours <= 16) {
+            session = "London Session";
+            isOpen = true;
+        } else if (hours >= 13 && hours <= 21) {
+            session = "New York Session";
+            isOpen = true;
+        } else if (hours >= 0 && hours <= 8) {
+            session = "Asian Session";
+            isOpen = false;
+        }
+        
+        // Update DOM if needed
+        const sessionElement = document.querySelector('.session-badge');
+        if (sessionElement) {
+            sessionElement.innerHTML = `<i class="fas fa-clock"></i> ${session}`;
+        }
+    }
+
+    // Call on load
+    updateMarketStatus();
+</script>
 {% endblock %}

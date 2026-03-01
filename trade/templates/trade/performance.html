@@ -1,780 +1,980 @@
 {% extends 'trade/base/base.html' %}
+{% load static %}
+
 {% block title %}Performance Dashboard{% endblock %}
+
+{% block page_icon %}chart-pie{% endblock %}
+{% block page_title %}Performance{% endblock %}
+{% block breadcrumb %}Performance{% endblock %}
 
 {% block body %}
 <style>
 :root {
-    --primary: #1abc9c;
-    --primary-dark: #16a085;
+    --primary: #10b981;
+    --primary-dark: #059669;
+    --primary-glow: rgba(16, 185, 129, 0.3);
+    --primary-soft: rgba(16, 185, 129, 0.15);
+    
+    --bg-primary: #0a0f1c;
+    --bg-secondary: #111827;
+    --bg-tertiary: #1f2937;
+    --bg-elevated: #2d3748;
+    --card-bg: #1a2332;
+    --card-hover: #232e3f;
+    --card-border: #2d3748;
+    
+    --text-primary: #f3f4f6;
+    --text-secondary: #9ca3af;
+    --text-muted: #6b7280;
+    
+    --success: #34d399;
+    --success-soft: rgba(52, 211, 153, 0.15);
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.15);
+    --info: #60a5fa;
+    --info-soft: rgba(96, 165, 250, 0.15);
+    --warning: #fbbf24;
+    --warning-soft: rgba(251, 191, 36, 0.15);
+    --purple: #c084fc;
+    --purple-soft: rgba(192, 132, 252, 0.15);
+    
+    --border: #2d3748;
+    --border-light: #374151;
+}
 
-    --bg: #0f172a;
-    --card: #1e293b;
-    --card-light: #334155;
-
-    --text-dark: #e2e8f0;
-    --muted: #94a3b8;
-
-    --success: #22c55e;
-    --danger: #ef4444;
-    --info: #3b82f6;
-    --warning: #f59e0b;
-
-    --border: #334155;
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 body {
-    background: var(--bg);
-    color: var(--text-dark);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    line-height: 1.5;
 }
 
 /* ===== DASHBOARD ===== */
 .dashboard {
     width: 100%;
-    margin: 0;
-    padding: 0;
-    font-family: "Segoe UI", Arial, sans-serif;
-    color: var(--text-dark);
+    min-height: 100vh;
+    padding: 16px;
+    background: var(--bg-primary);
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
 }
 
 .dashboard-title {
-    background: var(--primary);
-    color: #fff;
-    padding: 16px;
-    font-size: 20px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    padding: 10px 18px;
+    font-size: 18px;
     font-weight: 600;
-    border-radius: 8px;
-    text-align: center;
-    margin-bottom: 25px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 12px -5px var(--primary-glow);
 }
 
-.dashboard-layout {
+.dashboard-title i {
+    font-size: 18px;
+}
+
+.date-badge {
+    background: var(--bg-tertiary);
+    padding: 8px 16px;
+    border-radius: 30px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--border);
+}
+
+/* ===== COMPACT LAYOUT ===== */
+.dashboard-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-areas:
-        "summary overall"
-        "chart chart";
-    gap: 20px;
-    max-width: 100%;
-    margin: 0 auto;
-    padding: 20px;
-    box-sizing: border-box;
+    grid-template-columns: 1fr 280px;
+    gap: 16px;
+    margin-bottom: 16px;
 }
+
+/* ===== CARDS ===== */
 .card {
-    background: linear-gradient(145deg, #1e293b, #18212f);
-    border-radius: 14px;
-    border: 1px solid rgba(255,255,255,0.05);
-    box-shadow:
-        0 10px 25px rgba(0,0,0,0.6),
-        inset 0 1px 0 rgba(255,255,255,0.03);
+    background: var(--card-bg);
+    border-radius: 16px;
+    border: 1px solid var(--border);
     overflow: hidden;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
 }
 
-.card:hover {
-    transform: translateY(-2px);
-    box-shadow:
-        0 14px 30px rgba(0,0,0,0.7),
-        inset 0 1px 0 rgba(255,255,255,0.04);
-}
-
-.trades-summary {
-    grid-area: summary;
-}
-
-.overall-performance {
-    grid-area: overall;
-}
-
-.chart-card {
-    grid-area: chart;
-}
-
-.chart-card canvas {
-    width: 100% !important;
-    height: 420px !important;
-}
-
-.chart-card {
-    padding: 20px;
-}
-
-#performanceChart {
-    width: 100% !important;
-    height: 420px !important;
-}
-
-.section-title {
-    padding: 16px;
+.card-header {
+    padding: 12px 16px;
     font-weight: 600;
-    font-size: 16px;
-    letter-spacing: 0.5px;
-    background: linear-gradient(90deg, #1abc9c, #16a085);
-    text-align: left;
-    padding-left: 20px;
+    font-size: 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(90deg, rgba(16, 185, 129, 0.05), transparent);
 }
-    .journal-container {
-        max-width: 1150px;
-        margin: 0px auto;
-        padding: 10px;
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        color: var(--text-dark);
-        box-shadow: 0 8px 20px rgba(0,0,0,0.5);
-    }
-/* ===== TABLE ===== */
-table {
+
+.card-header i {
+    color: var(--primary);
+    font-size: 16px;
+}
+
+.card-header .badge {
+    margin-left: auto;
+    background: var(--bg-tertiary);
+    padding: 4px 10px;
+    border-radius: 30px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+/* ===== COMPACT TABLE ===== */
+.table-compact {
     width: 100%;
     border-collapse: collapse;
-}
-
-th {
-    background: var(--card-light);
-    padding: 10px;
     font-size: 13px;
-    text-transform: uppercase;
-    color: var(--muted);
 }
 
-td {
-    padding: 10px;
+.table-compact th {
+    background: var(--bg-tertiary);
+    padding: 8px 10px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
     text-align: center;
-    font-size: 14px;
     border-bottom: 1px solid var(--border);
 }
 
-tr:last-child td {
+.table-compact td {
+    padding: 8px 10px;
+    text-align: center;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.table-compact tr:last-child td {
     border-bottom: none;
 }
 
-tr:hover {
-    background: #2c3e50;
-    transition: 0.2s ease;
+.table-compact tbody tr:hover {
+    background: var(--bg-tertiary);
 }
 
-.pair {
+.pair-cell {
     font-weight: 600;
-    
+    text-align: left !important;
 }
 
-.green { color: var(--success); }
-.red { color: var(--danger); }
-.blue { color: var(--info);  }
-
-/* ===== OVERALL PERFORMANCE ===== */
-.overall-box {
-    padding: 15px;
+.pair-link {
+    color: var(--text-secondary);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 30px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    transition: all 0.2s ease;
+    font-size: 12px;
 }
 
-.overall-header,
-.overall-values {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    text-align: center;
+.pair-link:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
 }
 
-.overall-header {
-    background: var(--card-light);
-    border-radius: 6px;
-    margin-bottom: 12px;
-    font-size: 13px;
-    text-transform: uppercase;
-    color: var(--muted);
+.pair-link i {
+    font-size: 10px;
+    opacity: 0;
 }
 
-.overall-header div {
-    padding: 10px;
+.pair-link:hover i {
+    opacity: 1;
 }
 
-.overall-values div {
-    padding: 18px 0;
-    font-size: 18px;
-    font-weight: bold;
+.value-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 30px;
+    font-size: 11px;
+    font-weight: 500;
 }
 
-.expectancy-box {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 10px;
-    margin-top: 10px;
+.value-positive {
+    background: var(--success-soft);
+    color: var(--success);
 }
 
-.expectancy-message {
-    background: var(--card-light);
-    border-radius: 6px;
-    padding: 15px;
-    font-size: 14px;
-    color: var(--muted);
+.value-negative {
+    background: var(--danger-soft);
+    color: var(--danger);
 }
 
-.expectancy-value {
-    background: var(--success);
-    color: #fff;
-    border-radius: 6px;
-    padding: 15px;
-    text-align: center;
-    font-size: 16px;
-    font-weight: bold;
+.value-neutral {
+    background: var(--primary-soft);
+    color: var(--primary);
 }
 
-.small-metrics {
+/* ===== SIDEBAR STATS ===== */
+.stats-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Mini Gauges Row */
+.mini-gauges {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-top: 15px;
+    gap: 8px;
+    margin-bottom: 4px;
 }
 
-.metric-box {
-    background: var(--card-light);
-    border-radius: 6px;
+.mini-gauge {
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+    padding: 10px 8px;
+    text-align: center;
+    border: 1px solid var(--border);
+}
+
+.mini-gauge .gauge-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.mini-gauge .gauge-value {
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.mini-gauge .gauge-value small {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-weight: normal;
+}
+
+/* Mini Charts for gauges */
+.mini-chart {
+    width: 100%;
+    height: 50px;
+    margin-top: 4px;
+}
+
+/* Info Strip */
+.info-strip {
+    background: linear-gradient(135deg, #134e4a, #0d3d3a);
+    border-radius: 12px;
     padding: 12px;
     text-align: center;
-    font-size: 14px;
+    border: 1px solid var(--primary);
+    box-shadow: 0 0 12px var(--primary-glow);
+    position: relative;
+    overflow: hidden;
 }
 
-.metric-box b {
-    display: block;
-    margin-top: 5px;
-    font-size: 16px;
+.info-strip::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, var(--primary-soft), transparent);
+    animation: shine 3s infinite;
 }
 
-/* ===== HUD / CAR DASHBOARD DARK ===== */
-.dashboard-dark {
-    background: radial-gradient(circle at center, #1e293b 0%, #0f172a 80%);
-    color: var(--text-dark);
+@keyframes shine {
+    0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+    100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
 }
 
-.cluster {
-    padding: 14px 18px;
+.info-strip .label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+    position: relative;
+    z-index: 1;
 }
 
-.hud-row {
+.info-strip .value {
+    font-size: 22px;
+    font-weight: 700;
+    color: white;
+    line-height: 1.2;
+    position: relative;
+    z-index: 1;
+}
+
+.info-strip .sub {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    position: relative;
+    z-index: 1;
+}
+
+/* Stats Grid 2x3 */
+.stats-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 6px;
-    margin-bottom: 10px;
 }
 
-.hud-box {
-    background: var(--card-light);
-    border-radius: 6px;
-    padding: 10px;
+.stat-tile {
+    background: var(--bg-tertiary);
+    border-radius: 10px;
+    padding: 10px 6px;
     text-align: center;
-    font-size: 12px;
-    text-transform: uppercase;
-    color: var(--muted);
-}
-
-.hud-box b {
-    display: block;
-    font-size: 14px;
-    margin-top: 5px;
-}
-
-.hud-green { color: var(--success); }
-.hud-red { color: var(--danger); }
-.hud-blue { color: var(--info); }
-.hud-yellow{ color: var(--warning); }
-
-.gauge-wrap {
-    width: 100%;
-    height: 200px;
-    margin: 10px auto;
-}
-
-.digital-readout {
-    text-align: center;
-    margin-top: 4px;
-    font-size: 12px;
-    color: var(--muted);
-}
-
-.digital-readout span {
-    display: block;
-    font-size: 20px;
-    color: var(--primary);
-    font-weight: bold;
-}
-
-.expectancy-led {
-    background: linear-gradient(135deg, #134e4a, #1abc9c);
-    border-radius: 8px;
-    padding: 10px;
-    margin-top: 8px;
-    text-align: center;
-    font-size: 14px;
-}
-
-/* Tooltip */
-.message-box {
-    position: absolute;
-    display: none;
-    max-width: 260px;
-    background: var(--card);
-    color: var(--text-dark);
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 13px;
-    z-index: 1000;
     border: 1px solid var(--border);
-    box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+    transition: all 0.2s ease;
+}
+
+.stat-tile:hover {
+    border-color: var(--primary);
+    transform: translateY(-1px);
+}
+
+.stat-tile .tile-label {
+    font-size: 9px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.stat-tile .tile-label i {
+    font-size: 10px;
+    color: var(--primary);
+}
+
+.stat-tile .tile-value {
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.stat-tile .tile-trend {
+    font-size: 8px;
+    margin-top: 2px;
+    color: var(--text-muted);
+}
+
+/* Color classes */
+.text-green { color: var(--success); }
+.text-red { color: var(--danger); }
+.text-blue { color: var(--info); }
+.text-yellow { color: var(--warning); }
+.text-primary { color: var(--primary); }
+.text-purple { color: var(--purple); }
+
+/* ===== FULL WIDTH CHART ===== */
+.chart-card {
+    margin-top: 16px;
+    padding: 16px;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.chart-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chart-title h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.chart-title i {
+    color: var(--primary);
+    font-size: 18px;
+}
+
+.chart-legend {
+    display: flex;
+    gap: 20px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.legend-dot.profit { 
+    background: var(--success);
+    box-shadow: 0 0 8px var(--success);
+}
+.legend-dot.loss { 
+    background: var(--danger);
+    box-shadow: 0 0 8px var(--danger);
+}
+
+.chart-wrapper {
+    width: 100%;
+    height: 350px;
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+    padding: 16px;
+}
+
+#performanceChart {
+    width: 100%;
+    height: 100%;
+}
+
+/* ===== TOOLTIP ===== */
+.message-box {
+    position: fixed;
+    display: none;
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    z-index: 1000;
+    border: 1px solid var(--primary);
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 
 .hover-text {
     cursor: help;
-    text-decoration: underline dotted;
-}
-
-a.custom-link {
-    color: #4fd1c5;        /* soft teal, easy on dark bg */
-    text-decoration: underline dotted;
-    transition: color 0.2s ease;
-}
-
-/* Hover effect */
-a.custom-link:hover {
-    color: #1abc9c;        /* slightly brighter teal */
-    text-decoration: underline;
-}
-
-/* Active (clicked) */
-a.custom-link:active {
-    color: #16a085;        /* darker teal */
-}
-
-/* Visited link */
-a.custom-link:visited {
-    color: #38b2ac;        /* muted teal so it doesn't clash */
-}
-.gauges-row {
-    display: flex;
-    justify-content: center; /* horizontal center */
-    align-items: flex-start;  /* align gauges from top */
-    gap: 0px;                /* spacing between gauges */
-    flex-wrap: wrap;          /* allow wrapping on small screens */
-    margin-top: 8px;         /* space above gauges */
-}
-
-.gauge-wrap {
-    flex: 0 1 280px;          /* fixed width per gauge */
-    height: 260px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;      /* center gauge canvas horizontally */
-    pointer-events: none;     /* disable hover / clicks on gauge */
-}
-
-/* Digital readout styling */
-.digital-readout {
-    text-align: center;
-    margin-top: 8px;           /* separate from gauge */
-    font-size: 14px;
-    color: var(--muted);
-}
-
-.digital-readout span {
-    display: block;
-    font-size: 20px;
-    color: var(--primary);
-    font-weight: bold;
+    border-bottom: 1px dashed var(--primary);
 }
 
 /* ===== MOBILE ===== */
 @media (max-width: 768px) {
-     /* ===== CHART CONTAINER ===== */
-     .dashboard-layout {
+    .dashboard-grid {
         grid-template-columns: 1fr;
-        grid-template-areas:
-            "summary"
-            "overall"
-            "chart";
-    }
-    #performanceChart {
-        background: var(--card);
-        border-radius: 8px;
-        padding: 20px;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.5);
-    }
-    
-    .gauges-row {
-        flex-direction: row;       
-        justify-content: center;
-        align-items: center;
-        gap: 10px;                 /* smaller spacing */
+        gap: 12px;
     }
 
-    /* Make them shrink to fit screen */
-    .gauge-wrap {
-        flex: 1;                   /* share available width */
-        max-width: 50%;            /* each takes half screen */
-        height: auto;
+    .dashboard {
+        padding: 12px;
     }
 
-    .gauge-wrap canvas {
-        width: 100% !important;    /* responsive width */
-        height: auto !important;   /* auto height */
-    }
-
-    .grid-2 {
-        display: flex;
+    .dashboard-header {
         flex-direction: column;
-        gap: 20px; 
+        align-items: flex-start;
     }
 
-     .overall-performance {
-        order: -1;
-    }
-
-    /* Trades Summary comes second */
-    .trades-summary {
-        order: 0;
-    }
-
-    table, thead, tbody, th, tr {
-        display: block;
-    }
-
-    thead {
-        display: none;
-    }
-
-    tr {
-        background: var(--card);
-        margin: 12px;
-        border-radius: 8px;
-        box-shadow: 0 6px 16px rgba(0,0,0,0.5);
-        padding: 10px;
-        border: 1px solid var(--border);
-    }
-
-    td {
-        display: flex;
-        justify-content: space-between;
+    .chart-wrapper {
+        height: 250px;
         padding: 8px;
-        border: none;
-        font-size: 14px;
     }
 
-    td::before {
-        content: attr(data-label);
-        font-weight: 600;
-        color: var(--muted);
+    .chart-legend {
+        gap: 12px;
+        font-size: 11px;
     }
-
-    .pair {
-        text-align: right;
-        
-    }
-}
-
-a.custom-link {
-    color: #4fd1c5;        /* soft teal, easy on dark bg */
-    text-decoration: underline dotted;
-    transition: color 0.2s ease;
-}
-
-/* Hover effect */
-a.custom-link:hover {
-    color: #1abc9c;        /* slightly brighter teal */
-    text-decoration: underline;
-}
-
-/* Active (clicked) */
-a.custom-link:active {
-    color: #16a085;        /* darker teal */
-}
-
-/* Visited link */
-a.custom-link:visited {
-    color: #38b2ac;        /* muted teal so it doesn't clash */
 }
 </style>
 
+<!-- ECharts -->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+
 <div class="dashboard">
-
-    <div class="dashboard-layout">
-
-        <!-- TOP LEFT -->
-        <div class="card trades-summary">
-            <div class="section-title">Trades Summary</div>
-            <div class="card-body">
-                <table>
-                    <thead>
-                    <tr>
-                        <th>Pair</th>
-                        <th>Won</th>
-                        <th>Lost</th>
-                        <th>Avg RR</th>
-                        <th>Winrate</th>
-                        <th>Profit</th>
-                    </tr>
-                </thead>
-
-                <tbody id="lbord">
-                    {% for pair in pairs_summary %}
-                    <tr>
-                        <td data-label="Pair" class="pair"><a href="{% url 'performance_by_pair' pair.id  %}" class="custom-link">{{ pair.pair }}</a></td>
-                        <td data-label="Won" class="green">{{ pair.won }}+</td>
-                        <td data-label="Lost" class="red">-{{ pair.lost }}</td>
-                        <td data-label="Avg RR" class="green">{{ pair.avg_rr}}R</td>
-                        <td data-label="Winrate" class="green">{{ pair.winrate }}%</td>
-                        
-                        {%  if pair.profit_r > 0%}
-                        <td data-label="Profit" class="green">+{{ pair.profit_r }}%</td>
-                        {%else%}
-                        <td data-label="Profit" class="red">{{ pair.profit_r }}%</td>
-                        {% endif %}
-                    </tr>
-
-                    {% endfor %}
-                
-                   
-                  
-                </tbody>
-                </table>
-            </div>
-   
-            <div class="card-body">
-                <canvas id="performanceChart"></canvas>
-            </div>
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <div class="dashboard-title">
+            <i class="fas fa-chart-pie"></i> Performance
         </div>
-
-        <!-- TOP RIGHT -->
-        <div class="card overall-performance">
-            <div class="section-title">Overall Performance</div>
-            <div class="overall-box dashboard-dark cluster">
-                 <div class="gauges-row">
-                <div class="gauge-wrap">
-                    <canvas id="winrate-gauge"></canvas>
-                    
-                </div>
-            
-                <div class="gauge-wrap">
-                    <canvas id="expectancy-gauge"></canvas>
-                   
-                </div>
-            </div>
-            
-                <!-- DIGITAL -->
-                <div class="digital-readout">
-                    {{ messege }}
-                <span></span>
-                </div>
-            
-                <!-- EXPECTANCY -->
-                <div class="expectancy-led">
-                    EXPECTANCY {{ expectancy|default:"0" }}%
-                </div>
-            
-                <!-- LOWER STATS -->
-                <div class="hud-row" style="margin-top:12px;">
-                    <div class="hud-box">
-                    <div class="hover-text" data-message="Reduce RVS, fix Risk Reward, limit repeated mistakes, don't overtrade">
-                        Consistency
-                          <b class="{% if grade_consistency.consistency_level == 4 or grade_consistency.consistency_level == 3 %}
-                          hud-green {% elif grade_consistency.consistency_level == 2 %} 
-                          hud-yellow {% else  %} hud-red {% endif %}">
-                              {{ grade_consistency.consistency_tier }}
-                          </b>
-                          
-                          <div id="message-box" class="message-box"></div>
-
-                    </div>
-                    </div>
-                    <div class="hud-box">
-                        Avg RR
-                        <b class="hud-green">+{{ avg_risk_reward|default:"0" }}R</b>
-                    </div>
-                    <div class="hud-box">
-                        RVS
-                        <b class="hud-blue">{{ avg_rvs|default:"0" }}</b>
-                    </div>
-                    <div class="hud-box">
-                        Today trades
-                        <b class="hud-blue">{{todays_trades}}</b>
-                    </div>
-                    <div class="hud-box">
-                        RR deviation
-                        <b class="hud-red">{{std_dev_rr}}</b>
-                    </div>
-                    <div class="hud-box">
-                        Today Profit
-                        {%  if todays_profit > 0%}
-                        <b class="hud-green">+{{todays_profit}}%</b>
-                        {%else%}
-                        <b class="hud-red">{{todays_profit}}%</b>
-                        {% endif %}
-                    </div>
-                    
-                </div>
-            
-            </div>
+        <div class="date-badge">
+            <i class="fas fa-calendar-alt"></i> Feb 1 - Mar 3, 2024
         </div>
-
-       
-
     </div>
 
+    <!-- Main Grid: Left Table + Right Stats -->
+    <div class="dashboard-grid">
+        <!-- LEFT: TRADES SUMMARY TABLE (COMPACT) -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-list-alt"></i> Trades by Pair
+                <span class="badge">{{ pairs_summary|length }} pairs</span>
+            </div>
+            <div style="overflow-x: auto; max-height: 400px;">
+                <table class="table-compact">
+                    <thead>
+                        <tr>
+                            <th>Pair</th>
+                            <th>W</th>
+                            <th>L</th>
+                            <th>RR</th>
+                            <th>WR%</th>
+                            <th>P/L%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pair in pairs_summary %}
+                        <tr>
+                            <td class="pair-cell">
+                                <a href="{% url 'performance_by_pair' pair.id %}" class="pair-link">
+                                    {{ pair.pair }} <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </td>
+                            <td><span class="value-badge value-positive">{{ pair.won }}</span></td>
+                            <td><span class="value-badge value-negative">{{ pair.lost }}</span></td>
+                            <td><span class="value-badge value-neutral">{{ pair.avg_rr }}R</span></td>
+                            <td>
+                                <span class="value-badge {% if pair.winrate >= 50 %}value-positive{% else %}value-negative{% endif %}">
+                                    {{ pair.winrate }}%
+                                </span>
+                            </td>
+                            <td>
+                                <span class="value-badge {% if pair.profit_r > 0 %}value-positive{% elif pair.profit_r < 0 %}value-negative{% else %}value-neutral{% endif %}">
+                                    {{ pair.profit_r }}%
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- RIGHT: COMPACT STATS SIDEBAR -->
+        <div class="stats-sidebar">
+            <!-- Mini Gauges Row -->
+            <div class="mini-gauges">
+                <div class="mini-gauge">
+                    <div class="gauge-label">
+                        <i class="fas fa-percent"></i> Win Rate
+                    </div>
+                    <div class="gauge-value">
+                        {{ overallwinrate|default:"0" }}<small>%</small>
+                    </div>
+                    <div id="winrateMini" class="mini-chart"></div>
+                </div>
+                <div class="mini-gauge">
+                    <div class="gauge-label">
+                        <i class="fas fa-chart-line"></i> Consistency
+                    </div>
+                    <div class="gauge-value">
+                        {{ grade_consistency.consistency_score|default:"0" }}<small>/4</small>
+                    </div>
+                    <div id="consistencyMini" class="mini-chart"></div>
+                </div>
+            </div>
+
+            <!-- Expectancy Strip -->
+            <div class="info-strip">
+                <div class="label">EXPECTANCY</div>
+                <div class="value">{{ expectancy|default:"0" }}%</div>
+                <div class="sub">per trade</div>
+            </div>
+
+            <!-- Stats Grid 2x3 -->
+            <div class="stats-grid">
+                <div class="stat-tile">
+                    <div class="tile-label"><i class="fas fa-gem"></i> Tier</div>
+                    <div class="tile-value">
+                        <span class="hover-text {% if grade_consistency.consistency_level >= 3 %}text-green{% elif grade_consistency.consistency_level == 2 %}text-yellow{% else %}text-red{% endif %}" 
+                              data-message="Based on RVS, RR consistency, and trade frequency">
+                            {{ grade_consistency.consistency_tier }}
+                        </span>
+                    </div>
+                    <div class="tile-trend">{{ grade_consistency.consistency_score|default:"0" }}/4</div>
+                </div>
+
+                <div class="stat-tile">
+                    <div class="tile-label"><i class="fas fa-balance-scale"></i> Avg RR</div>
+                    <div class="tile-value text-primary">{{ avg_risk_reward|default:"0" }}R</div>
+                    <div class="tile-trend">risk/reward</div>
+                </div>
+
+                <div class="stat-tile">
+                    <div class="tile-label"><i class="fas fa-exclamation-triangle"></i> RVS</div>
+                    <div class="tile-value text-purple">{{ avg_rvs|default:"0" }}</div>
+                    <div class="tile-trend hover-text" data-message="Rule Violation Score - Measures adherence to trading rules">violations</div>
+                </div>
+
+                <div class="stat-tile">
+                    <div class="tile-label"><i class="fas fa-clock"></i> Today</div>
+                    <div class="tile-value text-blue">{{ todays_trades|default:"0" }}</div>
+                    <div class="tile-trend">trades</div>
+                </div>
+
+                <div class="stat-tile">
+                    <div class="tile-label"><i class="fas fa-chart-bar"></i> RR Dev</div>
+                    <div class="tile-value text-yellow">{{ std_dev_rr|default:"0" }}</div>
+                    <div class="tile-trend">std dev</div>
+                </div>
+
+                <div class="stat-tile">
+                    <div class="tile-label"><i class="fas fa-dollar-sign"></i> Today P&L</div>
+                    <div class="tile-value {% if todays_profit > 0 %}text-green{% elif todays_profit < 0 %}text-red{% endif %}">
+                        {% if todays_profit > 0 %}+{% endif %}{{ todays_profit|default:"0" }}%
+                    </div>
+                    <div class="tile-trend">
+                        {% if todays_profit > 0 %}▲{% elif todays_profit < 0 %}▼{% else %}●{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM: CHART (FULL WIDTH) -->
+    <div class="card chart-card">
+        <div class="chart-header">
+            <div class="chart-title">
+                <i class="fas fa-chart-line"></i>
+                <h3>Profitability Trend Analysis</h3>
+            </div>
+            <div class="chart-legend">
+                <div class="legend-item">
+                    <span class="legend-dot profit"></span>
+                    <span>Profit Zone (>0%)</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot loss"></span>
+                    <span>Loss Zone (<0%)</span>
+                </div>
+            </div>
+        </div>
+        <div class="chart-wrapper">
+            <div id="performanceChart"></div>
+        </div>
+    </div>
 </div>
 
-<!-- Include Canvas Gauges -->
-<script src="https://cdn.jsdelivr.net/npm/canvas-gauges/gauge.min.js"></script>
+<!-- TOOLTIP -->
+<div id="message-box" class="message-box"></div>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-
-    // Tooltip logic (keep yours)
+    // Tooltip logic
     const tooltip = document.getElementById("message-box");
-
+    
     document.querySelectorAll(".hover-text").forEach(el => {
-
-        el.addEventListener("mouseenter", function () {
-            tooltip.textContent = el.dataset.message;
+        el.addEventListener("mouseenter", function (e) {
+            tooltip.textContent = this.dataset.message;
             tooltip.style.display = "block";
+            updateTooltipPosition(e);
         });
 
         el.addEventListener("mousemove", function (e) {
-            tooltip.style.left = (e.pageX + 12) + "px";
-            tooltip.style.top = (e.pageY + 12) + "px";
+            updateTooltipPosition(e);
         });
 
         el.addEventListener("mouseleave", function () {
             tooltip.style.display = "none";
         });
-
     });
 
-    // ===============================
-    // CANVAS GAUGES
-    // ===============================
+    function updateTooltipPosition(e) {
+        tooltip.style.left = (e.pageX + 15) + "px";
+        tooltip.style.top = (e.pageY + 15) + "px";
+    }
 
-    // WINRATE GAUGE
-    var winrateGauge = new RadialGauge({
-        renderTo: 'winrate-gauge',
-        width: 280,
-        height: 240,
-        minValue: 0,
-        maxValue: 100,
-        majorTicks: ['0','20','40','60','80','100'],
-        minorTicks: 4,
-        value: {{ overallwinrate|default:"0" }},
-        units: "winrate",
-        startAngle: 60,
-        ticksAngle: 240,
-        colorPlate: "#111827",
-        borderShadowWidth: 0,
-        borders: false,
-        needleType: "arrow",
-        needleWidth: 2,
-        needleCircleSize: 7,
-        needleCircleOuter: true,
-        needleCircleInner: false,
-        animationDuration: 800,
-        animationRule: "easeOutExpo",
-        colorMajorTicks: "#e5e7eb",
-        colorMinorTicks: "#9ca3af",
-        colorNeedle: "#f59e0b",
-        colorNeedleEnd: "#f59e0b",
-        colorUnits: "#e5e7eb",
-        colorNumbers: "#e5e7eb",
-        colorNeedleShadowUp: "#000000",
-        colorNeedleShadowDown: "#000000",
-        highlights: [
-            { from: 0, to: 40, color: 'rgba(239,68,68,0.3)' },    // red
-            { from: 40, to: 70, color: 'rgba(251,191,36,0.3)' },  // yellow
-            { from: 70, to: 100, color: 'rgba(34,197,94,0.3)' }   // green
-        ]
-    }).draw();
+    // Win Rate Mini Gauge
+    const winrateValue = Number("{{ overallwinrate|default:'0' }}");
+    const winrateMini = echarts.init(document.getElementById('winrateMini'));
+    winrateMini.setOption({
+        series: [{
+            type: 'gauge',
+            center: ['50%', '50%'],
+            radius: '80%',
+            startAngle: 210,
+            endAngle: -30,
+            min: 0,
+            max: 100,
+            progress: {
+                show: true,
+                width: 6,
+                roundCap: true,
+                itemStyle: { color: { type: 'linear', x: 0, y: 0, x2: 1, y2: 0,
+                    colorStops: [
+                        { offset: 0, color: '#f87171' },
+                        { offset: 0.5, color: '#fbbf24' },
+                        { offset: 1, color: '#34d399' }
+                    ]
+                }}
+            },
+            axisLine: { lineStyle: { width: 6, color: [[0.4, '#f87171'],[0.7, '#fbbf24'],[1, '#34d399']] }},
+            axisTick: { show: false },
+            splitLine: { show: false },
+            axisLabel: { show: false },
+            detail: { show: false },
+            data: [{ value: winrateValue }]
+        }]
+    });
 
-    // CONSISTENCY GAUGE
-    var consistencyGauge = new RadialGauge({
-        renderTo: 'expectancy-gauge',
-        width: 280,
-        height: 240,
-        minValue: 0,
-        maxValue: 4,
-        majorTicks: ['0','1','2','3','4'],
-        minorTicks: 4,
-        value: {{ grade_consistency.consistency_score|default:"0" }},
-        units: "Consistency",
-        startAngle: 60,
-        ticksAngle: 240,
-        colorPlate: "#111827",
-        borderShadowWidth: 0,
-        borders: false,
-        needleType: "arrow",
-        needleWidth: 2,
-        needleCircleSize: 7,
-        needleCircleOuter: true,
-        needleCircleInner: false,
-        animationDuration: 800,
-        animationRule: "easeOutExpo",
-        colorMajorTicks: "#e5e7eb",
-        colorMinorTicks: "#9ca3af",
-        colorNeedle: "#f59e0b",
-        colorNeedleEnd: "#f59e0b",
-        colorUnits: "#e5e7eb",
-        colorNumbers: "#e5e7eb",
-        highlights: [
-            { from: 0, to: 1.3, color: 'rgba(239,68,68,0.3)' },    // red
-            { from: 1.3, to: 2.7, color: 'rgba(251,191,36,0.3)' }, // yellow
-            { from: 2.7, to: 4, color: 'rgba(34,197,94,0.3)' }     // green
-        ]
-    }).draw();
+    // Consistency Mini Gauge
+    const consistencyValue = {{ grade_consistency.consistency_score|default:"0" }};
+    const consistencyMini = echarts.init(document.getElementById('consistencyMini'));
+    consistencyMini.setOption({
+        series: [{
+            type: 'gauge',
+            center: ['50%', '50%'],
+            radius: '80%',
+            startAngle: 210,
+            endAngle: -30,
+            min: 0,
+            max: 4,
+            progress: {
+                show: true,
+                width: 6,
+                roundCap: true,
+                itemStyle: { color: { type: 'linear', x: 0, y: 0, x2: 1, y2: 0,
+                    colorStops: [
+                        { offset: 0, color: '#f87171' },
+                        { offset: 0.33, color: '#fbbf24' },
+                        { offset: 0.67, color: '#c084fc' },
+                        { offset: 1, color: '#34d399' }
+                    ]
+                }}
+            },
+            axisLine: { lineStyle: { width: 6, color: [[0.33, '#f87171'],[0.67, '#fbbf24'],[1, '#34d399']] }},
+            axisTick: { show: false },
+            splitLine: { show: false },
+            axisLabel: { show: false },
+            detail: { show: false },
+            data: [{ value: consistencyValue }]
+        }]
+    });
 
-});
-</script>
-
-
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    // Get data from Django context
+    // Performance Chart with ECharts
     const labels = {{ dates|safe }};
     const dataPoints = {{ performance|safe }};
 
-    const ctx = document.getElementById('performanceChart').getContext('2d');
-    const performanceChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Performance',
-                data: dataPoints,
-                borderColor: '#1abc9c',
-                borderWidth: 1,
-                backgroundColor: 'rgba(26, 188, 156, 0.2)',
-                fill: true,
-                tension: 0.4,
-                pointRadius: 3,
-                pointBackgroundColor: '#e2e8f0'
-            }]
+    const performanceChart = echarts.init(document.getElementById('performanceChart'));
+    
+    performanceChart.setOption({
+        backgroundColor: 'transparent',
+        grid: {
+            left: '6%',
+            right: '6%',
+            bottom: '12%',
+            top: '8%',
+            containLabel: true
         },
-        options: {
-            responsive: true,
-             animation: {
-            duration: 1500,
-            easing: 'easeOutQuart'
+        tooltip: {
+            trigger: 'axis',
+            axisPointer: { 
+                type: 'shadow',
+                shadowStyle: { color: 'rgba(16, 185, 129, 0.1)' }
             },
-            plugins: {
-                legend: {
-                    labels: {
-                        color: '#e2e8f0'
+            backgroundColor: '#1e293b',
+            borderColor: '#10b981',
+            borderWidth: 2,
+            textStyle: { color: '#f3f4f6', fontSize: 12 },
+            formatter: function(params) {
+                const value = params[0].value;
+                const color = value >= 0 ? '#34d399' : '#f87171';
+                const sign = value >= 0 ? '+' : '';
+                return `
+                    <div style="font-weight:600; margin-bottom:5px;">${params[0].name}</div>
+                    <div style="color:${color}">
+                        <span style="font-size:16px; font-weight:700;">${sign}${value}%</span>
+                    </div>
+                `;
+            }
+        },
+        xAxis: {
+            type: 'category',
+            data: labels,
+            axisLine: { lineStyle: { color: '#2d3748' } },
+            axisLabel: { 
+                color: '#9ca3af', 
+                rotate: labels.length > 10 ? 35 : 0,
+                fontSize: 11,
+                margin: 10
+            },
+            axisTick: { show: false }
+        },
+        yAxis: {
+            type: 'value',
+            axisLine: { show: false },
+            axisLabel: { 
+                color: '#9ca3af', 
+                formatter: '{value}%',
+                fontSize: 11
+            },
+            splitLine: { 
+                lineStyle: { 
+                    color: '#2d3748', 
+                    type: 'dashed',
+                    opacity: 0.5
+                } 
+            }
+        },
+        series: [{
+            data: dataPoints,
+            type: 'line',
+            smooth: true,
+            symbol: 'circle',
+            symbolSize: 8,
+            lineStyle: { 
+                width: 3, 
+                color: '#10b981',
+                shadowColor: 'rgba(16, 185, 129, 0.3)',
+                shadowBlur: 10,
+                shadowOffsetY: 4
+            },
+            areaStyle: {
+                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                    { offset: 0, color: 'rgba(16, 185, 129, 0.4)' },
+                    { offset: 0.5, color: 'rgba(16, 185, 129, 0.1)' },
+                    { offset: 1, color: 'rgba(16, 185, 129, 0)' }
+                ])
+            },
+            itemStyle: {
+                color: '#f3f4f6',
+                borderColor: '#10b981',
+                borderWidth: 2,
+                shadowColor: 'rgba(16, 185, 129, 0.5)',
+                shadowBlur: 10
+            },
+            emphasis: {
+                itemStyle: {
+                    color: '#10b981',
+                    borderColor: '#f3f4f6',
+                    borderWidth: 3,
+                    shadowBlur: 15
+                },
+                lineStyle: {
+                    width: 4,
+                    shadowBlur: 15
+                }
+            },
+            markPoint: {
+                data: [
+                    { type: 'max', name: 'Peak Performance', symbolSize: 50 },
+                    { type: 'min', name: 'Low Point', symbolSize: 50 }
+                ],
+                symbol: 'circle',
+                symbolSize: 40,
+                label: { 
+                    color: 'white', 
+                    fontWeight: 'bold',
+                    fontSize: 11,
+                    backgroundColor: 'rgba(0,0,0,0.6)',
+                    padding: [4, 8],
+                    borderRadius: 4
+                },
+                itemStyle: {
+                    color: {
+                        type: 'radial',
+                        colorStops: [
+                            { offset: 0, color: '#fbbf24' },
+                            { offset: 1, color: '#f59e0b' }
+                        ]
                     }
                 }
             },
-            scales: {
-                x: {
-                    ticks: { color: '#e2e8f0' },
-                    grid: { color: '#334155' }
-                },
-                y: {
-                    ticks: { color: '#e2e8f0' },
-                    grid: { color: '#334155' },
-                    beginAtZero: true
+            markLine: {
+                data: [
+                    { 
+                        type: 'average', 
+                        name: 'Average Performance', 
+                        lineStyle: { 
+                            color: '#fbbf24', 
+                            type: 'dashed',
+                            width: 2,
+                            shadowColor: 'rgba(251, 191, 36, 0.3)',
+                            shadowBlur: 8
+                        } 
+                    },
+                    {
+                        yAxis: 0,
+                        name: 'Break Even',
+                        lineStyle: {
+                            color: '#f87171',
+                            type: 'dashed',
+                            width: 1,
+                            opacity: 0.5
+                        }
+                    }
+                ],
+                label: { 
+                    color: '#fbbf24',
+                    fontSize: 11,
+                    backgroundColor: 'rgba(0,0,0,0.6)',
+                    padding: [4, 8],
+                    borderRadius: 4
                 }
             }
-        }
+        }],
+        dataZoom: [
+            { 
+                type: 'slider', 
+                show: true, 
+                start: 0, 
+                end: 100, 
+                backgroundColor: '#1f2937',
+                borderColor: '#2d3748',
+                fillerColor: 'rgba(16, 185, 129, 0.2)',
+                handleStyle: {
+                    color: '#10b981',
+                    borderColor: '#10b981'
+                },
+                textStyle: { color: '#9ca3af' }
+            }
+        ]
     });
+
+    // Handle resize
+    window.addEventListener('resize', () => {
+        winrateChart.resize();
+        consistencyChart.resize();
+        performanceChart.resize();
+    });
+
+    // Auto-refresh data every 60 seconds (optional)
+    // setInterval(() => {
+    //     location.reload();
+    // }, 60000);
+});
 </script>
 
-
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 {% endblock %}

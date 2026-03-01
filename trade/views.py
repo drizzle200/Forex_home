@@ -647,7 +647,7 @@ def performance_view(request):
                                                                                                              
 def trades_view(request):
 
-    trades = Trades.objects.filter(target__in=[0, 1]).order_by("-timestamp")[:16]
+    trades = Trades.objects.filter(target__in=[0, 1]).order_by("-timestamp")[:12]
     
     return render(request, "trade/trades.html",{
     'trades':trades,

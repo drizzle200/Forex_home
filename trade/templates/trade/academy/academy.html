@@ -1,208 +1,874 @@
 {% extends 'trade/base/base.html' %}
 {% load static %}
 
-{% block title %} Home | Trade {% endblock %}
+{% block title %}Home | Strategy Review{% endblock %}
+
+{% block page_icon %}brain{% endblock %}
+{% block page_title %}Strategy Review{% endblock %}
+{% block breadcrumb %}Strategy{% endblock %}
 
 {% block body %}
 <style>
-:root{
-    --bg: #0f172a;
-    --card: #1e293b;
-    --card-light: #334155;
-    --border: #334155;
-
-    --text: #e2e8f0;
-    --muted: #94a3b8;
-
-    --primary: #1abc9c;
-    --primary-dark: #16a085;
-
-    --danger-bg: #3b1f1f;
-    --danger-border: #7f1d1d;
-    --danger-text: #f87171;
+:root {
+    --bg-primary: #0a0f1c;
+    --bg-secondary: #111827;
+    --bg-tertiary: #1f2937;
+    --bg-elevated: #2d3748;
+    --card-bg: #1a2332;
+    --card-hover: #232e3f;
+    --card-border: #2d3748;
+    --border: #2d3748;
+    --border-light: #374151;
+    
+    --text-primary: #f3f4f6;
+    --text-secondary: #9ca3af;
+    --text-muted: #6b7280;
+    
+    --primary: #10b981;
+    --primary-dark: #059669;
+    --primary-soft: rgba(16, 185, 129, 0.15);
+    --primary-glow: rgba(16, 185, 129, 0.3);
+    
+    --success: #34d399;
+    --success-soft: rgba(52, 211, 153, 0.15);
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.15);
+    --info: #60a5fa;
+    --info-soft: rgba(96, 165, 250, 0.15);
+    --warning: #fbbf24;
+    --warning-soft: rgba(251, 191, 36, 0.15);
+    --purple: #c084fc;
+    --purple-soft: rgba(192, 132, 252, 0.15);
 }
 
-body{
-    background: var(--bg);
-    color: var(--text);
+body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
 }
 
-.trade-card {
-    background: var(--card);
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+/* Search Section */
+.search-section {
     max-width: 600px;
-    margin: 30px auto;
+    margin: 30px auto 20px;
+    padding: 0 20px;
+}
+
+.search-container {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 4px;
     border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 10px 25px -10px rgba(0, 0, 0, 0.5);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.search-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 30% 50%, var(--primary-soft), transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.search-container:focus-within {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+.search-container:focus-within::before {
+    opacity: 0.5;
+}
+
+.search-icon {
+    padding-left: 16px;
+    color: var(--text-muted);
+    font-size: 16px;
+}
+
+.search-input {
+    flex: 1;
+    padding: 16px 16px 16px 8px;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 15px;
+    outline: none;
+}
+
+.search-input::placeholder {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.search-button {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-right: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+.search-button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transform: translate(-50%, -50%);
+    transition: width 0.4s, height 0.4s;
+}
+
+.search-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px -8px var(--primary-glow);
+}
+
+.search-button:hover::before {
+    width: 150px;
+    height: 150px;
+}
+
+.search-button i {
+    font-size: 14px;
+}
+
+/* Strategy Card */
+.trade-card {
+    background: var(--card-bg);
+    border-radius: 24px;
+    padding: 0;
+    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+    max-width: 600px;
+    margin: 0 auto 40px;
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+}
+
+.trade-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary), var(--purple), var(--info), var(--primary));
+    background-size: 300% 100%;
+    animation: gradientMove 6s ease infinite;
 }
 
 .trade-header {
-    background-color: var(--primary);
+    background: linear-gradient(135deg, var(--bg-tertiary), var(--card-bg));
+    color: var(--text-primary);
+    padding: 24px 28px;
+    border-bottom: 1px solid var(--border);
+    font-size: 22px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.trade-header i {
+    color: var(--primary);
+    font-size: 24px;
+    background: var(--primary-soft);
+    padding: 10px;
+    border-radius: 14px;
+}
+
+/* Strategy Links */
+.strategy-links {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.strategy-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.strategy-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.strategy-item:hover {
+    transform: translateX(8px) translateY(-2px);
+    border-color: var(--primary);
+    box-shadow: 0 10px 25px -10px var(--primary-glow);
+    background: var(--bg-elevated);
+}
+
+.strategy-item:hover::before {
+    opacity: 1;
+}
+
+.strategy-number {
+    width: 32px;
+    height: 32px;
+    background: var(--primary-soft);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.strategy-item:hover .strategy-number {
+    background: var(--primary);
     color: white;
-    padding: 12px 16px;
-    border-radius: 6px 6px 0 0;
-    font-size: 20px;
+    transform: scale(1.1);
+}
+
+.custom-link {
+    flex: 1;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.strategy-item:hover .custom-link {
+    color: var(--text-primary);
+}
+
+.strategy-icon {
+    color: var(--text-muted);
+    font-size: 12px;
+    transition: all 0.2s ease;
+    opacity: 0;
+}
+
+.strategy-item:hover .strategy-icon {
+    opacity: 1;
+    color: var(--primary);
+    transform: translateX(4px);
+}
+
+/* Strategy Categories */
+.strategy-category {
+    margin-top: 20px;
+}
+
+.category-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    background: var(--primary-soft);
+    border-radius: 100px;
+    color: var(--primary);
+    font-size: 12px;
     font-weight: 600;
+    margin-bottom: 12px;
+    border: 1px solid var(--primary-glow);
+}
+
+/* Progress for each strategy */
+.strategy-progress {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.progress-bar-small {
+    flex: 1;
+    height: 4px;
+    background: var(--bg-secondary);
+    border-radius: 100px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+    border-radius: 100px;
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+/* Stats Section */
+.strategy-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 20px 24px 24px;
+    border-top: 1px solid var(--border);
+    background: var(--bg-secondary);
+}
+
+.stat-item {
     text-align: center;
 }
 
-.step-card { display: none; }
-.step-card.active { display: block; }
-
-.option {
-    background: var(--card-light);
-    padding: 10px;
-    margin: 6px 0;
-    border-radius: 6px;
-    cursor: pointer;
-    border: 1px solid var(--border);
-    transition: 0.2s ease;
+.stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 4px;
 }
 
-.option:hover {
-    background: #3b5168;
+.stat-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-.option.selected {
-    border-color: var(--primary);
-    background: rgba(26,188,156,0.15);
-}
-
-.btn-nav {
-    background-color: var(--primary);
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    margin: 10px 5px 0 0;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: 0.2s ease;
-}
-
-.btn-nav:hover { 
-    background-color: var(--primary-dark); 
-}
-
-.btn-submit {
-    display: block;
-    width: 50%;
-    margin: 20px auto 0;
-    background-color: var(--primary);
-    color: white;
-    border: none;
-    padding: 12px 0;
-    border-radius: 6px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: 0.2s ease;
-}
-
-.btn-submit:hover { 
-    background-color: var(--primary-dark); 
-}
-
-/* Modal */
+/* Modal Styles (if needed) */
 .modal-bg {
     display: none;
     position: fixed;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
-    background: rgba(0,0,0,0.7);
-    z-index:1000;
-}
-
-.error-box {
-    background: var(--danger-bg);
-    color: var(--danger-text);
-    padding:12px;
-    border-radius:6px;
-    margin:15px 0;
-    border:1px solid var(--danger-border);
-    font-weight:600;
-    text-align:center;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
 }
 
 .modal-box {
-    background: var(--card);
-    width:90%;
-    max-width:500px;
-    margin:100px auto;
-    border-radius:8px;
-    overflow:hidden;
+    background: var(--card-bg);
+    width: 90%;
+    max-width: 500px;
+    border-radius: 24px;
+    overflow: hidden;
     border: 1px solid var(--border);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.3s ease;
+}
+
+.modal-header {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    padding: 20px 24px;
+    color: white;
+}
+
+.modal-header h3 {
+    font-size: 20px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.modal-body {
+    padding: 24px;
 }
 
 .modal-footer {
-    padding:15px;
-    text-align:right;
+    padding: 20px 24px;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
 }
 
-.preview-table { 
-    width:100%; 
-    border-collapse: collapse; 
+.modal-btn {
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
 }
 
-.preview-table th { 
-    background: var(--primary); 
-    color:white; 
-    padding:10px; 
-    text-align:left; 
+.btn-confirm {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
 }
 
-.preview-table td { 
-    padding:10px; 
-    background: var(--card-light); 
-    border-bottom:1px solid var(--border); 
+.btn-cancel {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
 }
 
-a.custom-link {
-    color: #4fd1c5;        /* soft teal, easy on dark bg */
-    text-decoration: underline dotted;
-    transition: color 0.2s ease;
+/* Animations */
+@keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
-/* Hover effect */
-a.custom-link:hover {
-    color: #1abc9c;        /* slightly brighter teal */
-    text-decoration: underline;
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-/* Active (clicked) */
-a.custom-link:active {
-    color: #16a085;        /* darker teal */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
-/* Visited link */
-a.custom-link:visited {
-    color: #38b2ac;        /* muted teal so it doesn't clash */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
 }
 
-</style>
-<div>    
- <form>
-    <input type="text" name="">
-    <input type="button" name="" value="Search">
+/* Responsive */
+@media (max-width: 640px) {
+    .search-section {
+        padding: 0 16px;
+    }
     
-</form>
+    .search-container {
+        flex-direction: column;
+        background: transparent;
+        padding: 0;
+        gap: 12px;
+    }
+    
+    .search-icon {
+        display: none;
+    }
+    
+    .search-input {
+        width: 100%;
+        padding: 16px 20px;
+        background: var(--card-bg);
+        border-radius: 16px;
+        border: 1px solid var(--border);
+    }
+    
+    .search-button {
+        width: 100%;
+        margin-right: 0;
+        justify-content: center;
+    }
+    
+    .trade-header {
+        padding: 20px;
+        font-size: 20px;
+    }
+    
+    .strategy-links {
+        padding: 16px;
+    }
+    
+    .strategy-item {
+        padding: 14px 16px;
+    }
+    
+    .strategy-stats {
+        padding: 16px;
+    }
+    
+    .stat-value {
+        font-size: 20px;
+    }
+}
+
+/* Dark mode enhancements */
+@media (prefers-color-scheme: dark) {
+    .search-input {
+        background: var(--card-bg);
+    }
+}
+
+/* Custom link states */
+.custom-link {
+    position: relative;
+    display: inline-block;
+}
+
+.custom-link:visited {
+    color: var(--purple);
+}
+
+.custom-link:visited + .strategy-icon {
+    color: var(--purple);
+}
+
+.strategy-item.completed .custom-link {
+    color: var(--success);
+}
+
+.strategy-item.completed .strategy-number {
+    background: var(--success);
+    color: white;
+}
+
+/* Tooltip */
+[data-tooltip] {
+    position: relative;
+    cursor: help;
+}
+
+[data-tooltip]:before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 6px 12px;
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    font-size: 12px;
+    border-radius: 8px;
+    white-space: nowrap;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 10;
+}
+
+[data-tooltip]:hover:before {
+    opacity: 1;
+    visibility: visible;
+    bottom: 120%;
+}
+</style>
+
+<!-- Search Section -->
+<div class="search-section">
+    <div class="search-container">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" class="search-input" placeholder="Search strategies..." id="strategySearch">
+        <button class="search-button" onclick="searchStrategies()">
+            <i class="fas fa-search"></i> Search
+        </button>
+    </div>
 </div>
+
+<!-- Strategy Review Card -->
 <div class="trade-card">
-    <div class="trade-header" >Reiview your strategy</div>
+    <div class="trade-header">
+        <i class="fas fa-brain"></i>
+        Review Your Strategy
+    </div>
 
-    <a href="" class="custom-link">1.Market structures</a><br>
-    <a href="" class="custom-link">2.Key level</a><br>
-    <a href="" class="custom-link">3.Smart moneny concept (SMC)</a><br>
-    <a href="" class="custom-link">4.Combine Key level and SMC</a><br>
-    <a href="" class="custom-link">5.Investing- inchimoku strategy</a><br>
-    <a href="" class="custom-link">6.Trading rules and psychologies</a><br>
+    <div class="strategy-links" id="strategyList">
+        <!-- Market Structures -->
+        <div class="strategy-item" data-category="structure" data-tooltip="Learn market structure basics">
+            <span class="strategy-number">1</span>
+            <a href="#" class="custom-link" onclick="openStrategy('market-structures')">
+                <i class="fas fa-chart-line"></i> Market Structures
+            </a>
+            <i class="fas fa-chevron-right strategy-icon"></i>
+            <div class="strategy-progress">
+                <div class="progress-bar-small">
+                    <div class="progress-fill" style="width: 60%"></div>
+                </div>
+            </div>
+        </div>
 
+        <!-- Key Level -->
+        <div class="strategy-item" data-category="levels" data-tooltip="Identify key support/resistance">
+            <span class="strategy-number">2</span>
+            <a href="#" class="custom-link" onclick="openStrategy('key-level')">
+                <i class="fas fa-bullseye"></i> Key Level
+            </a>
+            <i class="fas fa-chevron-right strategy-icon"></i>
+            <div class="strategy-progress">
+                <div class="progress-bar-small">
+                    <div class="progress-fill" style="width: 45%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Smart Money Concept (SMC) -->
+        <div class="strategy-item" data-category="smc" data-tooltip="Smart Money Concepts">
+            <span class="strategy-number">3</span>
+            <a href="#" class="custom-link" onclick="openStrategy('smc')">
+                <i class="fas fa-graduation-cap"></i> Smart Money Concept (SMC)
+            </a>
+            <i class="fas fa-chevron-right strategy-icon"></i>
+            <div class="strategy-progress">
+                <div class="progress-bar-small">
+                    <div class="progress-fill" style="width: 30%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Combine Key Level and SMC -->
+        <div class="strategy-item" data-category="advanced" data-tooltip="Advanced combination strategy">
+            <span class="strategy-number">4</span>
+            <a href="#" class="custom-link" onclick="openStrategy('combine')">
+                <i class="fas fa-puzzle-piece"></i> Combine Key Level and SMC
+            </a>
+            <i class="fas fa-chevron-right strategy-icon"></i>
+            <div class="strategy-progress">
+                <div class="progress-bar-small">
+                    <div class="progress-fill" style="width: 20%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Investing - Ichimoku Strategy -->
+        <div class="strategy-item" data-category="indicators" data-tooltip="Ichimoku Cloud strategy">
+            <span class="strategy-number">5</span>
+            <a href="#" class="custom-link" onclick="openStrategy('ichimoku')">
+                <i class="fas fa-cloud"></i> Investing - Ichimoku Strategy
+            </a>
+            <i class="fas fa-chevron-right strategy-icon"></i>
+            <div class="strategy-progress">
+                <div class="progress-bar-small">
+                    <div class="progress-fill" style="width: 75%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trading Rules and Psychologies -->
+        <div class="strategy-item" data-category="psychology" data-tooltip="Master your trading psychology">
+            <span class="strategy-number">6</span>
+            <a href="#" class="custom-link" onclick="openStrategy('psychology')">
+                <i class="fas fa-heart"></i> Trading Rules and Psychologies
+            </a>
+            <i class="fas fa-chevron-right strategy-icon"></i>
+            <div class="strategy-progress">
+                <div class="progress-bar-small">
+                    <div class="progress-fill" style="width: 90%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Strategy Stats -->
+    <div class="strategy-stats">
+        <div class="stat-item">
+            <div class="stat-value">6</div>
+            <div class="stat-label">Total Strategies</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">3</div>
+            <div class="stat-label">In Progress</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">53%</div>
+            <div class="stat-label">Mastered</div>
+        </div>
+    </div>
 </div>
 
-<!-- Trade Preview Modal -->
+<!-- Strategy Detail Modal (optional) -->
+<div class="modal-bg" id="strategyModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3><i class="fas fa-chart-line" id="modalIcon"></i> <span id="modalTitle">Market Structures</span></h3>
+        </div>
+        <div class="modal-body" id="modalContent">
+            <p>Strategy details would go here...</p>
+        </div>
+        <div class="modal-footer">
+            <button class="modal-btn btn-cancel" onclick="closeModal()">Close</button>
+            <button class="modal-btn btn-confirm" onclick="startLearning()">Start Learning</button>
+        </div>
+    </div>
+</div>
 
+<script>
+// Search functionality
+function searchStrategies() {
+    const searchTerm = document.getElementById('strategySearch').value.toLowerCase();
+    const strategies = document.querySelectorAll('.strategy-item');
+    
+    strategies.forEach(item => {
+        const linkText = item.querySelector('.custom-link').textContent.toLowerCase();
+        if (linkText.includes(searchTerm) || searchTerm === '') {
+            item.style.display = 'flex';
+            item.style.animation = 'fadeIn 0.3s ease';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+    
+    // Update stats based on visible items
+    updateVisibleStats();
+}
 
+// Real-time search as you type
+document.getElementById('strategySearch').addEventListener('input', searchStrategies);
 
+// Update stats based on visible items
+function updateVisibleStats() {
+    const visibleItems = document.querySelectorAll('.strategy-item[style*="display: flex"]').length;
+    const totalItems = document.querySelectorAll('.strategy-item').length;
+    
+    if (visibleItems !== totalItems) {
+        // You could update a "filtered results" stat here
+        console.log(`Showing ${visibleItems} of ${totalItems} strategies`);
+    }
+}
+
+// Open strategy detail
+function openStrategy(strategy) {
+    const modal = document.getElementById('strategyModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalIcon = document.getElementById('modalIcon');
+    
+    // Set content based on strategy
+    const titles = {
+        'market-structures': 'Market Structures',
+        'key-level': 'Key Level',
+        'smc': 'Smart Money Concept (SMC)',
+        'combine': 'Combine Key Level and SMC',
+        'ichimoku': 'Ichimoku Strategy',
+        'psychology': 'Trading Rules and Psychologies'
+    };
+    
+    const icons = {
+        'market-structures': 'fa-chart-line',
+        'key-level': 'fa-bullseye',
+        'smc': 'fa-graduation-cap',
+        'combine': 'fa-puzzle-piece',
+        'ichimoku': 'fa-cloud',
+        'psychology': 'fa-heart'
+    };
+    
+    modalTitle.textContent = titles[strategy] || 'Strategy Details';
+    modalIcon.className = `fas ${icons[strategy] || 'fa-chart-line'}`;
+    
+    // Set modal content based on strategy
+    const modalContent = document.getElementById('modalContent');
+    modalContent.innerHTML = getStrategyContent(strategy);
+    
+    modal.style.display = 'flex';
+}
+
+// Get strategy content
+function getStrategyContent(strategy) {
+    const contents = {
+        'market-structures': `
+            <h4 style="color: var(--primary); margin-bottom: 15px;">Market Structure Basics</h4>
+            <p>Learn about:</p>
+            <ul style="list-style: none; padding: 0;">
+                <li style="margin: 10px 0;">• Trend identification</li>
+                <li style="margin: 10px 0;">• Support and resistance</li>
+                <li style="margin: 10px 0;">• Higher highs and lower lows</li>
+                <li style="margin: 10px 0;">• Market phases</li>
+            </ul>
+        `,
+        'key-level': `
+            <h4 style="color: var(--primary); margin-bottom: 15px;">Key Level Identification</h4>
+            <p>Master the art of finding key levels:</p>
+            <ul style="list-style: none; padding: 0;">
+                <li style="margin: 10px 0;">• Horizontal support/resistance</li>
+                <li style="margin: 10px 0;">• Trendlines</li>
+                <li style="margin: 10px 0;">• Psychological levels</li>
+                <li style="margin: 10px 0;">• Previous high/lows</li>
+            </ul>
+        `,
+        'default': '<p>Select a strategy to learn more.</p>'
+    };
+    
+    return contents[strategy] || contents['default'];
+}
+
+// Close modal
+function closeModal() {
+    document.getElementById('strategyModal').style.display = 'none';
+}
+
+// Start learning
+function startLearning() {
+    alert('Starting learning module...');
+    closeModal();
+}
+
+// Click outside modal to close
+window.addEventListener('click', function(e) {
+    const modal = document.getElementById('strategyModal');
+    if (e.target === modal) {
+        closeModal();
+    }
+});
+
+// Keyboard navigation
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeModal();
+    }
+});
+
+// Mark strategy as completed (example function)
+function markCompleted(item) {
+    item.classList.toggle('completed');
+    const progressFill = item.querySelector('.progress-fill');
+    if (item.classList.contains('completed')) {
+        progressFill.style.width = '100%';
+    } else {
+        progressFill.style.width = '60%'; // Reset to previous progress
+    }
+}
+
+// Double-click to mark as completed (example)
+document.querySelectorAll('.strategy-item').forEach(item => {
+    item.addEventListener('dblclick', function() {
+        markCompleted(this);
+    });
+});
+
+// Initialize tooltips
+document.querySelectorAll('[data-tooltip]').forEach(item => {
+    item.addEventListener('mouseenter', function() {
+        // Tooltip is handled by CSS
+    });
+});
+</script>
+
+<!-- Optional: Add Font Awesome if not already in base -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 {% endblock %}
