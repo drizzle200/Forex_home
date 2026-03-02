@@ -350,3 +350,145 @@ class Advice(models.Model):
             advice = cls.get_random_advice()
         
         return advice
+
+
+class Mood(models.Model):
+    MOOD_CHOICES = [
+        ('confident', '😊 Confident'),
+        ('cautious', '🤔 Cautious'),
+        ('neutral', '😐 Neutral'),
+        ('stressed', '😓 Stressed'),
+        ('energetic', '⚡ Energetic'),
+        ('tired', '😴 Tired'),
+        ('focused', '🎯 Focused'),
+        ('anxious', '😰 Anxious'),
+    ]
+    
+    MOOD_EMOJIS = {
+        'confident': '😊',
+        'cautious': '🤔',
+        'neutral': '😐',
+        'stressed': '😓',
+        'energetic': '⚡',
+        'tired': '😴',
+        'focused': '🎯',
+        'anxious': '😰',
+    }
+    
+    MOOD_COLORS = {
+        'confident': '#10b981',  # Green
+        'cautious': '#f59e0b',   # Orange
+        'neutral': '#6b7280',    # Gray
+        'stressed': '#ef4444',   # Red
+        'energetic': '#8b5cf6',  # Purple
+        'tired': '#3b82f6',      # Blue
+        'focused': '#ec4899',    # Pink
+        'anxious': '#f97316',    # Orange-red
+    }
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    mood = models.CharField(max_length=20, choices=MOOD_CHOICES)
+    date = models.DateField(default=timezone.now)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    notes = models.CharField(max_length=200, blank=True, null=True)
+    
+    # Track trading performance on that day
+    trades_count = models.IntegerField(default=0)
+    profit_loss = models.FloatField(default=0)
+    win_rate = models.FloatField(default=0)
+    
+    class Meta:
+        ordering = ['-date', '-timestamp']
+        unique_together = ['user', 'date']  # One mood per user per day
+    
+    def __str__(self):
+        return f"{self.date} - {self.get_mood_display()}"
+    
+    @classmethod
+    def get_mood_stats(cls, days=30):
+        """Get mood statistics for the last X days"""
+        end_date = timezone.now().date()
+        start_date = end_date - timedelta(days=days)
+        
+        moods = cls.objects.filter(date__gte=start_date, date__lte=end_date)
+        
+        total = moods.count()
+        if total == 0:
+            return {}
+        
+        stats = {}
+        for mood_code, mood_name in cls.MOOD_CHOICES:
+            count = moods.filter(mood=mood_code).count()
+            if count > 0:
+                stats[mood_code] = {
+                    'name': mood_name,
+                    'count': count,
+                    'percentage': round((count / total) * 100, 1),
+                    'emoji': cls.MOOD_EMOJIS.get(mood_code, '😐'),
+                    'color': cls.MOOD_COLORS.get(mood_code, '#6b7280'),
+                }
+        
+        return stats
+    
+    @classmethod
+    def get_today_mood(cls, user=None):
+        """Get today's mood for user"""
+        today = timezone.now().date()
+        if user:
+            return cls.objects.filter(user=user, date=today).first()
+        return cls.objects.filter(date=today).first()
+    
+    @classmethod
+    def get_mood_recommendation(cls, mood):
+        """Get trading recommendation based on mood"""
+        recommendations = {
+            'confident': {
+                'message': 'Great! Confidence is good, but stay humble. Stick to your plan.',
+                'action': '👍 Trade normally with strict risk management',
+                'color': '#10b981',
+                'animation': 'bounce'
+            },
+            'cautious': {
+                'message': 'Smart! Being cautious protects your capital. Consider smaller positions.',
+                'action': '🛡️ Trade with 0.5% risk instead of 1%',
+                'color': '#f59e0b',
+                'animation': 'pulse'
+            },
+            'neutral': {
+                'message': 'Balanced mindset is perfect for trading. Stay focused.',
+                'action': '📊 Execute your strategy as planned',
+                'color': '#6b7280',
+                'animation': 'fade'
+            },
+            'stressed': {
+                'message': 'Take a break! Stressed trading leads to mistakes.',
+                'action': '🧘 Step away from charts. Try meditation.',
+                'color': '#ef4444',
+                'animation': 'shake'
+            },
+            'energetic': {
+                'message': 'Energy is great! Channel it into discipline, not overtrading.',
+                'action': '⚡ Set a max of 3 trades today',
+                'color': '#8b5cf6',
+                'animation': 'pulse'
+            },
+            'tired': {
+                'message': 'Fatigue is dangerous in trading. Consider resting.',
+                'action': '😴 Review charts only, no live trading',
+                'color': '#3b82f6',
+                'animation': 'yawn'
+            },
+            'focused': {
+                'message': 'Perfect state! Your best trades come now.',
+                'action': '🎯 Look for high-probability setups',
+                'color': '#ec4899',
+                'animation': 'glow'
+            },
+            'anxious': {
+                'message': 'Anxiety leads to impulsive decisions. Breathe.',
+                'action': '🌬️ Demo trade only today',
+                'color': '#f97316',
+                'animation': 'shake'
+            },
+        }
+        return recommendations.get(mood, recommendations['neutral'])

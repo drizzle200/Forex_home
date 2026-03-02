@@ -68,4 +68,7 @@ urlpatterns=[
         views.delete_trade, 
         name="delete_trade"
         ),
+
+    path('save-mood/', views.save_mood, name='save_mood'),
+    path('get-mood-stats/', views.get_mood_stats, name='get_mood_stats')
   ]

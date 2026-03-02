@@ -92,3 +92,10 @@ class AdviceView(admin.ModelAdmin):
 admin.site.register(models.Trades, TradeView)
 admin.site.register(models.Pairs, PairView)
 admin.site.register(models.Advice, AdviceView)
+
+@admin.register(models.Mood)
+class MoodAdmin(admin.ModelAdmin):
+    list_display = ['user', 'date', 'mood', 'trades_count', 'profit_loss']
+    list_filter = ['mood', 'date']
+    search_fields = ['user__username', 'notes']
+    date_hierarchy = 'date'

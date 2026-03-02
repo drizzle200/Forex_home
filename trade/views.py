@@ -17,11 +17,12 @@ from sklearn.impute import SimpleImputer
 from django.db.models import Avg,Sum,Count, StdDev, Q, Case, When, Value, FloatField, Max, Min
 from django.utils import timezone
 from django.views.decorators.http import require_POST,require_GET
-from .models import Trades, Pairs,Advice
+from .models import Trades, Pairs,Advice,  Mood
 from .services import restrict_trade
 from .forms import NewTradeForm, TradeUpdateForm
 import joblib
 import os, pytz
+import json  
 
 from .market_session import is_market_open, get_trading_session, get_market_volatility, get_major_news_impact,get_session_pairs,get_pair_recommendations
 
@@ -437,7 +438,129 @@ def performance_view(request):
         'dates': chart_data['dates'],
     })
 
+#@login_required
+#@csrf_exempt
+def save_mood(request):
+    """Save user's mood with gamified response"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            mood = data.get('mood')
+            notes = data.get('notes', '')
+            
+            # Check if already have mood for today
+            today = timezone.now().date()
+            existing_mood = Mood.objects.filter(user=request.user, date=today).first()
+            
+            if existing_mood:
+                # Update existing mood
+                existing_mood.mood = mood
+                existing_mood.notes = notes
+                existing_mood.save()
+                created = False
+            else:
+                # Create new mood
+                existing_mood = Mood.objects.create(
+                    user=request.user,
+                    mood=mood,
+                    notes=notes
+                )
+                created = True
+            
+            # Get recommendation
+            recommendation = Mood.get_mood_recommendation(mood)
+            
+            # Get today's stats (you can calculate these from your trade data)
+            today_trades = Trades.objects.filter(
+                timestamp__date=today,
+                user=request.user
+            )
+            
+            # Update mood with trading data (optional)
+            existing_mood.trades_count = today_trades.count()
+            existing_mood.profit_loss = calculate_daily_profit(today_trades)
+            existing_mood.save()
+            
+            # Gamified response
+            response_data = {
+                'success': True,
+                'mood': mood,
+                'emoji': Mood.MOOD_EMOJIS.get(mood, '😐'),
+                'color': Mood.MOOD_COLORS.get(mood, '#6b7280'),
+                'message': recommendation['message'],
+                'action': recommendation['action'],
+                'animation': recommendation['animation'],
+                'created': created,
+                'streak': get_mood_streak(request.user),
+            }
+            
+            return JsonResponse(response_data)
+            
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    
+    return JsonResponse({'success': False, 'error': 'Invalid method'}, status=405)
 
+
+def get_mood_stats(request):
+    """Get mood statistics for charts"""
+    days = int(request.GET.get('days', 30))
+    stats = Mood.get_mood_stats(days)
+    
+    # Get today's mood
+    today_mood = Mood.get_today_mood(request.user if request.user.is_authenticated else None)
+    
+    # Prepare chart data
+    chart_data = {
+        'labels': [],
+        'values': [],
+        'colors': [],
+    }
+    
+    for mood_code, data in stats.items():
+        chart_data['labels'].append(data['name'])
+        chart_data['values'].append(data['count'])
+        chart_data['colors'].append(data['color'])
+    
+    return JsonResponse({
+        'success': True,
+        'stats': stats,
+        'chart_data': chart_data,
+        'today_mood': {
+            'mood': today_mood.mood if today_mood else None,
+            'emoji': Mood.MOOD_EMOJIS.get(today_mood.mood, '') if today_mood else '',
+        } if today_mood else None
+    })
+
+
+def get_mood_streak(user):
+    """Calculate user's mood logging streak"""
+    moods = Mood.objects.filter(user=user).order_by('-date')
+    if not moods.exists():
+        return 0
+    
+    streak = 1
+    last_date = moods.first().date
+    
+    for mood in moods[1:]:
+        if (last_date - mood.date).days == 1:
+            streak += 1
+            last_date = mood.date
+        else:
+            break
+    
+    return streak
+
+
+def calculate_daily_profit(trades_queryset):
+    """Calculate profit for a day's trades"""
+    profit = 0
+    for trade in trades_queryset.filter(target__in=[0, 1]):
+        if trade.target == 1:
+            profit += trade.risk_reward or 0
+        else:
+            profit -= 1
+    return round(profit, 2)
 
 def calculate_overall_stats():
     """Calculate overall statistics from trades"""
@@ -1011,7 +1134,103 @@ def prepare_chart_data(trade_count=40):
         'dates': dates,
         'risk_rewards': risk_rewards,
         'targets': targets,
-    }                                                                                                      
+    }   
+
+
+def get_mood_streak(user):
+    """Calculate user's mood logging streak"""
+    moods = Mood.objects.filter(user=user).order_by('-date')
+    if not moods.exists():
+        return 0
+    
+    streak = 1
+    last_date = moods.first().date
+    
+    for mood in moods[1:]:
+        if (last_date - mood.date).days == 1:
+            streak += 1
+            last_date = mood.date
+        else:
+            break
+    
+    return streak
+
+
+def get_mood_achievements(user):
+    """Calculate mood logging achievements"""
+    streak = get_mood_streak(user)
+    total_logs = Mood.objects.filter(user=user).count()
+    
+    achievements = []
+    
+    # Streak achievements
+    if streak >= 30:
+        achievements.append({'icon': '👑', 'title': 'Mood Legend', 'desc': '30 day streak!'})
+    elif streak >= 14:
+        achievements.append({'icon': '🏆', 'title': 'Mood Champion', 'desc': '14 day streak!'})
+    elif streak >= 7:
+        achievements.append({'icon': '🔥', 'title': 'Week Warrior', 'desc': '7 day streak!'})
+    elif streak >= 3:
+        achievements.append({'icon': '⚡', 'title': 'On Fire', 'desc': '3 day streak!'})
+    
+    # Total logs achievements
+    if total_logs >= 100:
+        achievements.append({'icon': '🌟', 'title': 'Mood Master', 'desc': '100 mood logs'})
+    elif total_logs >= 50:
+        achievements.append({'icon': '💫', 'title': 'Mood Expert', 'desc': '50 mood logs'})
+    elif total_logs >= 30:
+        achievements.append({'icon': '🎯', 'title': 'Getting Consistent', 'desc': '30 mood logs'})
+    elif total_logs >= 10:
+        achievements.append({'icon': '📊', 'title': 'Just Started', 'desc': '10 mood logs'})
+    
+    return achievements[:3]  # Return top 3 achievements
+
+
+def get_mood_stats_for_dashboard(user, days=30):
+    """Get mood statistics for dashboard charts"""
+    end_date = timezone.now().date()
+    start_date = end_date - timedelta(days=days)
+    
+    moods = Mood.objects.filter(
+        user=user, 
+        date__gte=start_date, 
+        date__lte=end_date
+    ).order_by('date')
+    
+    # Prepare data for charts
+    mood_counts = {}
+    daily_moods = []
+    
+    for mood_code, _ in Mood.MOOD_CHOICES:
+        count = moods.filter(mood=mood_code).count()
+        if count > 0:
+            mood_counts[mood_code] = {
+                'count': count,
+                'percentage': round((count / moods.count()) * 100, 1) if moods.count() > 0 else 0,
+                'emoji': Mood.MOOD_EMOJIS.get(mood_code, '😐'),
+                'color': Mood.MOOD_COLORS.get(mood_code, '#6b7280'),
+                'name': dict(Mood.MOOD_CHOICES).get(mood_code, mood_code)
+            }
+    
+    # Get last 7 days for trend
+    for i in range(7):
+        day = end_date - timedelta(days=i)
+        day_mood = moods.filter(date=day).first()
+        daily_moods.append({
+            'date': day.strftime('%a'),
+            'mood': day_mood.mood if day_mood else None,
+            'emoji': Mood.MOOD_EMOJIS.get(day_mood.mood, '❌') if day_mood else '❌',
+        })
+    
+    return {
+        'total_logs': moods.count(),
+        'mood_counts': mood_counts,
+        'daily_moods': daily_moods,
+        'most_common': max(mood_counts.items(), key=lambda x: x[1]['count'])[0] if mood_counts else None,
+    }
+
+
+
 def trades_view(request):
 
     trades = Trades.objects.filter(target__in=[0, 1]).order_by("-timestamp")[:12]
@@ -1030,6 +1249,7 @@ def home_view(request):
     now_eat = timezone.now().astimezone(eat)
     current_time_local = now_eat.strftime('%I:%M %p')
     current_date_local = now_eat.strftime('%A, %B %d, %Y')
+    
     # Get all-time stats
     all_time_stats = get_all_time_stats()
     
@@ -1060,7 +1280,7 @@ def home_view(request):
     news_impact = get_major_news_impact()
     
     # Get session pairs and recommendations
-    session_pairs_data = get_session_pairs()  # Gets pairs for current session
+    session_pairs_data = get_session_pairs()
     pair_recommendations = get_pair_recommendations()
     
     # Get comprehensive performance analysis
@@ -1094,27 +1314,27 @@ def home_view(request):
     next_session_time = trading_session_data.get('next_session_time', '')
     time_until_next = trading_session_data.get('time_until_next', '')
     
+    # ===== MOOD TRACKING INTEGRATION =====
+    # Check if user already selected mood today
+    today = timezone.now().date()
+    today_mood = None
+    mood_streak = 0
+    mood_achievements = []
+    tomorrow_date = (today + timedelta(days=1)).strftime('%Y-%m-%d')
     
+    if request.user.is_authenticated:
+        today_mood = Mood.objects.filter(user=request.user, date=today).first()
+        mood_streak = get_mood_streak(request.user)
+        mood_achievements = get_mood_achievements(request.user)
     
-    
-    market_info = is_market_open()
-    trading_session_data = get_trading_session()
+    # Get mood statistics for charts (last 30 days)
+    mood_stats = get_mood_stats_for_dashboard(request.user) if request.user.is_authenticated else {}
     
     # DEBUG: Print to console
-    import pytz
     est = pytz.timezone('US/Eastern')
-    eat = pytz.timezone('Africa/Dar_es_Salaam')
     now_est = timezone.now().astimezone(est)
-    now_eat = timezone.now().astimezone(eat)
     
-    print("="*50)
-    print("TIME DEBUG:")
-    print(f"Local Tanzania Time: {now_eat.strftime('%Y-%m-%d %H:%M:%S %Z')}")
-    print(f"EST Time: {now_est.strftime('%Y-%m-%d %H:%M:%S %Z')}")
-    print(f"EST Hour (decimal): {now_est.hour + now_est.minute/60}")
-    print(f"Session from API: {trading_session_data['name']}")
-    print(f"Session start/end: {trading_session_data.get('start')} - {trading_session_data.get('end')}")
-    print("="*50)
+
     
     return render(request, 'trade/home.html', {
         # Trading session & market info
@@ -1130,11 +1350,11 @@ def home_view(request):
         'market_volatility': market_volatility,
         'news_impact': news_impact,
         
-        # Session pairs data - IMPORTANT: These are needed for the template
-        'session_pairs': trading_session_data,  # Full session data
-        'active_pairs': active_pairs,  # List of active pairs for current session
-        'best_pairs': best_pairs,  # List of best pairs for current session
-        'pair_recommendations': pair_recommendations,  # Detailed pair recommendations
+        # Session pairs data
+        'session_pairs': trading_session_data,
+        'active_pairs': active_pairs,
+        'best_pairs': best_pairs,
+        'pair_recommendations': pair_recommendations,
         
         # Loss reason analysis
         'most_common_reason': most_common_reason,
@@ -1174,11 +1394,22 @@ def home_view(request):
         # Advice
         'advice': advice,
         
-        # Current date
+        # Date and time
         'current_date': timezone.now().strftime('%A, %B %d, %Y'),
         'current_time_local': current_time_local,
         'current_date_local': current_date_local,
         'local_timezone': 'EAT',
+        'tomorrow_date': tomorrow_date,
+        
+        # ===== MOOD TRACKING DATA =====
+        'today_mood': today_mood,
+        'mood_selected_today': today_mood is not None,
+        'selected_mood': today_mood.mood if today_mood else None,
+        'selected_mood_emoji': Mood.MOOD_EMOJIS.get(today_mood.mood, '😐') if today_mood else None,
+        'selected_mood_color': Mood.MOOD_COLORS.get(today_mood.mood, '#6b7280') if today_mood else None,
+        'mood_streak': mood_streak,
+        'mood_achievements': mood_achievements,
+        'mood_stats': mood_stats,
     })
 def performance_by_pair_view(request, pair_id):
 
