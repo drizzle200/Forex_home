@@ -154,6 +154,142 @@ class Trades(models.Model):
     def __str__(self):
         return f'{self.trade_id} - {self.buy_or_sell}'
 
-
-
-
+class Advice(models.Model):
+    CATEGORY_CHOICES = [
+        ('motivation', '💪 Motivation'),
+        ('discipline', '🎯 Discipline'),
+        ('psychology', '🧠 Psychology'),
+        ('risk', '⚠️ Risk Management'),
+        ('trading', '📊 Trading Wisdom'),
+        ('mindset', '🌅 Mindset'),
+        ('patience', '⏳ Patience'),
+    ]
+    
+    quote = models.TextField(help_text="The advice or motivational quote")
+    author = models.CharField(
+        max_length=100, 
+        blank=True, 
+        null=True,
+        help_text="Author of the quote (leave blank if unknown)"
+    )
+    category = models.CharField(
+        max_length=50,
+        choices=CATEGORY_CHOICES,
+        blank=True,
+        null=True,
+        help_text="Category of advice"
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Whether this advice should be displayed"
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        help_text="When this advice was added"
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        help_text="Last updated"
+    )
+    usage_count = models.PositiveIntegerField(
+        default=0,
+        help_text="How many times this advice has been shown"
+    )
+    last_shown = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When this advice was last displayed"
+    )
+    
+    class Meta:
+        db_table = 'trade_advice'
+        verbose_name = "Advice"
+        verbose_name_plural = "Advice"
+        ordering = ['-is_active', 'usage_count', '-created_at']
+        indexes = [
+            models.Index(fields=['is_active', 'category']),
+            models.Index(fields=['usage_count']),
+        ]
+    
+    def __str__(self):
+        if self.author:
+            return f"“{self.quote[:50]}...” - {self.author}"
+        return f"“{self.quote[:50]}...”"
+    
+    def increment_usage(self):
+        """Increment usage count and update last_shown"""
+        self.usage_count += 1
+        self.last_shown = timezone.now()
+        self.save(update_fields=['usage_count', 'last_shown'])
+    
+    @classmethod
+    def get_daily_advice(cls):
+        """
+        Get advice for the day - prefers less-shown advice first.
+        This is the default fallback for average performance.
+        """
+        advice = cls.objects.filter(
+            is_active=True
+        ).order_by('usage_count', '?').first()
+        
+        if advice:
+            advice.increment_usage()
+        
+        return advice
+    
+    @classmethod
+    def get_random_advice(cls):
+        """Get completely random active advice (backup method)"""
+        advice = cls.objects.filter(is_active=True).order_by('?').first()
+        
+        if advice:
+            advice.increment_usage()
+        
+        return advice
+    
+    @classmethod
+    def get_advice_by_category(cls, category):
+        """
+        Get random advice from specific category.
+        Used for targeted advice based on performance.
+        """
+        if not category:
+            return cls.get_daily_advice()
+        
+        advice = cls.objects.filter(
+            is_active=True, 
+            category=category
+        ).order_by('usage_count', '?').first()
+        
+        if advice:
+            advice.increment_usage()
+        
+        return advice
+    
+    @classmethod
+    def get_performance_based_advice(cls, winrate):
+        """
+        Get advice based on trader's winrate.
+        This directly implements the view logic in the model.
+        """
+        if winrate < 40:
+            # Poor performance - need discipline and psychology
+            advice = (cls.get_advice_by_category('discipline') or 
+                     cls.get_advice_by_category('psychology'))
+        elif winrate < 50:
+            # Below average - focus on risk management
+            advice = (cls.get_advice_by_category('risk') or 
+                     cls.get_daily_advice())
+        elif winrate > 60:
+            # Good performance - motivation and trading wisdom
+            advice = (cls.get_advice_by_category('motivation') or 
+                     cls.get_advice_by_category('trading'))
+        else:
+            # Average performance - daily random advice
+            advice = cls.get_daily_advice()
+        
+        # Ultimate fallback
+        if not advice:
+            advice = cls.get_random_advice()
+        
+        return advice

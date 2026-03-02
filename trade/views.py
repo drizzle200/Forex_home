@@ -1021,22 +1021,7 @@ def home_view(request):
     trading_session = get_trading_session()
     
     # Get advice based on performance
-    if stats['overallwinrate'] < 40:
-        # Poor performance - need discipline and psychology
-        advice = Advice.get_advice_by_category('discipline') or Advice.get_advice_by_category('psychology')
-    elif stats['overallwinrate'] < 50:
-        # Below average - focus on risk management
-        advice = Advice.get_advice_by_category('risk') or Advice.get_daily_advice()
-    elif stats['overallwinrate'] > 60:
-        # Good performance - motivation and trading wisdom
-        advice = Advice.get_advice_by_category('motivation') or Advice.get_advice_by_category('trading')
-    else:
-        # Average performance - daily random advice
-        advice = Advice.get_daily_advice()
-    
-    # If no category-specific advice found, fall back to daily advice
-    if not advice:
-        advice = Advice.get_daily_advice()
+    advice = Advice.get_performance_based_advice(stats['overallwinrate'])
     
     return render(request, 'trade/home.html', {
         'trading_session': trading_session,
