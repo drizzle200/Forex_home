@@ -1,0 +1,8 @@
+Django>=4.2,<5.0
+pandas
+scikit-learn
+joblib
+pytz
+gunicorn
+whitenoise
+psycopg2-binary  # for PostgreSQL when you switch from SQLite
