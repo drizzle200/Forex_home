@@ -627,23 +627,247 @@
             white-space: normal;
         }
     }
+
+
+      /* style for blining light*/
+      /* Add these styles to your existing CSS */
+    .severity-container {
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .severity-label {
+        display: block;
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .severity-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 16px;
+        border-radius: 100px;
+        font-size: 14px;
+        font-weight: 600;
+        background: var(--card-light);
+        border: 1px solid var(--border);
+    }
+    
+    /* Severity-specific styles */
+    .severity-badge.critical {
+        background: rgba(239, 68, 68, 0.1);
+        border-color: #ef4444;
+        color: #ef4444;
+    }
+    
+    .severity-badge.serious {
+        background: rgba(245, 158, 11, 0.1);
+        border-color: #f59e0b;
+        color: #f59e0b;
+    }
+    
+    .severity-badge.poor {
+        background: rgba(245, 158, 11, 0.1);
+        border-color: #f59e0b;
+        color: #f59e0b;
+    }
+    
+    .severity-badge.below_average {
+        background: rgba(59, 130, 246, 0.1);
+        border-color: #3b82f6;
+        color: #3b82f6;
+    }
+    
+    .severity-badge.good {
+        background: rgba(34, 197, 94, 0.1);
+        border-color: #22c55e;
+        color: #22c55e;
+    }
+    
+    .severity-badge.excellent {
+        background: rgba(168, 85, 247, 0.1);
+        border-color: #a855f7;
+        color: #a855f7;
+    }
+    
+    /* Blinking Light Animation */
+    .blinking-light {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        animation: blink 1.5s infinite;
+        box-shadow: 0 0 8px currentColor;
+    }
+    
+    .red-light {
+        background-color: #ef4444;
+        color: #ef4444;
+    }
+    
+    .orange-light {
+        background-color: #f59e0b;
+        color: #f59e0b;
+    }
+    
+    .yellow-light {
+        background-color: #fbbf24;
+        color: #fbbf24;
+    }
+    
+    .blue-light {
+        background-color: #3b82f6;
+        color: #3b82f6;
+    }
+    
+    .green-light {
+        background-color: #22c55e;
+        color: #22c55e;
+    }
+    
+    .purple-light {
+        background-color: #a855f7;
+        color: #a855f7;
+    }
+    
+    .gray-light {
+        background-color: #94a3b8;
+        color: #94a3b8;
+    }
+    
+    @keyframes blink {
+        0% {
+            opacity: 1;
+            transform: scale(1);
+            box-shadow: 0 0 8px currentColor;
+        }
+        50% {
+            opacity: 0.4;
+            transform: scale(0.9);
+            box-shadow: 0 0 4px currentColor;
+        }
+        100% {
+            opacity: 1;
+            transform: scale(1);
+            box-shadow: 0 0 8px currentColor;
+        }
+    }
+    
+    /* Update quote card for better spacing */
+    .quote-card {
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 20px 30px;
+        border: 1px solid rgba(255,255,255,0.1);
+        max-width: 500px;
+        min-width: 350px;
+    }
+    
+    .quote-text {
+        font-size: 16px;
+        font-style: italic;
+        color: white;
+        margin-bottom: 10px;
+        line-height: 1.6;
+    }
+    
+    .quote-author {
+        color: var(--primary);
+        font-weight: 600;
+        text-align: right;
+        font-size: 14px;
+        margin-bottom: 10px;
+    }
+    
+    @media (max-width: 768px) {
+        .quote-card {
+            max-width: 100%;
+            min-width: auto;
+            padding: 15px 20px;
+        }
+        
+        .severity-badge {
+            font-size: 12px;
+            padding: 6px 12px;
+        }
+    }
+
 </style>
 
 <div class="dashboard-container">
-    <!-- Welcome Section -->
-    <div class="welcome-section">
-        <div class="welcome-content">
-            <div class="welcome-text">
-                <h1>Welcome back, <span>Trader</span> 👋</h1>
-                <p>
-                    <i class="fas fa-calendar"></i> {{ current_date|default:"today" }}
-                </p>
+<!-- Welcome Section -->
+<div class="welcome-section">
+    <div class="welcome-content">
+        <div class="welcome-text">
+            <h1>Welcome back, <span>Trader</span> 👋</h1>
+            <p>
+                <i class="fas fa-calendar"></i> {{ current_date|default:"today" }}
+            </p>
+        </div>
+        <div class="quote-card">
+            <div class="quote-text">
+                "{{ advice.quote }}"
             </div>
-            <div class="quote-card">
-                <div class="quote-text">
-                    {{advice}}
+            {% if advice.author %}
+            <div class="quote-author">— {{ advice.author }}</div>
+            {% endif %}
+            
+            <!-- Severity Display with Blinking Light -->
+            <div class="severity-container">
+                <span class="severity-label">Performance Status:</span>
+                <div class="severity-badge {% if severity %}{{ severity }}{% endif %}">
+                    <span class="blinking-light 
+                        {% if severity == 'critical' %}red-light
+                        {% elif severity == 'serious' %}orange-light
+                        {% elif severity == 'poor' %}yellow-light
+                        {% elif severity == 'below_average' %}blue-light
+                        {% elif severity == 'good' %}green-light
+                        {% elif severity == 'excellent' %}purple-light
+                        {% else %}gray-light{% endif %}">
+                    </span>
+                    {{severity}}
                 </div>
-                <!--<div class="quote-author">- Alexander Elder</div>-->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mood Tracker -->
+    <div class="mood-section">
+        <div class="mood-header">
+            <div class="mood-icon">😊</div>
+            <h3>How are you feeling today?</h3>
+        </div>
+        <div class="mood-grid">
+            <div class="mood-option" onclick="selectMood(this)">
+                <div class="mood-emoji">😊</div>
+                <div class="mood-label">Confident</div>
+            </div>
+            <div class="mood-option" onclick="selectMood(this)">
+                <div class="mood-emoji">🤔</div>
+                <div class="mood-label">Cautious</div>
+            </div>
+            <div class="mood-option" onclick="selectMood(this)">
+                <div class="mood-emoji">😐</div>
+                <div class="mood-label">Neutral</div>
+            </div>
+            <div class="mood-option" onclick="selectMood(this)">
+                <div class="mood-emoji">😓</div>
+                <div class="mood-label">Stressed</div>
+            </div>
+            <div class="mood-option" onclick="selectMood(this)">
+                <div class="mood-emoji">⚡</div>
+                <div class="mood-label">Energetic</div>
+            </div>
+            <div class="mood-option" onclick="selectMood(this)">
+                <div class="mood-emoji">😴</div>
+                <div class="mood-label">Tired</div>
             </div>
         </div>
     </div>
@@ -698,61 +922,122 @@
         </div>
     </div>
 
-    <!-- Current Session Card -->
+<!-- Trading Session Card with Local Time -->
+<div class="session-card">
+    <div class="session-header">
+        <div class="session-icon">{{ session_icon }}</div>
+        <h3>Trading Session</h3>
+    </div>
+    <div class="session-info">
+        <div class="session-badge">
+            <i class="fas fa-clock"></i>
+            {{ trading_session }}
+            {% if session_volatility %}
+            <span style="font-size: 12px; margin-left: 8px; background: var(--bg); padding: 2px 8px; border-radius: 12px;">
+                {{ session_volatility }}
+            </span>
+            {% endif %}
+        </div>
+        
+        <!-- LOCAL TIME DISPLAY - NEW -->
+        <div class="session-time" style="background: var(--primary-soft); padding: 8px 12px; border-radius: 12px; margin: 10px 0;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-map-pin" style="color: var(--primary);"></i>
+                <div>
+                    <span style="color: var(--text-muted); font-size: 12px;">Your Local Time (Tanzania)</span>
+                    <div style="display: flex; align-items: baseline; gap: 10px;">
+                        <span style="font-size: 24px; font-weight: 700; color: white;">{{ current_time_local }}</span>
+                        <span style="color: var(--primary); font-size: 14px;">{{ local_timezone }}</span>
+                    </div>
+                    <span style="color: var(--text-muted); font-size: 12px;">{{ current_date_local }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Market Time (EST) -->
+        <div class="session-time" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-globe"></i>
+                <span>Market (EST):</span>
+            </div>
+            <span style="color: var(--text-secondary); font-weight: 500;">{{ market_info.current_time_est }}</span>
+        </div>
+        
+        <!-- Market Status -->
+        <div class="session-time" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-chart-line"></i>
+                <span>Market Status:</span>
+            </div>
+            <span style="color: {% if market_open %}var(--success){% else %}var(--danger){% endif %}; font-weight: 600;">
+                {{ market_info.market_status }} <span class="{% if market_open %}trend-up{% else %}trend-down{% endif %}">●</span>
+            </span>
+        </div>
+        
+        <!-- Time Until -->
+        <div class="session-time" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-hourglass-half"></i>
+                <span>{% if market_open %}Closes in:{% else %}Opens in:{% endif %}</span>
+            </div>
+            <span style="color: var(--warning); font-weight: 600;">{{ time_until_next }}</span>
+        </div>
+        
+        <!-- Session Local Hours -->
+        {% if active_hours_local %}
+        <div class="session-time" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-sun"></i>
+                <span>Session hours:</span>
+            </div>
+            <span style="color: var(--text-secondary);">{{ active_hours_local }} EAT</span>
+        </div>
+        {% endif %}
+    </div>
+</div>
+<!-- Add this after the session card or in a new section -->
+<div class="pairs-section" style="margin-top: 20px;">
     <div class="session-card">
         <div class="session-header">
-            <div class="session-icon">⏰</div>
-            <h3>Trading Session</h3>
+            <div class="session-icon">{{ session_icon|default:"💱" }}</div>
+            <h3>Active Pairs - {{ trading_session }}</h3>
         </div>
-        <div class="session-info">
-            <div class="session-badge">
-                <i class="fas fa-clock"></i>
-                {{ trading_session|default:"London Session" }}
+        <div class="pairs-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; padding: 10px;">
+            {% for pair in session_pairs.active_pairs %}
+            <div class="pair-item" style="background: var(--card-light); border-radius: 12px; padding: 12px; border: 1px solid var(--border);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 600; color: white;">{{ pair.pair }}</span>
+                    <span class="badge" style="background: {% if pair.spread == 'Ultra Tight' %}#10b981{% elif pair.spread == 'Tight' %}#22c55e{% elif pair.spread == 'Medium' %}#f59e0b{% else %}#6b7280{% endif %}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 10px;">
+                        {{ pair.spread }}
+                    </span>
+                </div>
+                <div style="margin-top: 8px; display: flex; justify-content: space-between;">
+                    <span style="color: var(--text-muted); font-size: 12px;">Volatility:</span>
+                    <span style="color: {% if pair.volatility == 'Extreme' %}#ef4444{% elif pair.volatility == 'High' %}#f59e0b{% elif pair.volatility == 'Medium' %}#3b82f6{% else %}#6b7280{% endif %}; font-size: 12px; font-weight: 600;">
+                        {{ pair.volatility }}
+                    </span>
+                </div>
             </div>
-            <div class="session-time">
-                <i class="fas fa-globe"></i>
-                Market is {% if market_open %}Open <span class="trend-up">●</span>{% else %}Closed <span class="trend-down">●</span>{% endif %}
-            </div>
-            <div class="session-time">
-                <i class="fas fa-hourglass-half"></i>
-                Next session: {{ next_session|default:"Asian (2h)" }}
-            </div>
+            {% endfor %}
         </div>
-    </div>
-
-    <!-- Mood Tracker -->
-    <div class="mood-section">
-        <div class="mood-header">
-            <div class="mood-icon">😊</div>
-            <h3>How are you feeling today?</h3>
-        </div>
-        <div class="mood-grid">
-            <div class="mood-option" onclick="selectMood(this)">
-                <div class="mood-emoji">😊</div>
-                <div class="mood-label">Confident</div>
+        
+        <!-- Best Pairs for this session -->
+        <div style="margin-top: 20px; padding: 15px; background: var(--primary-soft); border-radius: 16px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                <i class="fas fa-star" style="color: var(--warning);"></i>
+                <span style="color: white; font-weight: 600;">Best Pairs for {{ trading_session }}</span>
             </div>
-            <div class="mood-option" onclick="selectMood(this)">
-                <div class="mood-emoji">🤔</div>
-                <div class="mood-label">Cautious</div>
-            </div>
-            <div class="mood-option" onclick="selectMood(this)">
-                <div class="mood-emoji">😐</div>
-                <div class="mood-label">Neutral</div>
-            </div>
-            <div class="mood-option" onclick="selectMood(this)">
-                <div class="mood-emoji">😓</div>
-                <div class="mood-label">Stressed</div>
-            </div>
-            <div class="mood-option" onclick="selectMood(this)">
-                <div class="mood-emoji">⚡</div>
-                <div class="mood-label">Energetic</div>
-            </div>
-            <div class="mood-option" onclick="selectMood(this)">
-                <div class="mood-emoji">😴</div>
-                <div class="mood-label">Tired</div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                {% for pair in session_pairs.best_pairs %}
+                <span class="badge" style="background: var(--primary); color: white; padding: 6px 16px; border-radius: 20px;">
+                    {{ pair }}
+                </span>
+                {% endfor %}
             </div>
         </div>
     </div>
+</div>
+    
 
     <!-- News Section -->
     <div class="news-section">
@@ -777,10 +1062,10 @@
                 <div class="alert-title">Watch Out!</div>
                 <div class="alert-description">
                     Your most common loss reason is <strong>"{{ most_common_reason }}"</strong>. 
-                    Review your strategy and avoid repeating this mistake.
+                    {{reason_message}}
                 </div>
             </div>
-            <div class="alert-badge">{{ most_common_reason_count }} times</div>
+            <div class="alert-badge">{{ most_common_count }} times</div>
         </div>
     </div>
     {% else %}
@@ -873,33 +1158,6 @@
         console.log('Refreshing news...');
     }, 60000); // Every minute
 
-    // Market open/close simulation
-    function updateMarketStatus() {
-        const now = new Date();
-        const hours = now.getUTCHours();
-        // Simple logic for major sessions
-        let session = "London Session";
-        let isOpen = false;
-        
-        if (hours >= 8 && hours <= 16) {
-            session = "London Session";
-            isOpen = true;
-        } else if (hours >= 13 && hours <= 21) {
-            session = "New York Session";
-            isOpen = true;
-        } else if (hours >= 0 && hours <= 8) {
-            session = "Asian Session";
-            isOpen = false;
-        }
-        
-        // Update DOM if needed
-        const sessionElement = document.querySelector('.session-badge');
-        if (sessionElement) {
-            sessionElement.innerHTML = `<i class="fas fa-clock"></i> ${session}`;
-        }
-    }
 
-    // Call on load
-    updateMarketStatus();
 </script>
 {% endblock %}

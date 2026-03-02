@@ -21,8 +21,10 @@ from .models import Trades, Pairs,Advice
 from .services import restrict_trade
 from .forms import NewTradeForm, TradeUpdateForm
 import joblib
-import os
-import pytz
+import os, pytz
+
+from .market_session import is_market_open, get_trading_session, get_market_volatility, get_major_news_impact,get_session_pairs,get_pair_recommendations
+
 
 # ---------------------------
 # Global model cache
@@ -110,39 +112,6 @@ def get_model():
 
     return train_model()
  
-
-
-
-def get_trading_session() -> str:
-    """
-    Returns the current trading session based on the user's local timezone,
-    using standard FX market session windows.
-    """
-
-    # --- Get local timezone (your country) ---
-    local_tz = pytz.timezone(settings.TIME_ZONE)
-
-    # --- Current local time ---
-    now_local = timezone.now().astimezone(local_tz)
-    hour = now_local.hour
-
-    # --- FX Session Windows (LOCAL TIME) ---
-    # These are approximate and intentionally overlapping
-    ASIA = range(0, 9)        # 00:00 – 08:59
-    LONDON = range(8, 17)     # 08:00 – 16:59
-    NEW_YORK = range(13, 22)  # 13:00 – 21:59
-
-    # --- Determine active session ---
-    if hour in LONDON and hour in NEW_YORK:
-        return "London / New York Overlap"
-    elif hour in LONDON:
-        return "London Session"
-    elif hour in NEW_YORK:
-        return "New York Session"
-    else:
-        return "Asia Session"
-
-
 
 # ---------------------------
 # RVS calculation
@@ -414,8 +383,17 @@ def performance_view(request):
     # 3️⃣ Get pairs summary
     pairs_summary = get_pairs_summary()
     
-    # 4️⃣ Analyze losing reasons
-    most_common_reason, message = analyze_losing_reasons()
+    # 4️⃣ Analyze losing reasons - NOW HANDLES DICTIONARY RETURN
+    analysis = analyze_losing_reasons()  # This returns a dictionary
+    
+    # Extract values from analysis
+    most_common_reason = analysis['most_common_reason']
+    most_common_count = analysis['most_common_count']
+    most_common_percentage = analysis['most_common_percentage']
+    message = analysis['message']
+    reason_breakdown = analysis['reason_breakdown']
+    total_losing_analyzed = analysis['total_losing_analyzed']
+    unique_reasons = analysis['unique_reasons']
     
     # 5️⃣ Get today's trading data
     today_data = get_today_trading_data()
@@ -425,7 +403,7 @@ def performance_view(request):
         today_data['todays_trades'],
         stats['avg_rvs'],
         stats['std_dev_rr'],
-        most_common_reason
+        most_common_reason  # This still works with the extracted value
     )
     
     # 7️⃣ Prepare performance chart data
@@ -437,15 +415,28 @@ def performance_view(request):
         'avg_rvs': stats['avg_rvs'],
         'avg_risk_reward': stats['avg_risk_reward'],
         "pairs_summary": pairs_summary,
+        
+        # Loss reason analysis data
+        'most_common_reason': most_common_reason,
+        'most_common_count': most_common_count,
+        'most_common_percentage': most_common_percentage,
         'message': message,
+        'reason_breakdown': reason_breakdown,
+        'total_losing_analyzed': total_losing_analyzed,
+        'unique_reasons': unique_reasons,
+        
+        # Performance stats
         "overallwinrate": stats['overallwinrate'],
         "overalllossrate": stats['overalllossrate'],
         'todays_trades': today_data['todays_trades'],
         'todays_profit': today_data['todays_profit'],
         'std_dev_rr': stats['std_dev_rr'],
+        
+        # Chart data
         'performance': chart_data['performance'],
         'dates': chart_data['dates'],
     })
+
 
 
 def calculate_overall_stats():
@@ -557,29 +548,62 @@ def get_pairs_summary():
 
 def analyze_losing_reasons():
     """Analyze most common reasons for losing trades and generate advice"""
-    reasons = Trades.objects.filter(target=0).order_by("-timestamp").values_list("reason", flat=True)[:10]
-
+    # Get last 50 losing trades for better sample size (or all if you prefer)
+    losing_trades = Trades.objects.filter(target=0).order_by("-timestamp")[:50]
+    reasons = list(losing_trades.values_list("reason", flat=True))
+    
+    # Filter out None values
+    reasons = [r for r in reasons if r]
+    
     if reasons:
-        most_common_reason = Counter(reasons).most_common(1)[0][0]
+        # Count occurrences
+        reason_counts = Counter(reasons)
+        most_common_reason, count = reason_counts.most_common(1)[0]
+        
+        # Calculate percentage
+        total_reasons = len(reasons)
+        percentage = round((count / total_reasons) * 100, 1) if total_reasons > 0 else 0
     else:
         most_common_reason = None
+        count = 0
+        percentage = 0
+        reason_counts = Counter()
 
     # Message mapping
     message_map = {
-        "Psycho/Mood": "Refresh your psychology, avoid emotional trading and take rest if necessary",
-        "Wrong Structure": "Review trade structures, ensure proper analysis before executing trade",
-        "Trend": "Follow the Trend carefully, avoid forcing trades against it",
-        "FOMO": "Avoid fear of missing out, there are plenty of chances to come, just trade your plan",
-        "Greed": "Control Greed, just take profit according to your plan",
-        "No Confirmation": "Wait for confirmation, patience increases your probability for success",
-        "Momentum": "Avoid weak Momentums, always wait for the best setups",
-        "News": "Be cautious around News, it is very risky",
-        "Other": "Stop trading for a while, review your strategy and evaluate yourself!",
+        "Psycho/Mood": "🧠 Refresh your psychology, avoid emotional trading and take rest if necessary",
+        "Wrong Structure": "📐 Review trade structures, ensure proper analysis before executing trade",
+        "Trend": "📈 Follow the Trend carefully, avoid forcing trades against it",
+        "FOMO": "🎯 Avoid fear of missing out, there are plenty of chances to come, just trade your plan",
+        "Greed": "💰 Control Greed, just take profit according to your plan",
+        "No Confirmation": "⏳ Wait for confirmation, patience increases your probability for success",
+        "Momentum": "⚡ Avoid weak Momentums, always wait for the best setups",
+        "News": "📰 Be cautious around News, it is very risky",
+        "Other": "🛑 Stop trading for a while, review your strategy and evaluate yourself!",
     }
     
-    message = message_map.get(most_common_reason, "You are doing great!")
+    # Get message with emoji
+    message = message_map.get(most_common_reason, "🌟 You are doing great! Keep up the good work!")
     
-    return most_common_reason, message
+    # Also get the full breakdown of all reasons (optional)
+    reason_breakdown = []
+    for reason, reason_count in reason_counts.most_common():
+        reason_breakdown.append({
+            'reason': reason,
+            'count': reason_count,
+            'percentage': round((reason_count / total_reasons) * 100, 1) if total_reasons > 0 else 0,
+            'message': message_map.get(reason, "Review your strategy for this issue")
+        })
+    
+    return {
+        'most_common_reason': most_common_reason,
+        'most_common_count': count,
+        'most_common_percentage': percentage,
+        'message': message,
+        'total_losing_analyzed': len(reasons),
+        'reason_breakdown': reason_breakdown,  # Full breakdown of all reasons
+        'unique_reasons': len(reason_counts),   # Number of different reasons
+    }
 
 
 def get_today_trading_data():
@@ -996,7 +1020,16 @@ def trades_view(request):
     'trades':trades,
         })
 
+from .market_session import is_market_open, get_trading_session
+
+from .market_session import is_market_open, get_trading_session, get_market_volatility, get_major_news_impact
+
 def home_view(request):
+    import pytz
+    eat = pytz.timezone('Africa/Dar_es_Salaam')
+    now_eat = timezone.now().astimezone(eat)
+    current_time_local = now_eat.strftime('%I:%M %p')
+    current_date_local = now_eat.strftime('%A, %B %d, %Y')
     # Get all-time stats
     all_time_stats = get_all_time_stats()
     
@@ -1010,32 +1043,143 @@ def home_view(request):
     yesterday_data = get_yesterday_trading_data()
     stats = calculate_overall_stats()
 
-    # Get losing reasons
-    reasons = Trades.objects.filter(target=0).order_by("-timestamp").values_list("reason", flat=True)[:10]
-
-    if reasons:
-        most_common_reason = Counter(reasons).most_common(1)[0][0]
-    else:
-        most_common_reason = None
+    # Get losing reasons analysis
+    analysis = analyze_losing_reasons()
     
-    trading_session = get_trading_session()
+    # Extract values from analysis
+    most_common_reason = analysis['most_common_reason']
+    most_common_count = analysis['most_common_count']
+    most_common_percentage = analysis['most_common_percentage']
+    message = analysis['message']
+    reason_breakdown = analysis['reason_breakdown']
     
-    # Get advice based on performance
-    advice = Advice.get_performance_based_advice(stats['overallwinrate'])
+    # Get market session information
+    market_info = is_market_open()
+    trading_session_data = get_trading_session()
+    market_volatility = get_market_volatility()
+    news_impact = get_major_news_impact()
+    
+    # Get session pairs and recommendations
+    session_pairs_data = get_session_pairs()  # Gets pairs for current session
+    pair_recommendations = get_pair_recommendations()
+    
+    # Get comprehensive performance analysis
+    issues, severity = Advice.analyze_performance(stats)
+    advice = Advice.get_performance_based_advice(stats)
+    
+    # Severity mapping for display
+    severity_display_map = {
+        'critical': '🔴 Critical Issues',
+        'serious': '🟠 Serious Issues',
+        'poor': '🟡 Needs Improvement',
+        'below_average': '🔵 Below Average',
+        'good': '🟢 Good Performance',
+        'excellent': '🌟 Excellent Performance',
+    }
+    severity_display = severity_display_map.get(severity, '⚪ Average')
+    
+    # Format market data for template
+    market_open = market_info['is_open']
+    current_session = trading_session_data['name']
+    session_icon = trading_session_data['icon']
+    session_description = trading_session_data['description']
+    session_volatility = trading_session_data['volatility']
+    
+    # Extract active pairs and best pairs from trading_session_data
+    active_pairs = trading_session_data.get('active_pairs', [])
+    best_pairs = trading_session_data.get('best_pairs', [])
+    
+    # Calculate next session
+    next_session = trading_session_data.get('next_session', 'Unknown')
+    next_session_time = trading_session_data.get('next_session_time', '')
+    time_until_next = trading_session_data.get('time_until_next', '')
+    
+    
+    
+    
+    market_info = is_market_open()
+    trading_session_data = get_trading_session()
+    
+    # DEBUG: Print to console
+    import pytz
+    est = pytz.timezone('US/Eastern')
+    eat = pytz.timezone('Africa/Dar_es_Salaam')
+    now_est = timezone.now().astimezone(est)
+    now_eat = timezone.now().astimezone(eat)
+    
+    print("="*50)
+    print("TIME DEBUG:")
+    print(f"Local Tanzania Time: {now_eat.strftime('%Y-%m-%d %H:%M:%S %Z')}")
+    print(f"EST Time: {now_est.strftime('%Y-%m-%d %H:%M:%S %Z')}")
+    print(f"EST Hour (decimal): {now_est.hour + now_est.minute/60}")
+    print(f"Session from API: {trading_session_data['name']}")
+    print(f"Session start/end: {trading_session_data.get('start')} - {trading_session_data.get('end')}")
+    print("="*50)
     
     return render(request, 'trade/home.html', {
-        'trading_session': trading_session,
+        # Trading session & market info
+        'trading_session': current_session,
+        'market_open': market_open,
+        'session_icon': session_icon,
+        'session_description': session_description,
+        'session_volatility': session_volatility,
+        'next_session': next_session,
+        'next_session_time': next_session_time,
+        'time_until_next': time_until_next,
+        'market_info': market_info,
+        'market_volatility': market_volatility,
+        'news_impact': news_impact,
+        
+        # Session pairs data - IMPORTANT: These are needed for the template
+        'session_pairs': trading_session_data,  # Full session data
+        'active_pairs': active_pairs,  # List of active pairs for current session
+        'best_pairs': best_pairs,  # List of best pairs for current session
+        'pair_recommendations': pair_recommendations,  # Detailed pair recommendations
+        
+        # Loss reason analysis
         'most_common_reason': most_common_reason,
+        'most_common_count': most_common_count,
+        'most_common_percentage': most_common_percentage,
+        'reason_message': message,
+        'reason_breakdown': reason_breakdown,
+        
+        # Daily performance
         'todays_profit': today_data['todays_profit'],
-        "overallwinrate": stats['overallwinrate'],
-        "yesterday_profit": yesterday_data['yesterday_profit'],
+        'yesterday_profit': yesterday_data['yesterday_profit'],
+        
+        # Overall stats
+        'overallwinrate': stats['overallwinrate'],
+        'overalllossrate': stats['overalllossrate'],
         'total_trades': all_time_stats['total_trades'],
+        'avg_risk_reward': stats['avg_risk_reward'],
+        'std_dev_rr': stats.get('std_dev_rr', 0),
+        'avg_rvs': stats.get('avg_rvs', 0),
+        'expectancy': stats['expectancy'],
+        
+        # Best streak
+        'best_streak': all_time_stats.get('longest_win_streak', 0),
+        
+        # All-time stats
+        'all_time_stats': all_time_stats,
+        
+        # Activity
         'weekly_activity': weekly_activity,
         'monthly_activity': monthly_activity,
-        'advice': advice,  # Single advice object with all methods
+        
+        # Performance analysis
+        'issues': issues,
+        'severity': severity,
+        'severity_display': severity_display,
+        
+        # Advice
+        'advice': advice,
+        
+        # Current date
+        'current_date': timezone.now().strftime('%A, %B %d, %Y'),
+        'current_time_local': current_time_local,
+        'current_date_local': current_date_local,
+        'local_timezone': 'EAT',
     })
-    
-
 def performance_by_pair_view(request, pair_id):
 
     pair = get_object_or_404(Pairs, id=pair_id)

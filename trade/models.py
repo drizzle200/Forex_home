@@ -17,96 +17,97 @@ class Pairs(models.Model):
 class Trades(models.Model):
     trade_id = models.IntegerField(null=True, blank=True)
 
-    PAIR_CHOICES = [("EUR/USD","EUR/USD"),
-    				("NZD/USD","NZD/USD"),
-    				("AUD/JPY","AUD/JPY"),
-    				("GBP/USD","GBP/USD"),
-    				("EUR/JPY","EUR/JPY"),
-
-    ]
-
-    H4_CHOICES = 	[("Up Strong","Up Strong"),
-    				("Down Strong","Down Strong"),
-    				("Up Very strong","Up Very strong"),
-    				("Down Very strong","Down Very strong "),
-    				("Up weak","Up weak"),
-    				("Down weak","Down weak"),
-
-    ]
-
-    ENTRY_PLACE_CHOICES = 	[("key level","Key level"),
-    				("POI","POI"),
-    				("BRT","BRT"),
-    				("Other","Other")
-
-    ]
-    BUY_CHOICES = 	[("BUY","BUY"),
-    				("SELL","SELL"),
-    				
-    ]
-    SETUP_QUALITY_CHOICES = 	[(5,"5 Stars"),
-    				(4,"4 Stars"),
-    				(3,"3 Stars"),
-    				(2,"2 Stars"),
-    				(1,"1 Star"),
-    				
-    ]
-
-    TRADE_TYPE_CHOICES = 	[("Scalping (1M)","Scalping (1M)"),
-    				("Day trading (5M)","Day trading (5M)"),
-    				("Intraday trading (15M)","Intraday trading (15M)"),
-    				("Swing (H1)","Swing (H1) "),
-    				
+    PAIR_CHOICES = [
+    ("EUR/USD", "🇪🇺 EUR/USD"),
+    ("NZD/USD", "🇳🇿 NZD/USD"),
+    ("AUD/JPY", "🇦🇺 AUD/JPY"),
+    ("GBP/USD", "🇬🇧 GBP/USD"),
+    ("EUR/JPY", "🇪🇺🇯🇵 EUR/JPY"),
     ]
     
-    CONFIRMATION_CHOICES = 	[("Big maru/pin bar","Big maru/pin bar"),
-    				("Triple top","Triple top"),
-    				("Double top","Double top"),
-    				("No confirmation","No confirmation"),
-    				
+    H4_CHOICES = [
+        ("Up Strong", "🚀 Up Strong"),
+        ("Down Strong", "💥 Down Strong"),
+        ("Up Very strong", "⚡ Up Very strong"),
+        ("Down Very strong", "🌊 Down Very strong"),
+        ("Up weak", "↗️ Up weak"),
+        ("Down weak", "↘️ Down weak"),
     ]
     
-    MOOD_CHOICES = 	[("Calm","Calm"),
-    				("FOMO","FOMO"),
-    				("Frustrated","Frustrated"),
-    				("Tired","Tired"),
-    				
+    ENTRY_PLACE_CHOICES = [
+        ("key level", "🎯 Key level"),
+        ("POI", "📍 POI"),
+        ("BRT", "🔄 BRT"),
+        ("Other", "❓ Other")
     ]
-
-    TP_CHOICES = 	[("Below recent high","Below recent high"),
-    				("At recent high","At recent high"),
-    				("Above recent high","Above recent high"),
-    				    				
+    
+    BUY_CHOICES = [
+        ("BUY", "🟢 BUY"),
+        ("SELL", "🔴 SELL"),
     ]
-
-    TP_REASON_CHOICES = 	[(" Everything OK"," Everything OK"),
-    				("Fake BO at KL","Fake BO at KL"),
-    				("Strong opposite KL","Strong opposite KL"),
-    				("Strong opposite POIL","Strong opposite POI"),
-    				("Strong maru/pin","Strong maru/pin (Price rejection)"),
-    				("Double top","Double top"),
-    				("Triple top","Triple top"),
-    				("Strong opposite volume","Strong opposite volume"),
-    				    				
+    
+    SETUP_QUALITY_CHOICES = [
+        (5, "🌟🌟🌟🌟🌟"),
+        (4, "🌟🌟🌟🌟"),
+        (3, "🌟🌟🌟"),
+        (2, "🌟🌟"),
+        (1, "🌟"),
     ]
-
-    TARGET_CHOICES = 	[(1,"Win"),
-    				(0,"Lose"),
-    	   				
+    
+    TRADE_TYPE_CHOICES = [
+        ("Scalping (1M)", "⚡ Scalping (1M)"),
+        ("Day trading (5M)", "📊 Day trading (5M)"),
+        ("Intraday trading (15M)", "📈 Intraday trading (15M)"),
+        ("Swing (H1)", "🔄 Swing (H1)"),
     ]
-
-    REASON_CHOICES = 	[("Psycho/Mood","Psycho/Mood"),
-    				("Wrong Structure","Wrong Structure"),
-    				("Trend","Trend"),
-    				("FOMO","FOMO"),
-    				("Greed","Greed"),
-    				("No Confirmation","No Confirmation"),
-    				("Momentum","Momentum"),
-    				("News","News"),
-    				("Other","Other"),
-    	   				
+    
+    CONFIRMATION_CHOICES = [
+        ("Big maru/pin bar", "📌 Big maru/pin bar"),
+        ("Triple top", "🔝🔝🔝 Triple top"),
+        ("Double top", "🔝🔝 Double top"),
+        ("No confirmation", "❌ No confirmation"),
     ]
-
+    
+    MOOD_CHOICES = [
+        ("Calm", "😌 Calm"),
+        ("FOMO", "😰 FOMO"),
+        ("Frustrated", "😤 Frustrated"),
+        ("Tired", "😴 Tired"),
+    ]
+    
+    TP_CHOICES = [
+        ("Below recent high", "⬇️ Below recent high"),
+        ("At recent high", "⚖️ At recent high"),
+        ("Above recent high", "⬆️ Above recent high"),
+    ]
+    
+    TP_REASON_CHOICES = [
+        ("Everything OK", "✅ Everything OK"),
+        ("Fake BO at KL", "🎭 Fake BO at KL"),
+        ("Strong opposite KL", "🛑 Strong opposite KL"),
+        ("Strong opposite POI", "🚧 Strong opposite POI"),
+        ("Strong maru/pin", "📌 Strong maru/pin (Price rejection)"),
+        ("Double top", "🔝🔝 Double top"),
+        ("Triple top", "🔝🔝🔝 Triple top"),
+        ("Strong opposite volume", "📉 Strong opposite volume"),
+    ]
+    
+    TARGET_CHOICES = [
+        (1, "✅ Win 🏆"),
+        (0, "❌ Lose 💔"),
+    ]
+    
+    REASON_CHOICES = [
+        ("Psycho/Mood", "🧠 Psycho/Mood"),
+        ("Wrong Structure", "📐 Wrong Structure"),
+        ("Trend", "📈 Trend"),
+        ("FOMO", "🎯 FOMO"),
+        ("Greed", "💰 Greed"),
+        ("No Confirmation", "⏳ No Confirmation"),
+        ("Momentum", "⚡ Momentum"),
+        ("News", "📰 News"),
+        ("Other", "❓ Other"),
+    ]
 
 
 
@@ -267,25 +268,81 @@ class Advice(models.Model):
         return advice
     
     @classmethod
-    def get_performance_based_advice(cls, winrate):
-        """
-        Get advice based on trader's winrate.
-        This directly implements the view logic in the model.
-        """
+    def analyze_performance(cls, stats):
+        """Analyze performance and return issue list and severity"""
+        winrate = stats.get('overallwinrate', 0)
+        std_dev_rr = stats.get('std_dev_rr', 999)
+        avg_rvs = stats.get('avg_rvs', 999)
+        
+        issues = []
+        severity = 'good'  # default
+        
+        # Check each metric
+        if avg_rvs >= 4:
+            issues.append({
+                'metric': 'rvs',
+                'value': avg_rvs,
+                'threshold': 4,
+                'issue': 'High rule violation score',
+                'category': 'discipline'
+            })
+            severity = 'critical'
+        
+        if std_dev_rr > 1:
+            issues.append({
+                'metric': 'consistency',
+                'value': std_dev_rr,
+                'threshold': 1,
+                'issue': 'Inconsistent risk-reward execution',
+                'category': 'risk'
+            })
+            if severity != 'critical':
+                severity = 'serious'
+        
         if winrate < 40:
-            # Poor performance - need discipline and psychology
+            issues.append({
+                'metric': 'winrate',
+                'value': winrate,
+                'threshold': 40,
+                'issue': 'Very low win rate',
+                'category': 'psychology'
+            })
+            if severity not in ['critical', 'serious']:
+                severity = 'poor'
+        elif winrate < 50:
+            if severity not in ['critical', 'serious', 'poor']:
+                severity = 'below_average'
+        elif winrate > 60:
+            if severity == 'good':
+                severity = 'excellent'
+        
+        return issues, severity
+    
+    @classmethod
+    def get_performance_based_advice(cls, stats):
+        """
+        Get advice based on comprehensive performance analysis
+        """
+        issues, severity = cls.analyze_performance(stats)
+        
+        # Priority based on severity and issues
+        if severity == 'critical':
+            # Multiple serious issues
             advice = (cls.get_advice_by_category('discipline') or 
                      cls.get_advice_by_category('psychology'))
-        elif winrate < 50:
-            # Below average - focus on risk management
-            advice = (cls.get_advice_by_category('risk') or 
-                     cls.get_daily_advice())
-        elif winrate > 60:
-            # Good performance - motivation and trading wisdom
-            advice = (cls.get_advice_by_category('motivation') or 
-                     cls.get_advice_by_category('trading'))
+        elif severity == 'serious':
+            # Single serious issue
+            if issues and issues[0]['category'] == 'risk':
+                advice = cls.get_advice_by_category('risk')
+            else:
+                advice = cls.get_advice_by_category('discipline')
+        elif severity == 'poor':
+            advice = cls.get_advice_by_category('psychology')
+        elif severity == 'below_average':
+            advice = cls.get_advice_by_category('trading')
+        elif severity == 'excellent':
+            advice = cls.get_advice_by_category('motivation')
         else:
-            # Average performance - daily random advice
             advice = cls.get_daily_advice()
         
         # Ultimate fallback
