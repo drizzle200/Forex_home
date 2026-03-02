@@ -752,7 +752,6 @@ document.addEventListener("DOMContentLoaded", function () {
 const dataPoints = {{ performance|safe }};
 
 const performanceChart = echarts.init(document.getElementById('performanceChart'));
-
 performanceChart.setOption({
     backgroundColor: 'transparent',
     grid: {
@@ -771,7 +770,7 @@ performanceChart.setOption({
         backgroundColor: '#1e293b',
         borderColor: '#10b981',
         borderWidth: 2,
-        textStyle: { color: '#f3f4f6', fontSize: 12 },
+        textStyle: { color: '#f3f4f6', fontSize: 8 },
         formatter: function(params) {
             const value = params[0].value;
             // Format to one decimal place
@@ -779,9 +778,9 @@ performanceChart.setOption({
             const color = value >= 0 ? '#34d399' : '#f87171';
             const sign = value >= 0 ? '+' : '';
             return `
-                <div style="font-weight:600; margin-bottom:5px;">${params[0].name}</div>
+                <div style="font-weight:100; margin-bottom:5px;">${params[0].name}</div>
                 <div style="color:${color}">
-                    <span style="font-size:16px; font-weight:700;">${sign}${formattedValue}%</span>
+                    <span style="font-size:12px; font-weight:700;">${sign}${formattedValue}%</span>
                 </div>
             `;
         }
@@ -823,7 +822,7 @@ performanceChart.setOption({
         symbol: 'circle',
         symbolSize: 8,
         lineStyle: { 
-            width: 3, 
+            width: 2, 
             color: '#10b981',
             shadowColor: 'rgba(16, 185, 129, 0.3)',
             shadowBlur: 10,

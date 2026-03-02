@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 from django.contrib.auth.models import User
 from random import choice
 import string
@@ -152,3 +153,7 @@ class Trades(models.Model):
 
     def __str__(self):
         return f'{self.trade_id} - {self.buy_or_sell}'
+
+
+
+

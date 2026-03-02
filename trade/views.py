@@ -2,7 +2,7 @@ import random
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse, JsonResponse
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 from django.utils.timezone import localtime,now
 from collections import Counter
 import pandas as pd
@@ -14,10 +14,10 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
-from django.db.models import Avg,Sum,Count, StdDev, Q, Case, When, Value, FloatField
+from django.db.models import Avg,Sum,Count, StdDev, Q, Case, When, Value, FloatField, Max, Min
 from django.utils import timezone
 from django.views.decorators.http import require_POST,require_GET
-from .models import Trades, Pairs
+from .models import Trades, Pairs,Advice
 from .services import restrict_trade
 from .forms import NewTradeForm, TradeUpdateForm
 import joblib
@@ -408,36 +408,75 @@ def delete_trade(request, trade_id):
     return redirect("journal")
 
 def performance_view(request):
+    # 2️⃣ Calculate overall statistics
+    stats = calculate_overall_stats()
     
-    # 1️⃣ Get last 20 closed trades
+    # 3️⃣ Get pairs summary
+    pairs_summary = get_pairs_summary()
+    
+    # 4️⃣ Analyze losing reasons
+    most_common_reason, message = analyze_losing_reasons()
+    
+    # 5️⃣ Get today's trading data
+    today_data = get_today_trading_data()
+    
+    # 6️⃣ Calculate consistency grade
+    grade_consistency = calculate_consistency_grade(
+        today_data['todays_trades'],
+        stats['avg_rvs'],
+        stats['std_dev_rr'],
+        most_common_reason
+    )
+    
+    # 7️⃣ Prepare performance chart data
+    chart_data = prepare_chart_data()
+    
+    return render(request, 'trade/performance.html', {
+        'grade_consistency': grade_consistency,
+        'expectancy': stats['expectancy'],
+        'avg_rvs': stats['avg_rvs'],
+        'avg_risk_reward': stats['avg_risk_reward'],
+        "pairs_summary": pairs_summary,
+        'message': message,
+        "overallwinrate": stats['overallwinrate'],
+        "overalllossrate": stats['overalllossrate'],
+        'todays_trades': today_data['todays_trades'],
+        'todays_profit': today_data['todays_profit'],
+        'std_dev_rr': stats['std_dev_rr'],
+        'performance': chart_data['performance'],
+        'dates': chart_data['dates'],
+    })
+
+
+def calculate_overall_stats():
+    """Calculate overall statistics from trades"""
+    # Aggregate stats from last 20 trades
+     # 1️⃣ Get last 20 closed trades
     last_20_trades = Trades.objects.filter(
         target__in=[0, 1]
-    ).order_by("-timestamp")[:20]
+    ).order_by("-timestamp")[:30]
     last_2_trades = Trades.objects.filter(
         target__in=[0, 1]
     ).order_by("-timestamp")[:2]
     
-    # 2️⃣ Aggregate everything from the SAME queryset
     stats = last_20_trades.aggregate(
         total_trades=Count("id"),
         all_won=Count("id", filter=Q(target=1)),
         all_lost=Count("id", filter=Q(target=0)),
         avg_risk_reward=Avg("risk_reward", filter=Q(target=1)),
         std_dev_rr=StdDev("risk_reward"),
-        avg_rvs=Avg("rvs"),
     )
-    stat = last_2_trades.aggregate(        
+    
+    # Aggregate RVS from last 2 trades
+    rvs_stats = last_2_trades.aggregate(        
         avg_rvs=Avg("rvs"),
     )
     
     total_trades = stats["total_trades"] or 0
     all_won = stats["all_won"] or 0
     all_lost = stats["all_lost"] or 0
-    avg_risk_reward = round(stats["avg_risk_reward"] or 0, 2)
-    std_dev_rr = round(stats["std_dev_rr"] or 0, 2)
-    avg_rvs = round(stat["avg_rvs"] or 0, 2)
     
-    # 3️⃣ Calculate winrate safely
+    # Calculate winrate safely
     if total_trades > 0:
         overallwinrate = round((all_won / total_trades) * 100, 2)
         overalllossrate = round((all_lost / total_trades) * 100, 2)
@@ -445,15 +484,33 @@ def performance_view(request):
         overallwinrate = 0
         overalllossrate = 0
     
-    # 4️⃣ Expectancy formula
+    avg_risk_reward = round(stats["avg_risk_reward"] or 0, 2)
+    std_dev_rr = round(stats["std_dev_rr"] or 0, 2)
+    avg_rvs = round(rvs_stats["avg_rvs"] or 0, 2)
+    
+    # Calculate expectancy
     expectancy = round(
         ((overallwinrate / 100) * avg_risk_reward) -
         ((overalllossrate / 100) * 1),
         2
     )
     
-    pairs_summary = []
+    return {
+        'total_trades': total_trades,
+        'all_won': all_won,
+        'all_lost': all_lost,
+        'overallwinrate': overallwinrate,
+        'overalllossrate': overalllossrate,
+        'avg_risk_reward': avg_risk_reward,
+        'std_dev_rr': std_dev_rr,
+        'avg_rvs': avg_rvs,
+        'expectancy': expectancy,
+    }
 
+
+def get_pairs_summary():
+    """Generate summary statistics for each trading pair"""
+    pairs_summary = []
     pairs = Pairs.objects.all()
 
     for pair in pairs:
@@ -468,18 +525,17 @@ def performance_view(request):
     
         winrate = round((won / total) * 100, 2) if total > 0 else 0
     
-        # ✅ Sum of winning RR
+        # Sum of winning RR
         total_win_rr = trades.filter(target=1).aggregate(
             total_rr=Sum("risk_reward")
         )["total_rr"] or 0
     
-        # ✅ Total loss R (each loss = -1R)
+        # Total loss R (each loss = -1R)
         total_loss_rr = lost * 1
     
-        # ✅ Net Profit in R
+        # Net Profit in R
         net_profit = round(total_win_rr - total_loss_rr, 2)
       
-    
         avg_rr = trades.filter(target=1).aggregate(
             avg_rr=Avg("risk_reward")
         )["avg_rr"] or 0
@@ -495,102 +551,45 @@ def performance_view(request):
             "winrate": winrate,
             "profit_r": net_profit,   
         })
+    
+    return pairs_summary
 
-    reasons = Trades.objects.filter(target=0).order_by("-timestamp").values_list("reason",flat=True)[:10]
 
+def analyze_losing_reasons():
+    """Analyze most common reasons for losing trades and generate advice"""
+    reasons = Trades.objects.filter(target=0).order_by("-timestamp").values_list("reason", flat=True)[:10]
 
     if reasons:
         most_common_reason = Counter(reasons).most_common(1)[0][0]
     else:
         most_common_reason = None
 
-    messege = ''
-    if most_common_reason == "Psycho/Mood":
-        messege="Refresh your psychology, avoid emotional trading and take rest if necessary"
-    elif most_common_reason == "Wrong Structure":
-        messege = "Review trade structures, ensure proper analysis before executing trade"  
-    elif most_common_reason == "Trend":
-        messege = "Follow the Trend carefully, avaoid forcing trades against it" 
-    elif most_common_reason == "FOMO":
-        messege = "Avoid fear of missing out, there are plenty of chances to come, just trade your plan" 
+    # Message mapping
+    message_map = {
+        "Psycho/Mood": "Refresh your psychology, avoid emotional trading and take rest if necessary",
+        "Wrong Structure": "Review trade structures, ensure proper analysis before executing trade",
+        "Trend": "Follow the Trend carefully, avoid forcing trades against it",
+        "FOMO": "Avoid fear of missing out, there are plenty of chances to come, just trade your plan",
+        "Greed": "Control Greed, just take profit according to your plan",
+        "No Confirmation": "Wait for confirmation, patience increases your probability for success",
+        "Momentum": "Avoid weak Momentums, always wait for the best setups",
+        "News": "Be cautious around News, it is very risky",
+        "Other": "Stop trading for a while, review your strategy and evaluate yourself!",
+    }
+    
+    message = message_map.get(most_common_reason, "You are doing great!")
+    
+    return most_common_reason, message
 
-    elif most_common_reason == "Greed":
-        messege = "Control Greed, just take profit according to your plan" 
 
-    elif most_common_reason == "No Confirmation":
-        messege = "Wait for confirmation, patience increases your probability for success" 
-
-    elif most_common_reason == "Momentum":
-        messege = "Avoid weak Momentums, always wait for the best setups" 
-    elif most_common_reason == "News":
-        messege = "Be cautious around News, it is very risk"
-    elif most_common_reason == "Other":
-        messege = "Stop trading for a while, review your strategy and evaluate yourself!"
-    else:
-        messege="You are doing great!" 
-
-    #################### geting today's trades
+def get_today_trading_data():
+    """Get today's trading statistics"""
     local_now = timezone.localtime(timezone.now())
     today = local_now.date()
     
     todays_trades = Trades.objects.filter(timestamp__date=today).count()
     
-    
-    
-    def grade_consistency(
-        todays_trades: int,
-        avg_rvs: float,
-        std_dev_rr: float,
-        most_common_reason
-        ):
-        score = 0
-        max_score = 4
-    
-        # Rule 1: Overtrading 
-        if todays_trades <= 2:
-            score += 1
-    
-        # Rule 2: RVS control
-        if avg_rvs < 4:
-            score += 1
-    
-        # Rule 3: RR execution consistency
-        if std_dev_rr <= 1:
-            score += 1
-    
-        # Rule 4: no strategy breaking
-        if most_common_reason is None:
-            score += 1
-    
-        # ---- Tier mapping ----
-        if score == 4:
-            tier = "Mastery"
-            level = 4
-        elif score == 3:
-            tier = "High"
-            level = 3
-        elif score == 2:
-            tier = "Medium"
-            level = 2
-        else:
-            tier = "Low"
-            level = 1
-    
-        return {
-            "consistency_score": score,
-            "consistency_max": max_score,
-            "consistency_level": level,
-            "consistency_tier": tier,
-            "consistency_percent": int((score / max_score) * 100),
-        }
-
-    grade_consistency= grade_consistency( 
-        todays_trades,
-        avg_rvs,
-        std_dev_rr,
-        most_common_reason)
-    
-    # Today's closed trades only
+    # Today's closed trades profit/loss
     todays_profit = Trades.objects.filter(
         timestamp__date=today,
         target__in=[0, 1]
@@ -605,16 +604,373 @@ def performance_view(request):
     )["total_profit"] or 0
     todays_profit = round(todays_profit, 2)
     
-    last_16_trades = Trades.objects.filter(
-        target__in=[0, 1]
-    ).order_by("-timestamp")[:40]  # latest first
+    return {
+        'todays_trades': todays_trades,
+        'todays_profit': todays_profit,
+        'today_date': today,
+    }
+def get_yesterday_trading_data():
+    """Get yesterday's trading statistics"""
+    local_now = timezone.localtime(timezone.now())
+    yesterday = local_now.date() - timedelta(days=1)
     
-    # Reverse the lists for chronological plotting
-    trades_list = list(last_16_trades)[::-1]
+    yesterday_trades = Trades.objects.filter(timestamp__date=yesterday).count()
+    
+    # Yesterday's closed trades profit/loss
+    yesterday_profit = Trades.objects.filter(
+        timestamp__date=yesterday,
+        target__in=[0, 1]
+    ).aggregate(
+        total_profit=Sum(
+            Case(
+                When(target=1, then="risk_reward"),  # Win = +RR
+                When(target=0, then=Value(-1)),      # Loss = -1R
+                output_field=FloatField(),
+            )
+        )
+    )["total_profit"] or 0
+    yesterday_profit = round(yesterday_profit, 2)
+    
+    # Get winrate for yesterday
+    yesterday_wins = Trades.objects.filter(
+        timestamp__date=yesterday,
+        target=1
+    ).count()
+    
+    yesterday_total = Trades.objects.filter(
+        timestamp__date=yesterday,
+        target__in=[0, 1]
+    ).count()
+    
+    yesterday_winrate = round((yesterday_wins / yesterday_total * 100), 2) if yesterday_total > 0 else 0
+    
+    return {
+        'yesterday_trades': yesterday_trades,
+        'yesterday_profit': yesterday_profit,
+        'yesterday_date': yesterday,
+        'yesterday_wins': yesterday_wins,
+        'yesterday_losses': yesterday_total - yesterday_wins if yesterday_total > 0 else 0,
+        'yesterday_total': yesterday_total,
+        'yesterday_winrate': yesterday_winrate,
+    }
+
+def get_all_time_stats():
+    """Get all-time trading statistics"""
+    # All closed trades
+    all_trades = Trades.objects.filter(target__in=[0, 1])
+    
+    total_trades = all_trades.count()
+    
+    if total_trades == 0:
+        return {
+            'total_trades': 0,
+            'total_wins': 0,
+            'total_losses': 0,
+            'winrate': 0,
+            'lossrate': 0,
+            'total_profit_r': 0,
+            'avg_risk_reward': 0,
+            'best_trade': 0,
+            'worst_trade': 0,
+            'longest_win_streak': 0,
+            'longest_loss_streak': 0,
+            'total_days_traded': 0,
+            'avg_trades_per_day': 0,
+            'profit_factor': 0,
+            'expectancy': 0,
+            'total_r_multiple': 0,
+        }
+    
+    # Basic counts
+    total_wins = all_trades.filter(target=1).count()
+    total_losses = all_trades.filter(target=0).count()
+    
+    # Winrate
+    winrate = round((total_wins / total_trades) * 100, 2)
+    lossrate = round((total_losses / total_trades) * 100, 2)
+    
+    # Profit calculations
+    total_win_rr = all_trades.filter(target=1).aggregate(
+        total=Sum("risk_reward")
+    )["total"] or 0
+    
+    total_loss_rr = total_losses * 1  # Each loss = -1R
+    
+    total_profit_r = round(total_win_rr - total_loss_rr, 2)
+    
+    # Average risk-reward on winning trades
+    avg_risk_reward = round(
+        all_trades.filter(target=1).aggregate(
+            avg=Avg("risk_reward")
+        )["avg"] or 0, 2
+    )
+    
+    # Best and worst trades
+    best_trade = round(
+        all_trades.filter(target=1).aggregate(
+            best=Max("risk_reward")
+        )["best"] or 0, 2
+    )
+    
+    worst_trade = round(
+        all_trades.filter(target=0).aggregate(
+            worst=Min("risk_reward")  # This will be the smallest loss (closest to 0)
+        )["worst"] or 0, 2
+    )
+    
+    # Get the actual biggest loss (lowest value)
+    biggest_loss = round(
+        all_trades.filter(target=0).aggregate(
+            biggest=Min("risk_reward")  # Most negative
+        )["biggest"] or 0, 2
+    )
+    
+    # Calculate streaks
+    trades_chrono = all_trades.order_by('timestamp').values_list('target', flat=True)
+    
+    longest_win_streak = 0
+    longest_loss_streak = 0
+    current_win_streak = 0
+    current_loss_streak = 0
+    
+    for target in trades_chrono:
+        if target == 1:  # Win
+            current_win_streak += 1
+            current_loss_streak = 0
+            longest_win_streak = max(longest_win_streak, current_win_streak)
+        else:  # Loss
+            current_loss_streak += 1
+            current_win_streak = 0
+            longest_loss_streak = max(longest_loss_streak, current_loss_streak)
+    
+    # Days traded
+    trading_days = all_trades.dates('timestamp', 'day').count()
+    avg_trades_per_day = round(total_trades / trading_days, 2) if trading_days > 0 else 0
+    
+    # Profit factor (Gross Profit / Gross Loss)
+    gross_profit = total_win_rr
+    gross_loss = total_loss_rr
+    profit_factor = round(gross_profit / gross_loss, 2) if gross_loss > 0 else float('inf')
+    
+    # Expectancy
+    expectancy = round(
+        ((winrate / 100) * avg_risk_reward) - ((lossrate / 100) * 1),
+        2
+    )
+    
+    # Total R multiple (how many times you've grown your account)
+    total_r_multiple = round(total_profit_r, 2)
+    
+    # Performance by month
+    monthly_performance = []
+    months = all_trades.dates('timestamp', 'month').distinct()
+    
+    for month in months:
+        month_trades = all_trades.filter(timestamp__year=month.year, timestamp__month=month.month)
+        month_wins = month_trades.filter(target=1).count()
+        month_total = month_trades.count()
+        
+        month_win_rr = month_trades.filter(target=1).aggregate(
+            total=Sum("risk_reward")
+        )["total"] or 0
+        
+        month_loss_rr = month_trades.filter(target=0).count() * 1
+        
+        monthly_performance.append({
+            'month': month.strftime('%B %Y'),
+            'trades': month_total,
+            'wins': month_wins,
+            'losses': month_total - month_wins,
+            'winrate': round((month_wins / month_total) * 100, 2) if month_total > 0 else 0,
+            'profit_r': round(month_win_rr - month_loss_rr, 2),
+        })
+    
+    # Performance by pair
+    pair_performance = []
+    pairs = Pairs.objects.all()
+    
+    for pair in pairs:
+        pair_trades = pair.trades.filter(target__in=[0, 1])
+        if pair_trades.exists():
+            pair_wins = pair_trades.filter(target=1).count()
+            pair_total = pair_trades.count()
+            
+            pair_win_rr = pair_trades.filter(target=1).aggregate(
+                total=Sum("risk_reward")
+            )["total"] or 0
+            
+            pair_loss_rr = pair_trades.filter(target=0).count() * 1
+            
+            pair_performance.append({
+                'pair': pair.name,
+                'trades': pair_total,
+                'wins': pair_wins,
+                'losses': pair_total - pair_wins,
+                'winrate': round((pair_wins / pair_total) * 100, 2),
+                'profit_r': round(pair_win_rr - pair_loss_rr, 2),
+                'avg_rr': round(
+                    pair_trades.filter(target=1).aggregate(
+                        avg=Avg("risk_reward")
+                    )["avg"] or 0, 2
+                ),
+            })
+    
+    # Sort pair performance by profit
+    pair_performance.sort(key=lambda x: x['profit_r'], reverse=True)
+    
+    return {
+        # Basic stats
+        'total_trades': total_trades,
+        'total_wins': total_wins,
+        'total_losses': total_losses,
+        'winrate': winrate,
+        'lossrate': lossrate,
+        
+        # Profit stats
+        'total_profit_r': total_profit_r,
+        'total_win_rr': round(total_win_rr, 2),
+        'total_loss_rr': total_loss_rr,
+        'avg_risk_reward': avg_risk_reward,
+        
+        # Trade extremes
+        'best_trade': best_trade,
+        'worst_trade': worst_trade,
+        'biggest_loss': biggest_loss,
+        
+        # Streaks
+        'longest_win_streak': longest_win_streak,
+        'longest_loss_streak': longest_loss_streak,
+        'current_win_streak': current_win_streak,
+        'current_loss_streak': current_loss_streak,
+        
+        # Time-based
+        'total_days_traded': trading_days,
+        'avg_trades_per_day': avg_trades_per_day,
+        
+        # Key metrics
+        'profit_factor': profit_factor,
+        'expectancy': expectancy,
+        'total_r_multiple': total_r_multiple,
+        
+        # Detailed breakdowns
+        'monthly_performance': monthly_performance,
+        'pair_performance': pair_performance,
+        
+        # Best and worst pairs
+        'best_pair': pair_performance[0] if pair_performance else None,
+        'worst_pair': pair_performance[-1] if len(pair_performance) > 1 else None,
+    }
+
+
+def get_recent_activity(days=7):
+    """Get trading activity for the last X days"""
+    end_date = timezone.localtime(timezone.now()).date()
+    start_date = end_date - timedelta(days=days)
+    
+    daily_stats = []
+    
+    for i in range(days):
+        current_date = end_date - timedelta(days=i)
+        day_trades = Trades.objects.filter(
+            timestamp__date=current_date,
+            target__in=[0, 1]
+        )
+        
+        if day_trades.exists():
+            wins = day_trades.filter(target=1).count()
+            total = day_trades.count()
+            
+            day_win_rr = day_trades.filter(target=1).aggregate(
+                total=Sum("risk_reward")
+            )["total"] or 0
+            
+            day_loss_rr = day_trades.filter(target=0).count() * 1
+            
+            daily_stats.append({
+                'date': current_date,
+                'date_formatted': current_date.strftime('%a, %b %d'),
+                'trades': total,
+                'wins': wins,
+                'losses': total - wins,
+                'winrate': round((wins / total) * 100, 2),
+                'profit_r': round(day_win_rr - day_loss_rr, 2),
+            })
+        else:
+            daily_stats.append({
+                'date': current_date,
+                'date_formatted': current_date.strftime('%a, %b %d'),
+                'trades': 0,
+                'wins': 0,
+                'losses': 0,
+                'winrate': 0,
+                'profit_r': 0,
+            })
+    
+    # Reverse to have oldest first
+    daily_stats.reverse()
+    
+    return daily_stats
+
+def calculate_consistency_grade(todays_trades, avg_rvs, std_dev_rr, most_common_reason):
+    """Calculate trader consistency grade based on multiple factors"""
+    score = 0
+    max_score = 4
+
+    # Rule 1: Overtrading check
+    if todays_trades <= 2:
+        score += 1
+
+    # Rule 2: RVS control
+    if avg_rvs < 4:
+        score += 1
+
+    # Rule 3: RR execution consistency
+    if std_dev_rr <= 1:
+        score += 1
+
+    # Rule 4: No strategy breaking
+    if most_common_reason is None:
+        score += 1
+
+    # Tier mapping
+    tier_map = {
+        4: ("Mastery", 4),
+        3: ("High", 3),
+        2: ("Medium", 2),
+    }
+    
+    tier, level = tier_map.get(score, ("Low", 1))
+
+    return {
+        "consistency_score": score,
+        "consistency_max": max_score,
+        "consistency_level": level,
+        "consistency_tier": tier,
+        "consistency_percent": int((score / max_score) * 100),
+    }
+
+
+def prepare_chart_data(trade_count=40):
+    """Prepare data for performance chart"""
+    last_trades = Trades.objects.filter(
+        target__in=[0, 1]
+    ).order_by("-timestamp")[:trade_count]  # latest first
+    
+    # Reverse for chronological order
+    trades_list = list(last_trades)[::-1]
     
     risk_rewards = [t.risk_reward for t in trades_list]
     targets = [t.target for t in trades_list]
-    dates = [t.timestamp.strftime("%#m/%#d") for t in trades_list]  # now oldest → newest
+    
+    # Format dates (platform independent)
+    dates = []
+    for t in trades_list:
+        try:
+            # Windows
+            dates.append(t.timestamp.strftime("%#m/%#d"))
+        except ValueError:
+            # Unix/Linux/Mac
+            dates.append(t.timestamp.strftime("%-m/%-d"))
     
     # Build cumulative performance
     performance = []
@@ -624,27 +980,14 @@ def performance_view(request):
             cum_value += rr
         else:
             cum_value -= 1
-        performance.append(cum_value)
-  
-
-    return render(request, 'trade/performance.html', {
-   
-    'grade_consistency': grade_consistency,
-    'expectancy':expectancy,
-    'avg_rvs':avg_rvs,
-    'avg_risk_reward':avg_risk_reward,    
-    "pairs_summary": pairs_summary, 
-    'messege':messege,
-    "overallwinrate":overallwinrate,
-    "overalllossrate":overalllossrate,
-    'todays_trades':todays_trades,
-    'todays_profit':todays_profit,
-    'std_dev_rr':std_dev_rr,
-    'performance':performance,
-    'dates':dates,
-    })
-
-                                                                                                             
+        performance.append(round(cum_value, 2))  # Round to 2 decimal places
+    
+    return {
+        'performance': performance,
+        'dates': dates,
+        'risk_rewards': risk_rewards,
+        'targets': targets,
+    }                                                                                                      
 def trades_view(request):
 
     trades = Trades.objects.filter(target__in=[0, 1]).order_by("-timestamp")[:12]
@@ -654,20 +997,58 @@ def trades_view(request):
         })
 
 def home_view(request):
+    # Get all-time stats
+    all_time_stats = get_all_time_stats()
+    
+    # Get last 7 days activity
+    weekly_activity = get_recent_activity(days=7)
+    
+    # Get last 30 days activity
+    monthly_activity = get_recent_activity(days=30)
+    
+    today_data = get_today_trading_data()
+    yesterday_data = get_yesterday_trading_data()
+    stats = calculate_overall_stats()
 
-    reasons = Trades.objects.filter(target=0).order_by("-timestamp").values_list("reason",flat=True)[:10]
-
+    # Get losing reasons
+    reasons = Trades.objects.filter(target=0).order_by("-timestamp").values_list("reason", flat=True)[:10]
 
     if reasons:
         most_common_reason = Counter(reasons).most_common(1)[0][0]
     else:
         most_common_reason = None
+    
     trading_session = get_trading_session()
-    return  render(request, 'trade/home.html', {
-    'trading_session':trading_session,
-    'most_common_reason':most_common_reason,
+    
+    # Get advice based on performance
+    if stats['overallwinrate'] < 40:
+        # Poor performance - need discipline and psychology
+        advice = Advice.get_advice_by_category('discipline') or Advice.get_advice_by_category('psychology')
+    elif stats['overallwinrate'] < 50:
+        # Below average - focus on risk management
+        advice = Advice.get_advice_by_category('risk') or Advice.get_daily_advice()
+    elif stats['overallwinrate'] > 60:
+        # Good performance - motivation and trading wisdom
+        advice = Advice.get_advice_by_category('motivation') or Advice.get_advice_by_category('trading')
+    else:
+        # Average performance - daily random advice
+        advice = Advice.get_daily_advice()
+    
+    # If no category-specific advice found, fall back to daily advice
+    if not advice:
+        advice = Advice.get_daily_advice()
+    
+    return render(request, 'trade/home.html', {
+        'trading_session': trading_session,
+        'most_common_reason': most_common_reason,
+        'todays_profit': today_data['todays_profit'],
+        "overallwinrate": stats['overallwinrate'],
+        "yesterday_profit": yesterday_data['yesterday_profit'],
+        'total_trades': all_time_stats['total_trades'],
+        'weekly_activity': weekly_activity,
+        'monthly_activity': monthly_activity,
+        'advice': advice,  # Single advice object with all methods
     })
-
     
 
 def performance_by_pair_view(request, pair_id):

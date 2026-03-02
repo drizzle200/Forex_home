@@ -636,14 +636,14 @@
             <div class="welcome-text">
                 <h1>Welcome back, <span>Trader</span> 👋</h1>
                 <p>
-                    <i class="fas fa-calendar"></i> {{ current_date|date:"l, F j, Y" }}
+                    <i class="fas fa-calendar"></i> {{ current_date|default:"today" }}
                 </p>
             </div>
             <div class="quote-card">
                 <div class="quote-text">
-                    "The goal of a successful trader is to make the best trades. Money is secondary."
+                    {{advice}}
                 </div>
-                <div class="quote-author">- Alexander Elder</div>
+                <!--<div class="quote-author">- Alexander Elder</div>-->
             </div>
         </div>
     </div>
@@ -656,10 +656,10 @@
                 <div class="stat-title">Today's P&L</div>
             </div>
             <div class="stat-value {% if today_pl > 0 %}trend-up{% elif today_pl < 0 %}trend-down{% endif %}">
-                {% if today_pl > 0 %}+{% endif %}{{ today_pl|default:"0" }}%
+                {% if todays_profit > 0 %}+{% endif %}{{ todays_profit|default:"0" }}%
             </div>
             <div class="stat-trend">
-                <i class="fas {% if today_pl > 0 %}fa-arrow-up trend-up{% elif today_pl < 0 %}fa-arrow-down trend-down{% else %}fa-minus{% endif %}"></i>
+                <i class="fas {% if todays_profit > 0 %}fa-arrow-up trend-up{% elif todays_profit < 0 %}fa-arrow-down trend-down{% else %}fa-minus{% endif %}"></i>
                 vs yesterday
             </div>
         </div>
@@ -669,9 +669,9 @@
                 <div class="stat-icon">📈</div>
                 <div class="stat-title">Win Rate</div>
             </div>
-            <div class="stat-value">{{ win_rate|default:"0" }}%</div>
+            <div class="stat-value">{{ overallwinrate|default:"0" }}%</div>
             <div class="stat-trend">
-                <i class="fas fa-chart-line"></i> Last 30 days
+                <i class="fas fa-chart-line"></i> Last 30 trades
             </div>
         </div>
 
