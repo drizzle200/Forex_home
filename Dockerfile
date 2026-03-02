@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Copy requirements.txt (fixed the wildcard)
+# Copy requirements.txt
 COPY requirements.txt ./requirements.txt
 
 # Install Python dependencies
@@ -51,5 +51,5 @@ USER appuser
 ENV PORT=8080
 EXPOSE $PORT
 
-# FIXED: Run gunicorn for Django, NOT python app.py
-CMD gunicorn tradingfx.wsgi:application --bind 0.0.0.0:$PORT
+# Run migrations then start gunicorn
+CMD python manage.py migrate --noinput && gunicorn tradingfx.wsgi:application --bind 0.0.0.0:$PORT
