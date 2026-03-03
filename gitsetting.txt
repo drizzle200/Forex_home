@@ -1,0 +1,12 @@
+# 1. First, make sure files are committed in their base state
+git add tradingfx/settings.py fly.toml Dockerfile .dockerignore
+git commit -m "Add configuration files"
+
+# 2. Then mark them to ignore local changes
+git update-index --skip-worktree tradingfx/settings.py
+git update-index --skip-worktree fly.toml
+git update-index --skip-worktree Dockerfile
+git update-index --skip-worktree .dockerignore
+
+# 3. Now you can safely modify locally
+# Your local changes won't be tracked or accidentally committed

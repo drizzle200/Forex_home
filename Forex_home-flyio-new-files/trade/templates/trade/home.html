@@ -1,0 +1,1752 @@
+{% extends 'trade/base/base.html' %}
+{% load static %}
+
+{% block title %}Home | Trading Dashboard{% endblock %}
+
+{% block page_title %}Trading Dashboard{% endblock %}
+{% block breadcrumb %}Home{% endblock %}
+
+{% block body %}
+<style>
+    :root {
+        --primary: #1abc9c;
+        --primary-dark: #16a085;
+        --primary-glow: rgba(26, 188, 156, 0.3);
+        --primary-soft: rgba(26, 188, 156, 0.1);
+        
+        --bg: #0f172a;
+        --card: #1e293b;
+        --card-light: #334155;
+        --card-hover: #2c3e50;
+        
+        --text-dark: #e2e8f0;
+        --text-muted: #94a3b8;
+        --text-light: #f8fafc;
+        
+        --success: #22c55e;
+        --success-soft: rgba(34, 197, 94, 0.1);
+        --danger: #ef4444;
+        --danger-soft: rgba(239, 68, 68, 0.1);
+        --info: #3b82f6;
+        --info-soft: rgba(59, 130, 246, 0.1);
+        --warning: #f59e0b;
+        --warning-soft: rgba(245, 158, 11, 0.1);
+        --purple: #a855f7;
+        --purple-soft: rgba(168, 85, 247, 0.1);
+        
+        --border: #334155;
+        --border-light: #475569;
+    }
+
+    .dashboard-container {
+        max-width: 1300px;
+        margin: 0 auto;
+        padding: 0;
+    }
+
+    /* Welcome Section */
+    .welcome-section {
+        background: linear-gradient(135deg, var(--card), var(--card-light));
+        border-radius: 30px;
+        padding: 40px;
+        margin-bottom: 30px;
+        border: 1px solid var(--border);
+        box-shadow: 0 20px 40px -15px rgba(0,0,0,0.5);
+        position: relative;
+        overflow: hidden;
+        animation: slideIn 0.5s ease;
+    }
+
+    .welcome-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary), var(--purple), var(--info));
+    }
+
+    .welcome-section::after {
+        content: '📈';
+        position: absolute;
+        bottom: -20px;
+        right: -20px;
+        font-size: 150px;
+        opacity: 0.05;
+        transform: rotate(-10deg);
+    }
+
+    .welcome-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 30px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .welcome-text h1 {
+        font-size: 36px;
+        font-weight: 700;
+        color: white;
+        margin-bottom: 10px;
+    }
+
+    .welcome-text h1 span {
+        background: linear-gradient(135deg, var(--primary), var(--purple));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .welcome-text p {
+        color: var(--text-muted);
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .welcome-text p i {
+        color: var(--primary);
+    }
+
+    .quote-card {
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 20px 30px;
+        border: 1px solid rgba(255,255,255,0.1);
+        max-width: 500px;
+        min-width: 350px;
+    }
+
+    .quote-text {
+        font-size: 18px;
+        font-style: italic;
+        color: white;
+        margin-bottom: 10px;
+    }
+
+    .quote-author {
+        color: var(--primary);
+        font-weight: 600;
+        text-align: right;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 24px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        background: var(--card);
+        border-radius: 24px;
+        padding: 24px;
+        border: 1px solid var(--border);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        animation: slideIn 0.5s ease forwards;
+    }
+
+    .stat-card:nth-child(1) { animation-delay: 0.1s; }
+    .stat-card:nth-child(2) { animation-delay: 0.15s; }
+    .stat-card:nth-child(3) { animation-delay: 0.2s; }
+    .stat-card:nth-child(4) { animation-delay: 0.25s; }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, var(--primary-soft), transparent);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--primary);
+        box-shadow: 0 15px 30px -10px var(--primary-glow);
+    }
+
+    .stat-card:hover::before {
+        opacity: 1;
+    }
+
+    .stat-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+
+    .stat-icon {
+        width: 56px;
+        height: 56px;
+        background: linear-gradient(135deg, var(--primary-soft), transparent);
+        border-radius: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        color: var(--primary);
+        border: 1px solid var(--primary-glow);
+    }
+
+    .stat-title {
+        font-size: 16px;
+        color: var(--text-muted);
+    }
+
+    .stat-value {
+        font-size: 32px;
+        font-weight: 700;
+        color: white;
+        margin: 10px 0 5px;
+    }
+
+    .stat-trend {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--text-muted);
+    }
+
+    .trend-up { color: var(--success); }
+    .trend-down { color: var(--danger); }
+
+    /* Session Card */
+    .session-card {
+        background: var(--card);
+        border-radius: 24px;
+        padding: 24px;
+        border: 1px solid var(--border);
+        margin-bottom: 24px;
+        animation: slideIn 0.5s ease 0.2s forwards;
+        opacity: 0;
+        animation-fill-mode: forwards;
+    }
+
+    .session-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    .session-icon {
+        width: 48px;
+        height: 48px;
+        background: var(--primary-soft);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: var(--primary);
+    }
+
+    .session-header h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: white;
+    }
+
+    .session-info {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .session-badge {
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        color: white;
+        padding: 12px 24px;
+        border-radius: 100px;
+        font-size: 16px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 8px 16px -8px var(--primary-glow);
+    }
+
+    .session-time {
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+    }
+
+    /* Mood Section */
+    .mood-section {
+        background: var(--card);
+        border-radius: 24px;
+        padding: 24px;
+        border: 1px solid var(--border);
+        margin-bottom: 24px;
+        animation: slideIn 0.5s ease 0.3s forwards;
+        opacity: 0;
+        animation-fill-mode: forwards;
+        transition: all 0.5s ease;
+    }
+
+    .mood-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    .mood-icon {
+        width: 48px;
+        height: 48px;
+        background: var(--warning-soft);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: var(--warning);
+    }
+
+    .mood-header h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: white;
+    }
+
+    .mood-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 16px;
+    }
+
+    .mood-option {
+        background: var(--card-light);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 16px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .mood-option:hover {
+        border-color: var(--primary);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px -8px var(--primary-glow);
+    }
+
+    .mood-option.selected {
+        background: var(--primary-soft);
+        border-color: var(--primary);
+    }
+
+    .mood-emoji {
+        font-size: 32px;
+        margin-bottom: 8px;
+    }
+
+    .mood-label {
+        font-size: 14px;
+        color: var(--text-muted);
+    }
+
+    .mood-option.selected .mood-label {
+        color: var(--primary);
+    }
+
+    /* NEW: Mood Selected Card */
+    .mood-selected-card {
+        background: linear-gradient(135deg, var(--card), var(--primary-soft));
+        border-radius: 24px;
+        padding: 24px;
+        border: 1px solid var(--primary);
+        margin-bottom: 24px;
+        animation: slideIn 0.5s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .mood-selected-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, var(--primary-glow), transparent 70%);
+        opacity: 0.3;
+        animation: rotate 20s linear infinite;
+    }
+
+    @keyframes rotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    .selected-mood-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .selected-mood-badge {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        background: var(--bg);
+        padding: 15px 30px;
+        border-radius: 60px;
+        border: 2px solid var(--primary);
+    }
+
+    .large-emoji {
+        font-size: 48px;
+    }
+
+    .selected-mood-name {
+        font-size: 24px;
+        font-weight: 700;
+        color: white;
+        text-transform: capitalize;
+    }
+
+    /* NEW: Streak Display */
+    .streak-display {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        background: var(--card-light);
+        padding: 15px 25px;
+        border-radius: 50px;
+    }
+
+    .streak-icon {
+        font-size: 32px;
+    }
+
+    .streak-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .streak-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--warning);
+        line-height: 1;
+    }
+
+    .streak-label {
+        font-size: 12px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    /* NEW: Achievements */
+    .achievements {
+        width: 100%;
+        background: var(--card);
+        border-radius: 20px;
+        padding: 20px;
+    }
+
+    .achievements h4 {
+        color: white;
+        margin-bottom: 15px;
+        font-size: 16px;
+    }
+
+    .achievement-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .achievement-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: var(--bg-tertiary);
+        padding: 12px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+    }
+
+    .achievement-icon {
+        font-size: 24px;
+        min-width: 40px;
+        text-align: center;
+    }
+
+    .achievement-desc {
+        flex: 1;
+    }
+
+    .achievement-desc strong {
+        display: block;
+        color: white;
+        font-size: 14px;
+        margin-bottom: 2px;
+    }
+
+    .achievement-desc small {
+        color: var(--text-muted);
+        font-size: 11px;
+    }
+
+    /* NEW: Comeback Message */
+    .comeback-message {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--text-muted);
+        font-size: 14px;
+        padding: 10px;
+        border-top: 1px dashed var(--border);
+        width: 100%;
+        justify-content: center;
+    }
+
+    .comeback-message i {
+        color: var(--primary);
+        animation: pulse 2s infinite;
+    }
+
+    /* NEW: Streak Notification */
+    .streak-notification {
+        background: var(--card);
+        border-radius: 12px;
+        padding: 10px;
+        text-align: center;
+        border: 1px solid var(--border);
+    }
+
+    /* News Section */
+    .news-section {
+        background: var(--card);
+        border-radius: 24px;
+        padding: 24px;
+        border: 1px solid var(--border);
+        margin-bottom: 24px;
+        animation: slideIn 0.5s ease 0.4s forwards;
+        opacity: 0;
+        animation-fill-mode: forwards;
+    }
+
+    .news-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    .news-icon {
+        width: 48px;
+        height: 48px;
+        background: var(--info-soft);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: var(--info);
+    }
+
+    .news-header h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: white;
+    }
+
+    .news-ticker {
+        background: var(--card-light);
+        border-radius: 100px;
+        padding: 16px 24px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .news-ticker::after {
+        content: '';
+        position: absolute;
+        right: 0;
+        top: 0;
+        height: 100%;
+        width: 50px;
+        background: linear-gradient(90deg, transparent, var(--card-light));
+    }
+
+    .ticker-label {
+        background: var(--danger);
+        color: white;
+        padding: 6px 16px;
+        border-radius: 100px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .ticker-content {
+        color: var(--text-muted);
+        font-size: 14px;
+        white-space: nowrap;
+        animation: ticker 20s linear infinite;
+    }
+
+    @keyframes ticker {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-100%); }
+    }
+
+    /* Alert Section */
+    .alert-section {
+        background: linear-gradient(135deg, var(--danger-soft), transparent);
+        border: 1px solid var(--danger);
+        border-radius: 24px;
+        padding: 24px;
+        margin-bottom: 24px;
+        animation: slideIn 0.5s ease 0.5s forwards;
+        opacity: 0;
+        animation-fill-mode: forwards;
+    }
+
+    .alert-content {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .alert-icon {
+        width: 56px;
+        height: 56px;
+        background: var(--danger);
+        border-radius: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        color: white;
+    }
+
+    .alert-text {
+        flex: 1;
+    }
+
+    .alert-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: white;
+        margin-bottom: 4px;
+    }
+
+    .alert-description {
+        color: var(--text-muted);
+        font-size: 14px;
+    }
+
+    .alert-badge {
+        background: var(--danger);
+        color: white;
+        padding: 8px 20px;
+        border-radius: 100px;
+        font-size: 14px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    /* Quick Actions */
+    .quick-actions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-top: 30px;
+        animation: slideIn 0.5s ease 0.6s forwards;
+        opacity: 0;
+        animation-fill-mode: forwards;
+    }
+
+    .quick-action-btn {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 20px;
+        text-decoration: none;
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        transition: all 0.2s ease;
+    }
+
+    .quick-action-btn:hover {
+        border-color: var(--primary);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px -10px var(--primary-glow);
+    }
+
+    .quick-action-icon {
+        width: 48px;
+        height: 48px;
+        background: var(--primary-soft);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: var(--primary);
+    }
+
+    .quick-action-text {
+        flex: 1;
+    }
+
+    .quick-action-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+
+    .quick-action-subtitle {
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
+    /* Animations */
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 var(--primary-glow); }
+        70% { box-shadow: 0 0 0 10px rgba(26, 188, 156, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(26, 188, 156, 0); }
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+        .welcome-section {
+            padding: 30px 20px;
+        }
+
+        .welcome-text h1 {
+            font-size: 28px;
+        }
+
+        .quote-card {
+            max-width: 100%;
+            min-width: auto;
+            padding: 15px 20px;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .session-info {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .mood-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .selected-mood-badge {
+            flex-direction: column;
+            padding: 15px;
+        }
+        
+        .large-emoji {
+            font-size: 36px;
+        }
+        
+        .selected-mood-name {
+            font-size: 20px;
+        }
+
+        .alert-content {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .quick-actions-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .news-ticker {
+            border-radius: 16px;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .ticker-content {
+            animation: none;
+            white-space: normal;
+        }
+
+        .severity-badge {
+            font-size: 12px;
+            padding: 6px 12px;
+        }
+    }
+
+    /* style for blining light*/
+    .severity-container {
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .severity-label {
+        display: block;
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .severity-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 16px;
+        border-radius: 100px;
+        font-size: 14px;
+        font-weight: 600;
+        background: var(--card-light);
+        border: 1px solid var(--border);
+    }
+    
+    /* Severity-specific styles */
+    .severity-badge.critical {
+        background: rgba(239, 68, 68, 0.1);
+        border-color: #ef4444;
+        color: #ef4444;
+    }
+    
+    .severity-badge.serious {
+        background: rgba(245, 158, 11, 0.1);
+        border-color: #f59e0b;
+        color: #f59e0b;
+    }
+    
+    .severity-badge.poor {
+        background: rgba(245, 158, 11, 0.1);
+        border-color: #f59e0b;
+        color: #f59e0b;
+    }
+    
+    .severity-badge.below_average {
+        background: rgba(59, 130, 246, 0.1);
+        border-color: #3b82f6;
+        color: #3b82f6;
+    }
+    
+    .severity-badge.good {
+        background: rgba(34, 197, 94, 0.1);
+        border-color: #22c55e;
+        color: #22c55e;
+    }
+    
+    .severity-badge.excellent {
+        background: rgba(168, 85, 247, 0.1);
+        border-color: #a855f7;
+        color: #a855f7;
+    }
+    
+    /* Blinking Light Animation */
+    .blinking-light {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        animation: blink 1.5s infinite;
+        box-shadow: 0 0 8px currentColor;
+    }
+    
+    .red-light {
+        background-color: #ef4444;
+        color: #ef4444;
+    }
+    
+    .orange-light {
+        background-color: #f59e0b;
+        color: #f59e0b;
+    }
+    
+    .yellow-light {
+        background-color: #fbbf24;
+        color: #fbbf24;
+    }
+    
+    .blue-light {
+        background-color: #3b82f6;
+        color: #3b82f6;
+    }
+    
+    .green-light {
+        background-color: #22c55e;
+        color: #22c55e;
+    }
+    
+    .purple-light {
+        background-color: #a855f7;
+        color: #a855f7;
+    }
+    
+    .gray-light {
+        background-color: #94a3b8;
+        color: #94a3b8;
+    }
+    
+    @keyframes blink {
+        0% {
+            opacity: 1;
+            transform: scale(1);
+            box-shadow: 0 0 8px currentColor;
+        }
+        50% {
+            opacity: 0.4;
+            transform: scale(0.9);
+            box-shadow: 0 0 4px currentColor;
+        }
+        100% {
+            opacity: 1;
+            transform: scale(1);
+            box-shadow: 0 0 8px currentColor;
+        }
+    }
+    
+    /* Update quote card for better spacing */
+    .quote-card {
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 20px 30px;
+        border: 1px solid rgba(255,255,255,0.1);
+        max-width: 500px;
+        min-width: 350px;
+    }
+    
+    .quote-text {
+        font-size: 16px;
+        font-style: italic;
+        color: white;
+        margin-bottom: 10px;
+        line-height: 1.6;
+    }
+    
+    .quote-author {
+        color: var(--primary);
+        font-weight: 600;
+        text-align: right;
+        font-size: 14px;
+        margin-bottom: 10px;
+    }
+
+    /* css for mood interaction */
+    .response-card {
+        background: var(--card-light);
+        border-radius: 20px;
+        padding: 20px;
+        border-left: 4px solid var(--primary);
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .response-emoji {
+        font-size: 48px;
+        background: var(--bg);
+        width: 80px;
+        height: 80px;
+        border-radius: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid var(--primary);
+    }
+
+    .response-content {
+        flex: 1;
+    }
+
+    .response-content h4 {
+        color: white;
+        margin-bottom: 5px;
+        font-size: 18px;
+    }
+
+    .response-content p {
+        color: var(--text-muted);
+        margin-bottom: 10px;
+        font-size: 14px;
+    }
+
+    .response-action {
+        display: inline-block;
+        padding: 8px 16px;
+        background: var(--primary-soft);
+        border-radius: 20px;
+        color: var(--primary);
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    /* Mood stats */
+    .mood-stats .stat {
+        background: var(--card);
+        padding: 10px;
+        border-radius: 12px;
+        flex: 1;
+        margin: 0 5px;
+        text-align: center;
+    }
+
+    .stat-label {
+        display: block;
+        color: var(--text-muted);
+        font-size: 11px;
+        margin-bottom: 4px;
+    }
+
+    .stat-value {
+        color: white;
+        font-size: 18px;
+        font-weight: 700;
+    }
+
+    /* Animation classes */
+    .response-card.bounce { animation: bounce 0.8s ease; }
+    .response-card.pulse { animation: pulse 0.8s ease; }
+    .response-card.shake { animation: shake 0.5s ease; }
+    .response-card.glow { animation: glow 1.5s infinite; }
+    .response-card.yawn { animation: yawn 0.8s ease; }
+
+    @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
+
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-10px); }
+        75% { transform: translateX(10px); }
+    }
+
+    @keyframes glow {
+        0% { box-shadow: 0 0 5px currentColor; }
+        50% { box-shadow: 0 0 20px currentColor; }
+        100% { box-shadow: 0 0 5px currentColor; }
+    }
+
+    @keyframes yawn {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1) rotate(5deg); }
+        100% { transform: scale(1); }
+    }
+
+    /* Confetti animation */
+    .confetti {
+        position: fixed;
+        width: 10px;
+        height: 10px;
+        background: red;
+        top: -10px;
+        z-index: 9999;
+    }
+
+    @keyframes confetti {
+        0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+        100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+    }
+</style>
+
+<div class="dashboard-container">
+<!-- Welcome Section -->
+<div class="welcome-section">
+    <div class="welcome-content">
+        <div class="welcome-text">
+            <h1>Welcome back, <span>Trader</span> 👋</h1>
+            <p>
+                <i class="fas fa-calendar"></i> {{ current_date|default:"today" }}
+            </p>
+        </div>
+        <div class="quote-card">
+            <div class="quote-text">
+                "{{ advice.quote }}"
+            </div>
+            {% if advice.author %}
+            <div class="quote-author">— {{ advice.author }}</div>
+            {% endif %}
+            
+            <!-- Severity Display with Blinking Light -->
+            <div class="severity-container">
+                <span class="severity-label">Performance Status:</span>
+                <div class="severity-badge {% if severity %}{{ severity }}{% endif %}">
+                    <span class="blinking-light 
+                        {% if severity == 'critical' %}red-light
+                        {% elif severity == 'serious' %}orange-light
+                        {% elif severity == 'poor' %}yellow-light
+                        {% elif severity == 'below_average' %}blue-light
+                        {% elif severity == 'good' %}green-light
+                        {% elif severity == 'excellent' %}purple-light
+                        {% else %}gray-light{% endif %}">
+                    </span>
+                    {{severity}}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Mood Section - Will disappear after selection -->
+<div class="mood-section" id="moodSection" 
+     {% if mood_selected_today %}style="display: none;"{% endif %}>
+    <div class="mood-header">
+        <div class="mood-icon" id="moodIcon">😊</div>
+        <h3>How are you feeling today?</h3>
+    </div>
+    
+    <!-- Mood Grid -->
+    <div class="mood-grid" id="moodGrid">
+        <div class="mood-option" data-mood="confident" onclick="selectMood('confident')">
+            <div class="mood-emoji">😊</div>
+            <div class="mood-label">Confident</div>
+        </div>
+        <div class="mood-option" data-mood="cautious" onclick="selectMood('cautious')">
+            <div class="mood-emoji">🤔</div>
+            <div class="mood-label">Cautious</div>
+        </div>
+        <div class="mood-option" data-mood="neutral" onclick="selectMood('neutral')">
+            <div class="mood-emoji">😐</div>
+            <div class="mood-label">Neutral</div>
+        </div>
+        <div class="mood-option" data-mood="stressed" onclick="selectMood('stressed')">
+            <div class="mood-emoji">😓</div>
+            <div class="mood-label">Stressed</div>
+        </div>
+        <div class="mood-option" data-mood="energetic" onclick="selectMood('energetic')">
+            <div class="mood-emoji">⚡</div>
+            <div class="mood-label">Energetic</div>
+        </div>
+        <div class="mood-option" data-mood="tired" onclick="selectMood('tired')">
+            <div class="mood-emoji">😴</div>
+            <div class="mood-label">Tired</div>
+        </div>
+        <div class="mood-option" data-mood="focused" onclick="selectMood('focused')">
+            <div class="mood-emoji">🎯</div>
+            <div class="mood-label">Focused</div>
+        </div>
+        <div class="mood-option" data-mood="anxious" onclick="selectMood('anxious')">
+            <div class="mood-emoji">😰</div>
+            <div class="mood-label">Anxious</div>
+        </div>
+    </div>
+</div>
+
+<!-- Already Selected Mood Display - Shows when mood is already selected -->
+{% if mood_selected_today %}
+<div class="mood-selected-card" id="moodSelectedCard">
+    <div class="mood-header">
+        <div class="mood-icon">{{ selected_mood_emoji }}</div>
+        <h3>Today's Mood</h3>
+    </div>
+    <div class="selected-mood-content">
+        <div class="selected-mood-badge">
+            <span class="large-emoji">{{ selected_mood_emoji }}</span>
+            <span class="selected-mood-name">{{ selected_mood|title }}</span>
+        </div>
+        
+        <!-- Streak Display -->
+        <div class="streak-display">
+            <div class="streak-icon">🔥</div>
+            <div class="streak-info">
+                <span class="streak-value">{{ mood_streak }}</span>
+                <span class="streak-label">Day Streak</span>
+            </div>
+        </div>
+        
+        <!-- Achievements -->
+        {% if mood_achievements %}
+        <div class="achievements">
+            <h4>Achievements</h4>
+            <div class="achievement-list">
+                {% for achievement in mood_achievements %}
+                <div class="achievement-item">
+                    <span class="achievement-icon">{{ achievement.icon }}</span>
+                    <div class="achievement-desc">
+                        <strong>{{ achievement.title }}</strong>
+                        <small>{{ achievement.desc }}</small>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="comeback-message">
+            <i class="fas fa-moon"></i>
+            <p>Come back tomorrow to log your mood again!</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Mood Response Container (initially hidden) -->
+<div class="mood-response" id="moodResponse" style="display: none; margin-top: 20px;"></div>
+
+
+
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-header">
+                <div class="stat-icon">📊</div>
+                <div class="stat-title">Today's P&L</div>
+            </div>
+            <div class="stat-value {% if today_pl > 0 %}trend-up{% elif today_pl < 0 %}trend-down{% endif %}">
+                {% if todays_profit > 0 %}+{% endif %}{{ todays_profit|default:"0" }}%
+            </div>
+            <div class="stat-trend">
+                <i class="fas {% if todays_profit > 0 %}fa-arrow-up trend-up{% elif todays_profit < 0 %}fa-arrow-down trend-down{% else %}fa-minus{% endif %}"></i>
+                vs yesterday
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-header">
+                <div class="stat-icon">📈</div>
+                <div class="stat-title">Win Rate</div>
+            </div>
+            <div class="stat-value">{{ overallwinrate|default:"0" }}%</div>
+            <div class="stat-trend">
+                <i class="fas fa-chart-line"></i> Last 30 trades
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-header">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-title">Total Trades</div>
+            </div>
+            <div class="stat-value">{{ total_trades|default:"0" }}</div>
+            <div class="stat-trend">
+                <i class="fas fa-clock"></i> All time
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-header">
+                <div class="stat-icon">⚡</div>
+                <div class="stat-title">Best Streak</div>
+            </div>
+            <div class="stat-value">+{{ best_streak|default:"0" }}</div>
+            <div class="stat-trend">
+                <i class="fas fa-fire trend-up"></i> Consecutive wins
+            </div>
+        </div>
+    </div>
+
+<!-- Trading Session Card with Local Time -->
+<div class="session-card">
+    <div class="session-header">
+        <div class="session-icon">{{ session_icon }}</div>
+        <h3>Trading Session</h3>
+    </div>
+    <div class="session-info">
+        <div class="session-badge">
+            <i class="fas fa-clock"></i>
+            {{ trading_session }}
+            {% if session_volatility %}
+            <span style="font-size: 12px; margin-left: 8px; background: var(--bg); padding: 2px 8px; border-radius: 12px;">
+                {{ session_volatility }}
+            </span>
+            {% endif %}
+        </div>
+        
+        <!-- LOCAL TIME DISPLAY - NEW -->
+        <div class="session-time" style="background: var(--primary-soft); padding: 8px 12px; border-radius: 12px; margin: 10px 0;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-map-pin" style="color: var(--primary);"></i>
+                <div>
+                    <span style="color: var(--text-muted); font-size: 12px;">Your Local Time (Tanzania)</span>
+                    <div style="display: flex; align-items: baseline; gap: 10px;">
+                        <span style="font-size: 24px; font-weight: 700; color: white;">{{ current_time_local }}</span>
+                        <span style="color: var(--primary); font-size: 14px;">{{ local_timezone }}</span>
+                    </div>
+                    <span style="color: var(--text-muted); font-size: 12px;">{{ current_date_local }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Market Time (EST) -->
+        <div class="session-time" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-globe"></i>
+                <span>Market (EST):</span>
+            </div>
+            <span style="color: var(--text-secondary); font-weight: 500;">{{ market_info.current_time_est }}</span>
+        </div>
+        
+        <!-- Market Status -->
+        <div class="session-time" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-chart-line"></i>
+                <span>Market Status:</span>
+            </div>
+            <span style="color: {% if market_open %}var(--success){% else %}var(--danger){% endif %}; font-weight: 600;">
+                {{ market_info.market_status }} <span class="{% if market_open %}trend-up{% else %}trend-down{% endif %}">●</span>
+            </span>
+        </div>
+        
+        <!-- Time Until -->
+        <div class="session-time" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-hourglass-half"></i>
+                <span>{% if market_open %}Closes in:{% else %}Opens in:{% endif %}</span>
+            </div>
+            <span style="color: var(--warning); font-weight: 600;">{{ time_until_next }}</span>
+        </div>
+        
+        <!-- Session Local Hours -->
+        {% if active_hours_local %}
+        <div class="session-time" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-sun"></i>
+                <span>Session hours:</span>
+            </div>
+            <span style="color: var(--text-secondary);">{{ active_hours_local }} EAT</span>
+        </div>
+        {% endif %}
+    </div>
+</div>
+<!-- Add this after the session card or in a new section -->
+<div class="pairs-section" style="margin-top: 20px;">
+    <div class="session-card">
+        <div class="session-header">
+            <div class="session-icon">{{ session_icon|default:"💱" }}</div>
+            <h3>Active Pairs - {{ trading_session }}</h3>
+        </div>
+        <div class="pairs-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; padding: 10px;">
+            {% for pair in session_pairs.active_pairs %}
+            <div class="pair-item" style="background: var(--card-light); border-radius: 12px; padding: 12px; border: 1px solid var(--border);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 600; color: white;">{{ pair.pair }}</span>
+                    <span class="badge" style="background: {% if pair.spread == 'Ultra Tight' %}#10b981{% elif pair.spread == 'Tight' %}#22c55e{% elif pair.spread == 'Medium' %}#f59e0b{% else %}#6b7280{% endif %}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 10px;">
+                        {{ pair.spread }}
+                    </span>
+                </div>
+                <div style="margin-top: 8px; display: flex; justify-content: space-between;">
+                    <span style="color: var(--text-muted); font-size: 12px;">Volatility:</span>
+                    <span style="color: {% if pair.volatility == 'Extreme' %}#ef4444{% elif pair.volatility == 'High' %}#f59e0b{% elif pair.volatility == 'Medium' %}#3b82f6{% else %}#6b7280{% endif %}; font-size: 12px; font-weight: 600;">
+                        {{ pair.volatility }}
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Best Pairs for this session -->
+        <div style="margin-top: 20px; padding: 15px; background: var(--primary-soft); border-radius: 16px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                <i class="fas fa-star" style="color: var(--warning);"></i>
+                <span style="color: white; font-weight: 600;">Best Pairs for {{ trading_session }}</span>
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                {% for pair in session_pairs.best_pairs %}
+                <span class="badge" style="background: var(--primary); color: white; padding: 6px 16px; border-radius: 20px;">
+                    {{ pair }}
+                </span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+    
+
+    <!-- News Section -->
+    <div class="news-section">
+        <div class="news-header">
+            <div class="news-icon">📰</div>
+            <h3>Market News</h3>
+        </div>
+        <div class="news-ticker">
+            <span class="ticker-label">HOT</span>
+            <span class="ticker-content">
+                {{ news_headline|default:"Fed maintains interest rates • EURUSD volatility expected • Oil prices surge • Bitcoin above $50k • Gold steady ahead of NFP" }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Alert Section -->
+    {% if most_common_reason %}
+    <div class="alert-section">
+        <div class="alert-content">
+            <div class="alert-icon">⚠️</div>
+            <div class="alert-text">
+                <div class="alert-title">Watch Out!</div>
+                <div class="alert-description">
+                    Your most common loss reason is <strong>"{{ most_common_reason }}"</strong>. 
+                    {{reason_message}}
+                </div>
+            </div>
+            <div class="alert-badge">{{ most_common_count }} times</div>
+        </div>
+    </div>
+    {% else %}
+    <div class="session-card">
+        <div class="session-header">
+            <div class="session-icon" style="background: var(--success-soft); color: var(--success);">💪</div>
+            <h3>Discipline Reminder</h3>
+        </div>
+        <div class="session-info">
+            <div class="session-badge" style="background: var(--success);">
+                <i class="fas fa-check-circle"></i>
+                Discipline is key to profitability
+            </div>
+            <div class="session-time">
+                <i class="fas fa-brain"></i>
+                Stay focused, follow your plan
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Quick Actions -->
+    <div class="quick-actions-grid">
+        <a href="{% url 'index' %}" class="quick-action-btn">
+            <div class="quick-action-icon">📝</div>
+            <div class="quick-action-text">
+                <div class="quick-action-title">New Trade</div>
+                <div class="quick-action-subtitle">Record a trade</div>
+            </div>
+            <i class="fas fa-chevron-right" style="color: var(--primary);"></i>
+        </a>
+
+        <a href="{% url 'journal' %}" class="quick-action-btn">
+            <div class="quick-action-icon">📓</div>
+            <div class="quick-action-text">
+                <div class="quick-action-title">Journal</div>
+                <div class="quick-action-subtitle">Pending trades</div>
+            </div>
+            <i class="fas fa-chevron-right" style="color: var(--primary);"></i>
+        </a>
+
+        <a href="{% url 'performance' %}" class="quick-action-btn">
+            <div class="quick-action-icon">📊</div>
+            <div class="quick-action-text">
+                <div class="quick-action-title">Analytics</div>
+                <div class="quick-action-subtitle">View analytics</div>
+            </div>
+            <i class="fas fa-chevron-right" style="color: var(--primary);"></i>
+        </a>
+
+        <a href="{% url 'academy' %}" class="quick-action-btn">
+            <div class="quick-action-icon">🎓</div>
+            <div class="quick-action-text">
+                <div class="quick-action-title">Academy</div>
+                <div class="quick-action-subtitle">Learn & improve</div>
+            </div>
+            <i class="fas fa-chevron-right" style="color: var(--primary);"></i>
+        </a>
+    </div>
+</div>
+<script>
+// Mood selection with gamified response and disappearance
+function selectMood(mood) {
+    // Get the clicked element
+    const element = document.querySelector(`[data-mood="${mood}"]`);
+    if (!element) return;
+    
+    // Remove selected class from all
+    document.querySelectorAll('.mood-option').forEach(opt => {
+        opt.classList.remove('selected');
+    });
+    
+    // Add selected class to clicked
+    element.classList.add('selected');
+    
+    // Play selection animation
+    element.style.animation = 'selectPulse 0.5s ease';
+    setTimeout(() => {
+        element.style.animation = '';
+    }, 500);
+    
+    // Save mood via AJAX
+    fetch('/save-mood/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            mood: mood,
+            notes: ''
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Store in localStorage that mood was selected today
+            localStorage.setItem('lastMoodDate', new Date().toDateString());
+            
+            // Hide the mood selection section
+            const moodSection = document.getElementById('moodSection');
+            if (moodSection) {
+                moodSection.style.display = 'none';
+            }
+            
+            showMoodResponse(data);
+            updateMoodStats();
+            
+            // After 5 seconds, reload to show the "Already Selected" view
+            setTimeout(() => {
+                location.reload();
+            }, 5000);
+        }
+    })
+    .catch(error => {
+        console.error('Error saving mood:', error);
+        showNotification('Failed to save mood. Please try again.', 'error');
+    });
+}
+
+// Show gamified response
+function showMoodResponse(data) {
+    // Create or get response container
+    let responseDiv = document.getElementById('moodResponse');
+    if (!responseDiv) {
+        responseDiv = document.createElement('div');
+        responseDiv.id = 'moodResponse';
+        responseDiv.className = 'mood-response';
+        
+        // Insert after mood section or selected card
+        const moodSection = document.getElementById('moodSection');
+        const selectedCard = document.getElementById('moodSelectedCard');
+        if (moodSection) {
+            moodSection.parentNode.insertBefore(responseDiv, moodSection.nextSibling);
+        } else if (selectedCard) {
+            selectedCard.parentNode.insertBefore(responseDiv, selectedCard.nextSibling);
+        } else {
+            document.querySelector('.dashboard-container').appendChild(responseDiv);
+        }
+    }
+    
+    // Create response HTML
+    responseDiv.innerHTML = `
+        <div class="response-card ${data.animation}" style="border-left-color: ${data.color}; background: linear-gradient(135deg, ${data.color}15, transparent);">
+            <div class="response-emoji" style="border-color: ${data.color};">${data.emoji}</div>
+            <div class="response-content">
+                <h4 style="color: white;">${data.created ? '✨ First mood today!' : '🔄 Mood updated!'}</h4>
+                <p style="color: var(--text-muted);">${data.message}</p>
+                <div class="response-action" style="background: ${data.color}20; color: ${data.color};">${data.action}</div>
+            </div>
+        </div>
+        <div class="streak-notification" style="margin-top: 15px; text-align: center; padding: 15px; background: var(--card); border-radius: 12px; border: 1px solid var(--border);">
+            <span style="color: var(--warning); font-weight: 600; font-size: 18px;">🔥 ${data.streak} day streak!</span>
+        </div>
+    `;
+    
+    responseDiv.style.display = 'block';
+    responseDiv.style.marginTop = '20px';
+    responseDiv.style.marginBottom = '20px';
+    
+    // Confetti for positive moods
+    if (data.mood === 'confident' || data.mood === 'energetic' || data.mood === 'focused') {
+        createConfetti();
+    }
+    
+    // Scroll to response
+    responseDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// Update mood statistics
+function updateMoodStats() {
+    fetch('/get-mood-stats/?days=30')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update mood count in any existing stat element
+                const moodCount = document.getElementById('moodCount');
+                if (moodCount) {
+                    const total = Object.values(data.stats || {}).reduce((sum, item) => sum + (item.count || 0), 0);
+                    moodCount.textContent = total;
+                }
+            }
+        });
+}
+
+// Check and handle daily mood reset
+function checkDailyMoodReset() {
+    const lastMoodDate = localStorage.getItem('lastMoodDate');
+    const today = new Date().toDateString();
+    const moodSection = document.getElementById('moodSection');
+    const selectedCard = document.getElementById('moodSelectedCard');
+    
+    // If no mood stored today or it's a new day
+    if (!lastMoodDate || lastMoodDate !== today) {
+        // Show mood section, hide selected card
+        if (moodSection) moodSection.style.display = 'block';
+        if (selectedCard) selectedCard.style.display = 'none';
+    } else {
+        // Hide mood section, show selected card
+        if (moodSection) moodSection.style.display = 'none';
+        if (selectedCard) selectedCard.style.display = 'block';
+    }
+}
+
+// Show notification
+function showNotification(message, type = 'info') {
+    // Create notification element if it doesn't exist
+    let notification = document.getElementById('notification');
+    if (!notification) {
+        notification = document.createElement('div');
+        notification.id = 'notification';
+        document.body.appendChild(notification);
+    }
+    
+    // Style notification
+    notification.textContent = message;
+    notification.style.position = 'fixed';
+    notification.style.bottom = '20px';
+    notification.style.right = '20px';
+    notification.style.padding = '12px 24px';
+    notification.style.borderRadius = '12px';
+    notification.style.color = 'white';
+    notification.style.fontWeight = '500';
+    notification.style.zIndex = '9999';
+    notification.style.transition = 'all 0.3s ease';
+    notification.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+    
+    // Set color based on type
+    if (type === 'success') {
+        notification.style.background = '#10b981';
+    } else if (type === 'error') {
+        notification.style.background = '#ef4444';
+    } else {
+        notification.style.background = '#3b82f6';
+    }
+    
+    // Show notification
+    notification.style.opacity = '1';
+    notification.style.transform = 'translateY(0)';
+    
+    // Hide after 3 seconds
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateY(20px)';
+    }, 3000);
+}
+
+// Confetti effect
+function createConfetti() {
+    const colors = ['#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#a855f7', '#ec4899'];
+    
+    for (let i = 0; i < 50; i++) {
+        setTimeout(() => {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            confetti.style.left = Math.random() * 100 + '%';
+            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            confetti.style.position = 'fixed';
+            confetti.style.width = '10px';
+            confetti.style.height = '10px';
+            confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+            confetti.style.top = '-10px';
+            confetti.style.zIndex = '9999';
+            confetti.style.animation = `confetti ${Math.random() * 3 + 2}s linear forwards`;
+            document.body.appendChild(confetti);
+            
+            setTimeout(() => {
+                confetti.remove();
+            }, 5000);
+        }, i * 30);
+    }
+}
+
+// Cookie helper
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Check daily mood reset
+    checkDailyMoodReset();
+    
+    // Fetch today's mood from server
+    fetch('/get-mood-stats/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update streak if element exists
+                const streakValue = document.getElementById('streakValue');
+                if (streakValue && data.streak) {
+                    streakValue.textContent = data.streak;
+                }
+                
+                // Highlight selected mood if any
+                if (data.today_mood && data.today_mood.mood) {
+                    const element = document.querySelector(`[data-mood="${data.today_mood.mood}"]`);
+                    if (element) {
+                        element.classList.add('selected');
+                    }
+                    
+                    // Update localStorage to match server
+                    localStorage.setItem('lastMoodDate', new Date().toDateString());
+                }
+            }
+        })
+        .catch(error => console.error('Error fetching mood stats:', error));
+});
+
+// Auto-refresh news ticker (optional)
+setInterval(() => {
+    console.log('Refreshing news...');
+}, 60000);
+</script>
+{% endblock %}

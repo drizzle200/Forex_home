@@ -1,0 +1,74 @@
+from django.urls import path
+from . import views
+from django.contrib import admin
+#
+urlpatterns=[
+    path(
+        'home/', 
+        views.index_view, 
+        name='index' 
+        ),
+    path(
+        'journal', 
+        views.journal_view, 
+        name='journal'
+        ),
+    path(
+        "update/<int:trade_id>/", 
+        views.update_trade_view, 
+        name="update_trade"
+        ),
+    path(
+        "performance", 
+        views.performance_view, 
+        name="performance"
+        ),
+    path(
+        "trades", 
+        views.trades_view, 
+        name="trades_view"
+        ),
+    path(
+        'export-trades/', 
+        views.export_trades_to_excel, 
+        name='export_trades'
+        ),
+    path(
+        '', 
+        views.home_view, 
+        name="home"),
+    path(
+        'academy/', 
+        views.academy_view, 
+        name="academy"),
+    path(
+        "performance/<int:pair_id>/", 
+        views.performance_by_pair_view, 
+        name="performance_by_pair"
+        ),
+    path(
+        "api/performance/overview/",
+        views.performance_overview,
+        name="performance_overview",
+        ),
+
+    path(
+        'p',
+        views.p,
+        name='p'
+    ),
+    
+    path(
+        "delete/<int:trade_id>/confirm/", 
+        views.delete_trade_confirm, 
+        name="delete_trade_confirm"
+        ),
+    path(
+        "delete/<int:trade_id>/", 
+        views.delete_trade, 
+        name="delete_trade"
+        ),
+
+    path('save-mood/', views.save_mood, name='save_mood'),
+    path('get-mood-stats/', views.get_mood_stats, name='get_mood_stats')
+  ]
