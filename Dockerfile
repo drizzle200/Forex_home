@@ -1,49 +1,59 @@
 # Stage 1: Build the Application
-# We use python:3.11 as the base for building and installing dependencies.
 FROM python:3.11 AS build
 
-# Set the working directory inside the container
+# Set the working directory
 WORKDIR /usr/src/app
 
-# Install system dependencies if needed
-RUN apt-get update && apt-get install -y --no-install-recommends     build-essential     && rm -rf /var/lib/apt/lists/*
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
 # Create a virtual environment
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Copy requirements.txt if it exists (using wildcard to avoid build failure)
-COPY requirements.tx[t] ./requirements.txt
+# Copy requirements.txt
+COPY requirements.txt ./requirements.txt
 
-# Install Python dependencies only if requirements.txt exists
-RUN pip install --upgrade pip &&     if [ -f requirements.txt ]; then         pip install -r requirements.txt;     fi
+# Install Python dependencies
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt
 
-# Copy the rest of the application source code
+# Copy the rest of the application
 COPY . .
 
 # Stage 2: Create the Final Production Image
-# We use python:3.11 as the runtime image with all the necessary tools.
 FROM python:3.11
 
 # Set the working directory
 WORKDIR /usr/src/app
 
-# Copy the virtual environment from the build stage
+# Copy the virtual environment
 COPY --from=build /opt/venv /opt/venv
 
 # Copy the application code
 COPY --from=build /usr/src/app .
 
-# Set the virtual environment as the active Python environment
+# Set the virtual environment as active
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Create a non-root user to run the application
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /usr/src/app
+# Create volume for SQLite database
+VOLUME /data
+
+# Create a non-root user
+RUN useradd -m -u 1000 appuser && \
+    mkdir -p /data /usr/src/app/staticfiles && \
+    chown -R appuser:appuser /usr/src/app /data
 USER appuser
 
-# Expose the port your app runs on
+# Collect static files (THIS IS THE KEY LINE YOU WERE MISSING)
+RUN python manage.py collectstatic --noinput
+
+# Expose the port
 ENV PORT=8080
 EXPOSE $PORT
 
-# Define the command to start your application
-CMD ["python", "app.py"]
+# Run migrations and start gunicorn (NOT python app.py)
+CMD python manage.py migrate --noinput && \
+    gunicorn tradingfx.wsgi:application --bind 0.0.0.0:$PORT
