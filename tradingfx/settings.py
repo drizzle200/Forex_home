@@ -19,7 +19,7 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-n8daet-k0j71kl
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 # Allow Fly.io domain and local
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '0.0.0.0','localhost,127.0.0.1,.fly.dev').split(',')
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,.fly.dev').split(',')
 
 # CSRF Trusted Origins for Fly.io
 CSRF_TRUSTED_ORIGINS = [
