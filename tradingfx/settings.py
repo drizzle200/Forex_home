@@ -70,11 +70,11 @@ TEMPLATES = [
 WSGI_APPLICATION = 'tradingfx.wsgi.application'
 
 
-# Database - SQLite for both dev and production (with volume on Fly.io)
+# Database - SQLite with persistent volume on Fly.io
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',  # Simple path for both
+        'NAME': '/data/db.sqlite3',  # CHANGED: Use volume path for persistence
     }
 }
 
@@ -104,8 +104,12 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = '/data/staticfiles'  # CHANGED: Store static files in volume
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Media files (if you ever need them)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = '/data/media'  # ADDED: For user-uploaded files
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
