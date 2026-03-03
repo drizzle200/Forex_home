@@ -56,4 +56,4 @@ EXPOSE $PORT
 
 # Run migrations and start gunicorn (NOT python app.py)
 CMD python manage.py migrate --noinput && \
-    gunicorn tradingfx.wsgi:application --bind 0.0.0.0:$PORT
+    gunicorn tradingfx.wsgi:application --bind 0.0.0.0:8080
