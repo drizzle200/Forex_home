@@ -1,43 +1,34 @@
-app = "forexhome"
-console_command = "/code/manage.py shell"
-primary_region = "iad"
+# fly.toml app configuration file generated for fxhome on 2026-03-03T10:37:10Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'fxhome'
+primary_region = 'ams'
+console_command = '/code/manage.py shell'
+
+[build]
 
 [deploy]
-release_command = "python manage.py migrate --noinput"
+  release_command = 'python manage.py migrate --noinput'
 
 [env]
-PORT = "8000"
+  PORT = '8000'
 
 [http_service]
-auto_start_machines = true
-auto_stop_machines = true
-force_https = true
-internal_port = 8000
-min_machines_running = 0
-processes = [ "web" ]  # Changed from "app" to "web" (common convention)
-
-[[services]]
-internal_port = 8000
-protocol = "tcp"
-
-[[services.ports]]
-handlers = ["tls", "http"]
-port = 80
-
-[[services.ports]]
-handlers = ["tls"]
-port = 443
-
-[[statics]]
-guest_path = "/code/static"
-tigris_bucket = ""
-url_prefix = "/static/"
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
 
 [[vm]]
-cpu_kind = "shared"
-cpus = 1
-memory = "1gb"
-memory_mb = 1_024
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 256
 
-[processes]
-web = "gunicorn forexhome.wsgi:application --bind 0.0.0.0:8000 --workers 2"
+[[statics]]
+  guest_path = '/code/static'
+  url_prefix = '/static/'
