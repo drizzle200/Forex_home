@@ -9,6 +9,10 @@ console_command = '/code/manage.py shell'
 
 [build]
 
+[mounts]
+source = "fxhome_data"
+destination = "/code"
+
 [deploy]
   release_command = 'python manage.py migrate --noinput'
 
