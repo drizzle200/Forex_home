@@ -1,17 +1,15 @@
-# fly.toml app configuration file generated for fxhome on 2026-03-03T10:37:10Z
-#
-# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
-#
-
 app = 'fxhome'
 primary_region = 'ams'
-console_command = '/code/manage.py shell'
+
+# Console command updated to reflect new code location
+console_command = '/app/manage.py shell'
 
 [build]
 
+# Mount the volume to /data, not /code
 [mounts]
 source = "fxhome_data"
-destination = "/code"
+destination = "/data"
 
 [deploy]
   release_command = 'python manage.py migrate --noinput'
@@ -33,6 +31,7 @@ destination = "/code"
   cpus = 1
   memory_mb = 256
 
+# Statics path updated to where collectstatic places files in the volume
 [[statics]]
-  guest_path = '/code/static'
+  guest_path = '/data/staticfiles'
   url_prefix = '/static/'
