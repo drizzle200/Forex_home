@@ -1,4 +1,3 @@
-
 {% extends 'trade/base/base.html' %}
 {% load static %}
 
@@ -544,7 +543,7 @@ body {
     border: 1px solid var(--danger);
     border-radius: 16px;
     padding: 18px 22px;
-    margin: 0 28px 20px;
+    margin: 0 0 20px 0;
     color: #fecaca;
     display: flex;
     align-items: center;
@@ -923,14 +922,14 @@ body {
             
             <!-- Hidden inputs -->
             {% for field in form %}
-                <input type="hidden" name="{{ field.name }}" id="{{ field.name }}" class="hidden-field">
+                <input type="hidden" name="{{ field.name }}" id="{{ field.name }}" class="hidden-field" value="{{ field.value|default:'' }}">
             {% endfor %}
             <input type="hidden" name="show_confirm" id="show_confirm" value="0">
 
             <!-- Steps Container -->
             <div class="step-container">
                 <!-- Step 0: Pair -->
-                <div class="step-card active" data-step="0" data-name="Select Pair">
+                <div class="step-card active" data-step="0" data-name="Select Pair" data-required="true">
                     <div class="step-title">
                         <i class="fas fa-exchange-alt"></i> Currency Pair
                         <span class="required-badge">Required</span>
@@ -947,7 +946,7 @@ body {
                 </div>
 
                 <!-- Step 1: Momentum H4 -->
-                <div class="step-card" data-step="1" data-name="H4 Momentum">
+                <div class="step-card" data-step="1" data-name="H4 Momentum" data-required="false">
                     <div class="step-title">
                         <i class="fas fa-chart-bar"></i> H4 Momentum
                         <span>Optional</span>
@@ -964,7 +963,7 @@ body {
                 </div>
 
                 <!-- Step 2: Momentum H1 -->
-                <div class="step-card" data-step="2" data-name="H1 Momentum">
+                <div class="step-card" data-step="2" data-name="H1 Momentum" data-required="false">
                     <div class="step-title">
                         <i class="fas fa-chart-bar"></i> H1 Momentum
                         <span>Optional</span>
@@ -981,7 +980,7 @@ body {
                 </div>
 
                 <!-- Step 3: Momentum 15m -->
-                <div class="step-card" data-step="3" data-name="15m Momentum">
+                <div class="step-card" data-step="3" data-name="15m Momentum" data-required="false">
                     <div class="step-title">
                         <i class="fas fa-chart-line"></i> 15m Momentum
                         <span>Optional</span>
@@ -998,7 +997,7 @@ body {
                 </div>
 
                 <!-- Step 4: Momentum 5m -->
-                <div class="step-card" data-step="4" data-name="5m Momentum">
+                <div class="step-card" data-step="4" data-name="5m Momentum" data-required="false">
                     <div class="step-title">
                         <i class="fas fa-chart-line"></i> 5m Momentum
                         <span>Optional</span>
@@ -1015,7 +1014,7 @@ body {
                 </div>
 
                 <!-- Step 5: Momentum 1m -->
-                <div class="step-card" data-step="5" data-name="1m Momentum">
+                <div class="step-card" data-step="5" data-name="1m Momentum" data-required="false">
                     <div class="step-title">
                         <i class="fas fa-chart-line"></i> 1m Momentum
                         <span>Optional</span>
@@ -1032,7 +1031,7 @@ body {
                 </div>
 
                 <!-- Step 6: Entry Place -->
-                <div class="step-card" data-step="6" data-name="Entry Place">
+                <div class="step-card" data-step="6" data-name="Entry Place" data-required="true">
                     <div class="step-title">
                         <i class="fas fa-map-marker-alt"></i> Entry Place
                         <span class="required-badge">Required</span>
@@ -1049,7 +1048,7 @@ body {
                 </div>
 
                 <!-- Step 7: Buy/Sell -->
-                <div class="step-card" data-step="7" data-name="Direction">
+                <div class="step-card" data-step="7" data-name="Direction" data-required="true">
                     <div class="step-title">
                         <i class="fas fa-arrow-trend-up"></i> Trade Direction
                         <span class="required-badge">Required</span>
@@ -1066,7 +1065,7 @@ body {
                 </div>
 
                 <!-- Step 8: Setup Quality -->
-                <div class="step-card" data-step="8" data-name="Setup Quality">
+                <div class="step-card" data-step="8" data-name="Setup Quality" data-required="true">
                     <div class="step-title">
                         <i class="fas fa-star"></i> Setup Quality
                         <span class="required-badge">Required</span>
@@ -1083,7 +1082,7 @@ body {
                 </div>
 
                 <!-- Step 9: Trade Type -->
-                <div class="step-card" data-step="9" data-name="Trade Type">
+                <div class="step-card" data-step="9" data-name="Trade Type" data-required="true">
                     <div class="step-title">
                         <i class="fas fa-tag"></i> Trade Type
                         <span class="required-badge">Required</span>
@@ -1100,7 +1099,7 @@ body {
                 </div>
 
                 <!-- Step 10: Confirmation -->
-                <div class="step-card" data-step="10" data-name="Confirmation">
+                <div class="step-card" data-step="10" data-name="Confirmation" data-required="true">
                     <div class="step-title">
                         <i class="fas fa-check-double"></i> Confirmation
                         <span class="required-badge">Required</span>
@@ -1117,7 +1116,7 @@ body {
                 </div>
 
                 <!-- Step 11: Mood -->
-                <div class="step-card" data-step="11" data-name="Mood">
+                <div class="step-card" data-step="11" data-name="Mood" data-required="true">
                     <div class="step-title">
                         <i class="fas fa-smile"></i> Trading Mood
                         <span class="required-badge">Required</span>
@@ -1134,7 +1133,7 @@ body {
                 </div>
 
                 <!-- Step 12: TP -->
-                <div class="step-card" data-step="12" data-name="Take Profit">
+                <div class="step-card" data-step="12" data-name="Take Profit" data-required="true">
                     <div class="step-title">
                         <i class="fas fa-bullseye"></i> Take Profit (TP)
                         <span class="required-badge">Required</span>
@@ -1151,7 +1150,7 @@ body {
                 </div>
 
                 <!-- Step 13: TP Reason -->
-                <div class="step-card" data-step="13" data-name="TP Reason">
+                <div class="step-card" data-step="13" data-name="TP Reason" data-required="true">
                     <div class="step-title">
                         <i class="fas fa-comment"></i> TP Reason
                         <span class="required-badge">Required</span>
@@ -1168,44 +1167,44 @@ body {
                 </div>
 
                 <!-- Step 14: Risk Reward -->
-                <div class="step-card" data-step="14" data-name="Risk Reward">
+                <div class="step-card" data-step="14" data-name="Risk Reward" data-required="true">
                     <div class="step-title">
                         <i class="fas fa-scale-balanced"></i> Risk Reward Ratio
                         <span class="required-badge">Required</span>
                     </div>
                     <div class="input-wrapper">
                         <input type="number" step="0.1" min="0.1" class="form-control" 
-       id="input_risk_reward" placeholder="e.g., 2.5">
-</div>
-<div class="input-hint">
-    <i class="fas fa-info-circle"></i>
-    Enter the risk-to-reward ratio (e.g., 2.5 for 1:2.5)
-</div>
-</div>
-</div>
+                               id="input_risk_reward" placeholder="e.g., 2.5" value="{{ form.risk_reward.value|default:'' }}">
+                    </div>
+                    <div class="input-hint">
+                        <i class="fas fa-info-circle"></i>
+                        Enter the risk-to-reward ratio (e.g., 2.5 for 1:2.5)
+                    </div>
+                </div>
+            </div>
 
-<!-- Step Indicator Dots -->
-<div class="step-indicator-dots" id="stepDots">
-    {% for i in "123456789012345"|make_list %}
-    <span class="dot {% if forloop.first %}active{% endif %}" data-step="{{ forloop.counter0 }}"></span>
-    {% endfor %}
-</div>
+            <!-- Step Indicator Dots -->
+            <div class="step-indicator-dots" id="stepDots">
+                {% for i in "123456789012345"|make_list %}
+                <span class="dot {% if forloop.first %}active{% endif %}" data-step="{{ forloop.counter0 }}"></span>
+                {% endfor %}
+            </div>
 
-<!-- Navigation Buttons -->
-<div class="navigation-buttons">
-    <button type="button" class="btn-nav prev" id="backBtn" disabled>
-        <i class="fas fa-arrow-left"></i> Previous
-    </button>
-    <button type="button" class="btn-nav next" id="nextBtn">
-        Next <i class="fas fa-arrow-right"></i>
-    </button>
-</div>
+            <!-- Navigation Buttons -->
+            <div class="navigation-buttons">
+                <button type="button" class="btn-nav prev" id="backBtn" disabled>
+                    <i class="fas fa-arrow-left"></i> Previous
+                </button>
+                <button type="button" class="btn-nav next" id="nextBtn">
+                    Next <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
 
-<button type="submit" class="btn-submit" id="takeTradeBtn" style="display:none;">
-    <i class="fas fa-check-circle"></i> Review & Take Trade
-</button>
-</form>
-</div>
+            <button type="submit" class="btn-submit" id="takeTradeBtn" style="display:none;">
+                <i class="fas fa-check-circle"></i> Review & Take Trade
+            </button>
+        </form>
+    </div>
 </div>
 
 <!-- Trade Preview Modal -->
@@ -1262,20 +1261,27 @@ document.addEventListener('DOMContentLoaded', function() {
     const progressBar = document.getElementById('progressBar');
     
     const totalSteps = steps.length;
-    const optionalSteps = [1,2,3,4,5]; // Momentum steps are optional
-    const requiredSteps = [0,6,7,8,9,10,11,12,13,14]; // All non-momentum steps are required
 
-    // Initialize form data object
+    // Initialize form data object from hidden inputs
     let formData = {};
+    document.querySelectorAll('.hidden-field').forEach(field => {
+        formData[field.id] = field.value;
+    });
 
-    // Load existing values from hidden inputs
+    // Load existing values from hidden inputs and highlight corresponding options
     document.querySelectorAll('.hidden-field').forEach(field => {
         if (field.value) {
             formData[field.id] = field.value;
-            // Highlight corresponding option
-            const option = document.querySelector(`.option[data-field="${field.id}"][data-value="${field.value}"]`);
-            if (option) {
-                option.classList.add('selected');
+            // Handle risk reward separately
+            if (field.id === 'risk_reward') {
+                const rrInput = document.getElementById('input_risk_reward');
+                if (rrInput) rrInput.value = field.value;
+            } else {
+                // Highlight corresponding option
+                const option = document.querySelector(`.option[data-field="${field.id}"][data-value="${field.value}"]`);
+                if (option) {
+                    option.classList.add('selected');
+                }
             }
         }
     });
@@ -1343,9 +1349,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Check if current step is valid
     function isStepValid(step) {
         const stepCard = steps[step];
+        const isRequired = stepCard.dataset.required === 'true';
         
         // Optional steps are always valid
-        if (optionalSteps.includes(step)) {
+        if (!isRequired) {
             return true;
         }
         
@@ -1358,15 +1365,33 @@ document.addEventListener('DOMContentLoaded', function() {
         // For other required steps
         const selectedOption = stepCard.querySelector('.option.selected');
         const fieldName = selectedOption?.dataset.field;
-        return selectedOption && fieldName && document.getElementById(fieldName)?.value;
+        const hiddenInput = document.getElementById(fieldName);
+        
+        // Check if there's a selected option with a value
+        return selectedOption && fieldName && hiddenInput && hiddenInput.value !== '';
     }
 
     // Update next button state based on validation
     function updateNextButtonState() {
-        if (optionalSteps.includes(currentStep)) {
-            nextBtn.disabled = false;
-        } else {
+        if (currentStep === totalSteps - 1) {
+            return; // No next button on last step
+        }
+        
+        const isRequired = steps[currentStep].dataset.required === 'true';
+        
+        if (isRequired) {
             nextBtn.disabled = !isStepValid(currentStep);
+        } else {
+            nextBtn.disabled = false; // Optional steps always enable next
+        }
+    }
+
+    // Update hidden input and formData
+    function updateHiddenInput(field, value) {
+        const hiddenInput = document.getElementById(field);
+        if (hiddenInput) {
+            hiddenInput.value = value;
+            formData[field] = value;
         }
     }
 
@@ -1376,11 +1401,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const field = this.dataset.field;
             const value = this.dataset.value;
             
-            // Update hidden input
-            document.getElementById(field).value = value;
-            
-            // Store in formData
-            formData[field] = value;
+            // Update hidden input and formData
+            updateHiddenInput(field, value);
             
             // Remove selected class from all options in this field
             document.querySelectorAll(`.option[data-field="${field}"]`).forEach(o => {
@@ -1404,16 +1426,20 @@ document.addEventListener('DOMContentLoaded', function() {
             // Update next button state
             updateNextButtonState();
 
-            // Auto-advance for required fields ONLY if auto-advance is desired
-            // Comment this out if you don't want auto-advance
-            if (requiredSteps.includes(currentStep) && currentStep < totalSteps - 1 && isStepValid(currentStep)) {
-                setTimeout(() => {
-                    if (currentStep < totalSteps - 1) {
+            // Auto-advance for ALL steps (both required and optional)
+            // Only auto-advance if not on last step
+            if (currentStep < totalSteps - 1) {
+                // For optional steps, auto-advance always
+                // For required steps, only auto-advance if valid
+                const isRequired = steps[currentStep].dataset.required === 'true';
+                
+                if (!isRequired || (isRequired && isStepValid(currentStep))) {
+                    setTimeout(() => {
                         currentStep++;
                         showStep(currentStep);
                         updateNextButtonState();
-                    }
-                }, 300);
+                    }, 300);
+                }
             }
         });
     });
@@ -1442,10 +1468,8 @@ document.addEventListener('DOMContentLoaded', function() {
             wrapper.style.boxShadow = '0 0 0 4px var(--danger-soft)';
         }
         
-        // Update next button state
-        if (currentStep === totalSteps - 1) {
-            updateNextButtonState();
-        }
+        // Update next button state if on last step
+        updateNextButtonState();
     });
 
     // Back button with animation
@@ -1476,19 +1500,11 @@ document.addEventListener('DOMContentLoaded', function() {
             // Create error message
             const errorMsg = document.createElement('div');
             errorMsg.className = 'error-box';
-            errorMsg.style.margin = '0 0 20px 0';
             
-            if (currentStep === totalSteps - 1) {
-                errorMsg.innerHTML = `
-                    <span class="error-icon">!</span>
-                    <span>Please enter a valid Risk Reward ratio greater than 0.</span>
-                `;
-            } else {
-                errorMsg.innerHTML = `
-                    <span class="error-icon">!</span>
-                    <span>This field is required. Please make a selection.</span>
-                `;
-            }
+            errorMsg.innerHTML = `
+                <span class="error-icon">!</span>
+                <span>This field is required. Please make a selection.</span>
+            `;
             
             // Add error message
             currentStepCard.insertBefore(errorMsg, currentStepCard.firstChild);
@@ -1522,14 +1538,15 @@ document.addEventListener('DOMContentLoaded', function() {
     submitBtn.addEventListener('click', function(e) {
         e.preventDefault(); // Prevent default to validate first
         
-        // Validate all required fields
+        // Validate all required steps
         let invalidSteps = [];
         
-        for (let step of requiredSteps) {
-            if (!isStepValid(step)) {
-                invalidSteps.push(step);
+        steps.forEach((step, index) => {
+            const isRequired = step.dataset.required === 'true';
+            if (isRequired && !isStepValid(index)) {
+                invalidSteps.push(index);
             }
-        }
+        });
         
         if (invalidSteps.length > 0) {
             // Find the first invalid step
@@ -1542,7 +1559,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Highlight invalid steps in the progress dots
             invalidSteps.forEach(step => {
                 dots[step].style.backgroundColor = 'var(--danger)';
-                dots[step].style.boxShadow = '0 0 15px var(--danger-glow)';
+                dots[step].style.boxShadow = '0 0 15px var(--danger)';
                 
                 // Reset after 2 seconds
                 setTimeout(() => {
@@ -1584,7 +1601,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         .dot.completed {
             background: var(--success);
-            box-shadow: 0 0 10px var(--success-glow);
+            box-shadow: 0 0 10px var(--success);
         }
         
         .error-box {

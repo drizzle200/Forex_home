@@ -202,114 +202,195 @@ def export_trades_to_excel(request):
 # Index view
 # ---------------------------[]
 
+import random
+import pandas as pd
+import numpy as np
+from datetime import datetime
+from django.db import transaction
+from django.core.exceptions import ValidationError
+from django.shortcuts import render, redirect
 
-def index_view(request):
-    model = get_model()
-   
-    if request.method == "POST":
-        form = NewTradeForm(request.POST)
+def generate_unique_trade_id():
+    """Generate a unique 4-digit trade ID."""
+    existing_ids = set(Trades.objects.values_list("trade_id", flat=True))
+    while True:
+        new_id = random.randint(1000, 9999)
+        if new_id not in existing_ids:
+            return new_id
 
-        if form.is_valid():
-            new_trade = form.save(commit=False)
+def normalize_empty_fields(trade_instance):
+    """Convert empty strings to None for all fields."""
+    for field in Trades._meta.get_fields():
+        if hasattr(trade_instance, field.name):
+            value = getattr(trade_instance, field.name)
+            if value == "":
+                setattr(trade_instance, field.name, None)
+    return trade_instance
 
-            try:
-                with transaction.atomic():
+def prepare_prediction_data(trade_instance, features):
+    """
+    Prepare data for model prediction.
+    Fixed: Properly handles data types to avoid sklearn encoding issues.
+    """
+    pred_data = {}
+    
+    for col in features:
+        # Get the value and ensure it's a primitive type, not a dict
+        value = getattr(trade_instance, col, "Blank")
+        
+        # Handle different data types
+        if value is None:
+            value = "Blank"
+        elif isinstance(value, (dict, list)):
+            value = str(value)  # Convert complex types to string
+        elif not isinstance(value, (str, int, float, bool, np.number)):
+            value = str(value)  # Convert any other non-primitive to string
+        
+        pred_data[col] = [value]
+    
+    pred_df = pd.DataFrame(pred_data)
+    
+    # Convert risk_reward to numeric safely
+    if "risk_reward" in pred_df.columns:
+        pred_df["risk_reward"] = pd.to_numeric(
+            pred_df["risk_reward"], errors="coerce"
+        ).fillna(0)
+    
+    # Convert all object columns to string to avoid encoding issues
+    for col in pred_df.select_dtypes(include=['object']).columns:
+        pred_df[col] = pred_df[col].astype(str)
+    
+    return pred_df
 
-                    # 🔒 Restrict trade BEFORE doing any heavy work
-                    restrict_trade(
-                        pair=new_trade.pair,
-                        new_trade_type=new_trade.trade_type
-                    )
+def calculate_trade_rating(probability):
+    """Calculate trade rating based on win probability."""
+    if probability >= 70:
+        return "A"
+    elif probability >= 60:
+        return "B"
+    elif probability >= 50:
+        return "C"
+    return "D"
 
-                    # Unique trade ID
-                    existing_ids = set(
-                        Trades.objects.values_list("trade_id", flat=True)
-                    )
-                    new_id = random.randint(1000, 9999)
-                    while new_id in existing_ids:
-                        new_id = random.randint(1000, 9999)
+def get_trade_preview_data(trade_instance, rvs_value, rvs_grade, probability=None, rating=None):
+    """Prepare trade preview data for confirmation."""
+    exclude_fields = {
+        "id", "momentum_h4", "momentum_h1", "momentum_15m", "momentum_5m", 
+        "momentum_1m", "rvs", "rvs_grade", "risk_reward", "trade_id", 
+        "timestamp", "trade_type", "buy_or_sell", "session", "entry_place", 
+        "confirmation", "mood", "tp", "tp_reason", "setup_quality", "target",
+        "reason", "holding_time_hrs", "holding_time", "narration"
+    }
+    
+    preview_data = {}
+    
+    for field in Trades._meta.get_fields():
+        if field.name not in exclude_fields:
+            value = getattr(trade_instance, field.name, None)
+            # Handle None values
+            if value is None or value == "":
+                display_value = "Not specified"
+            else:
+                display_value = value
+            
+            # Use field name or verbose_name
+            field_label = getattr(field, 'verbose_name', field.name)
+            preview_data[str(field_label).title()] = display_value
+    
+    preview_data["RVS"] = rvs_value if rvs_value is not None else 0
+    preview_data["RVS Grade"] = rvs_grade if rvs_grade is not None else "N/A"
+    
+    if probability is not None:
+        preview_data["Win Probability (%)"] = round(probability, 1)
+        preview_data["Trade Rating"] = rating
+    
+    return preview_data
 
-                    new_trade.trade_id = new_id
-                    new_trade.timestamp = datetime.now()
-
-                    if not new_trade.session:
-                        new_trade.session = get_trading_session()
-
-                    # Normalize empty fields
-                    for field in Trades._meta.get_fields():
-                        if hasattr(new_trade, field.name):
-                            if getattr(new_trade, field.name) in ["", None]:
-                                setattr(new_trade, field.name, None)
-
-                    # Prediction
+def process_trade_submission(request, form, model):
+    """Process the trade form submission."""
+    new_trade = form.save(commit=False)
+    
+    try:
+        with transaction.atomic():
+            # Restrict trade before doing any heavy work
+            restrict_trade(
+                pair=new_trade.pair,
+                new_trade_type=new_trade.trade_type
+            )
+            
+            # Set basic trade info
+            new_trade.trade_id = generate_unique_trade_id()
+            new_trade.timestamp = datetime.now()
+            
+            if not new_trade.session:
+                new_trade.session = get_trading_session()
+            
+            # Normalize empty fields to None
+            new_trade = normalize_empty_fields(new_trade)
+            
+            # Calculate RVS
+            new_trade = calculate_rvs(new_trade)
+            
+            # Initialize prediction variables
+            probability = None
+            rating = None
+            
+            # Make prediction if model exists
+            if model:
+                try:
+                    pred_df = prepare_prediction_data(new_trade, FEATURES)
+                    probability = model.predict_proba(pred_df)[0][1] * 100
+                    rating = calculate_trade_rating(probability)
+                except Exception as e:
+                    # Log the error but don't break the trade creation
+                    print(f"Prediction error: {e}")
                     probability = None
                     rating = None
-                    if model:
-                        pred_data = {
-                            col: [getattr(new_trade, col, "Blank")]
-                            for col in FEATURES
-                        }
-                        pred_df = pd.DataFrame(pred_data)
-                        pred_df["risk_reward"] = pd.to_numeric(
-                            pred_df["risk_reward"], errors="coerce"
-                        ).fillna(0)
-
-                        probability = model.predict_proba(pred_df)[0][1] * 100
-                        rating = (
-                            "A" if probability >= 70 else
-                            "B" if probability >= 60 else
-                            "C" if probability >= 50 else
-                            "D"
-                        )
-
-                    # RVS calculation
-                    new_trade = calculate_rvs(new_trade)
-
-                    # Trade preview
-                    trade_preview_data = {}
-                    exclude_fields = {
-                        "id", "momentum_h4", "momentum_h1", "momentum_15m",
-                        "momentum_5m", "momentum_1m", "rvs", "rvs_grade","risk_reward",
-                        "trade_id", "timestamp", "trade_type", "buy_or_sell",
-                        "session", "entry_place", "confirmation", "mood",
-                        "tp", "tp_reason", "setup_quality", "target",
-                        "reason", "holding_time_hrs", "holding_time",
-                        "narration"
-                    }
-
-                    for field in Trades._meta.get_fields():
-                        if field.name not in exclude_fields:
-                            trade_preview_data[field.verbose_name.title()] = \
-                                getattr(new_trade, field.name, None)
-
-                    trade_preview_data["RVS"] = new_trade.rvs
-                    trade_preview_data["RVS Grade"] = new_trade.rvs_grade
-
-                    if probability is not None:
-                        trade_preview_data["Win Probability (%)"] = round(probability, 1)
-                        trade_preview_data["Trade Rating"] = rating
-
-                    if "confirm_save" in request.POST:
-                        new_trade.save()
-                        return redirect("index")
-
-            except ValidationError as e:
-                form.add_error(None, e.message)
-
+            
+            # Prepare preview data
+            preview_data = get_trade_preview_data(
+                new_trade, 
+                new_trade.rvs, 
+                new_trade.rvs_grade,
+                probability, 
+                rating
+            )
+            
+            # Check if user confirmed save
+            if "confirm_save" in request.POST:
+                new_trade.save()
+                return redirect("index")
+            
+            # Return preview for confirmation
             return render(request, "trade/index.html", {
                 "form": form,
                 "show_confirm": True,
-                "trade_preview": trade_preview_data if "trade_preview_data" in locals() else None,
+                "trade_preview": preview_data,
             })
+            
+    except ValidationError as e:
+        form.add_error(None, e.message)
+        return render(request, "trade/index.html", {
+            "form": form,
+            "show_confirm": False,
+        })
 
+def index_view(request):
+    """Main view for creating new trades."""
+    model = get_model()
+    
+    if request.method == "POST":
+        form = NewTradeForm(request.POST)
+        
+        if form.is_valid():
+            return process_trade_submission(request, form, model)
     else:
         form = NewTradeForm()
-   
+    
     return render(request, "trade/index.html", {
         "form": form,
         "show_confirm": False,
     })
-
 
 
 def journal_view(request):
