@@ -70,11 +70,11 @@ TEMPLATES = [
 WSGI_APPLICATION = 'tradingfx.wsgi.application'
 
 
-# Database - SQLite for both dev and production (with volume on Fly.io)
+# Database - SQLite with persistent volume on Fly.io
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',  # Simple path for both
+        'NAME': '/data/db.sqlite3',  # CHANGED: Use volume path for persistence
     }
 }
 
@@ -104,15 +104,23 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = '/data/staticfiles'  # CHANGED: Store static files in volume
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Media files (if you ever need them)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = '/data/media'  # ADDED: For user-uploaded files
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Security settings for production
 if not DEBUG:
-    SECURE_SSL_REDIRECT = True
+    # For Fly.io - SSL is terminated at the proxy level
+    SECURE_SSL_REDIRECT = False  # Changed from True to False
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')  # Added this line
+    
+    # Keep these for security
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
