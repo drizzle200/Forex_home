@@ -355,60 +355,6 @@ body::before {
     font-size: 11px;
 }
 
-/* Login/Signup Buttons */
-.auth-buttons {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-left: 20px;
-    padding-left: 20px;
-    border-left: 1px solid var(--border);
-}
-
-.btn-login {
-    padding: 8px 20px;
-    background: transparent;
-    border: 2px solid var(--primary);
-    border-radius: 40px;
-    color: var(--primary);
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.btn-login:hover {
-    background: var(--primary-soft);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px var(--primary-glow);
-}
-
-.btn-signup {
-    padding: 8px 20px;
-    background: var(--gradient-primary);
-    border: none;
-    border-radius: 40px;
-    color: white;
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    box-shadow: 0 4px 12px var(--primary-glow);
-}
-
-.btn-signup:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px var(--primary-glow);
-}
-
 /* Hamburger Menu - IMPROVED for mobile */
 .hamburger {
     display: none;
@@ -918,21 +864,6 @@ tr:hover td {
         border-left: none;
     }
 
-    .auth-buttons {
-        order: 3;
-        margin-left: 0;
-        padding-left: 0;
-        border-left: none;
-        flex-direction: column;
-        width: 100%;
-    }
-
-    .btn-login, .btn-signup {
-        width: 100%;
-        justify-content: center;
-        padding: 12px;
-    }
-
     .dropdown-content {
         position: relative;
         box-shadow: var(--shadow-lg);
@@ -1252,14 +1183,14 @@ tr:hover td {
         <!-- Navigation Links -->
         <div class="nav-links" id="navLinks">
             <div class="nav-item">
-                <a href="{% url 'index' %}" class="nav-link">
+                <a href="{% url 'home' %}" class="nav-link">
                     <i class="fas fa-home"></i>
                     <span>Dashboard</span>
                 </a>
             </div>
             
             <div class="nav-item">
-                <a href="{% url 'trade' %}" class="nav-link">
+                <a href="{% url 'index' %}" class="nav-link">
                     <i class="fas fa-chart-line"></i>
                     <span>Trading</span>
                 </a>
@@ -1269,9 +1200,7 @@ tr:hover td {
                 <a href="{% url 'journal' %}" class="nav-link">
                     <i class="fas fa-book"></i>
                     <span>Journal</span>
-                    {% if user.is_authenticated %}
                     <span class="nav-badge">3</span>
-                    {% endif %}
                 </a>
             </div>
             
@@ -1296,58 +1225,41 @@ tr:hover td {
                 </a>
             </div>
             
-            {% if user.is_authenticated %}
             <div class="nav-item">
-                <a href="{% url 'profile' %}" class="nav-link">
+                <a href="#" class="nav-link">
                     <i class="fas fa-cog"></i>
                     <span>Settings</span>
                 </a>
             </div>
-            {% endif %}
         </div>
 
-        <!-- User Menu or Auth Buttons -->
-        {% if user.is_authenticated %}
+        <!-- User Menu -->
         <div class="user-menu">
             <div class="dropdown">
                 <div class="user-avatar">
-                    {% if user.first_name %}
-                        {{ user.first_name|first }}{{ user.last_name|first }}
-                    {% else %}
-                        {{ user.username|first|upper }}
-                    {% endif %}
+                    JD
                 </div>
                 <div class="dropdown-content">
-                    <a href="{% url 'profile' %}" class="dropdown-item">
+                    <a href="#" class="dropdown-item">
                         <i class="fas fa-user"></i> Profile
                         <span class="badge">80%</span>
                     </a>
-                    <a href="{% url 'profile' %}?tab=stats" class="dropdown-item">
+                    <a href="#" class="dropdown-item">
                         <i class="fas fa-chart-pie"></i> Statistics
                     </a>
                     <a href="#" class="dropdown-item">
                         <i class="fas fa-bell"></i> Notifications
                         <span class="badge badge-primary">3</span>
                     </a>
-                    <a href="{% url 'profile' %}?tab=security" class="dropdown-item">
+                    <a href="#" class="dropdown-item">
                         <i class="fas fa-cog"></i> Settings
                     </a>
-                    <a href="{% url 'logout' %}" class="dropdown-item">
+                    <a href="#" class="dropdown-item">
                         <i class="fas fa-sign-out-alt"></i> Logout
                     </a>
                 </div>
             </div>
         </div>
-        {% else %}
-        <div class="auth-buttons">
-            <a href="{% url 'login' %}" class="btn-login">
-                <i class="fas fa-sign-in-alt"></i> Login
-            </a>
-            <a href="{% url 'login' %}?register=true" class="btn-signup">
-                <i class="fas fa-user-plus"></i> Sign Up
-            </a>
-        </div>
-        {% endif %}
     </div>
 </div>
 
@@ -1357,19 +1269,7 @@ tr:hover td {
 
 <!-- Page Header -->
 {% block header %}
-{% if page_title %}
-<div class="page-header">
-    <div class="page-title">
-        <i class="fas fa-{% block page_icon %}circle{% endblock %}"></i>
-        {% block page_title %}{{ page_title }}{% endblock %}
-    </div>
-    <div class="breadcrumb">
-        <a href="{% url 'home' %}">Home</a>
-        <i class="fas fa-chevron-right"></i>
-        <span>{% block breadcrumb %}{% endblock %}</span>
-    </div>
-</div>
-{% endif %}
+
 {% endblock %}
 
 <!-- Main Content Area -->
@@ -1509,7 +1409,7 @@ tr:hover td {
             const href = link.getAttribute('href');
             if (href && currentPath === href) {
                 link.classList.add('active');
-            } else if (href && href !== '/' && currentPath.startsWith(href) && href !== '#') {
+            } else if (href && href !== '/' && currentPath.startsWith(href)) {
                 // For nested paths
                 link.classList.add('active');
             }
@@ -1571,14 +1471,6 @@ tr:hover td {
         document.querySelectorAll('.card, .table-card, .stats-card').forEach(el => {
             observer.observe(el);
         });
-
-        // Check for tab parameter in URL (for profile page)
-        const urlParams = new URLSearchParams(window.location.search);
-        const tabParam = urlParams.get('tab');
-        if (tabParam) {
-            // This will be handled by profile page if it exists
-            console.log('Tab parameter:', tabParam);
-        }
     });
 </script>
 

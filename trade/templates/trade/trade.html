@@ -917,7 +917,7 @@ body {
         </div>
         {% endif %}
 
-        <form method="post" action="{% url 'index' %}" id="tradeForm">
+        <form method="post" action="{% url 'trade' %}" id="tradeForm">
             {% csrf_token %}
             
             <!-- Hidden inputs -->
@@ -1231,7 +1231,7 @@ body {
             </table>
         </div>
         <div class="modal-footer">
-            <form method="post" action="{% url 'index' %}" style="display:inline;">
+            <form method="post" action="{% url 'trade' %}" style="display:inline;">
                 {% csrf_token %}
                 {% for field in form %}
                 <input type="hidden" name="{{ field.name }}" value="{{ field.value|default:'' }}">
@@ -1240,7 +1240,7 @@ body {
                     <i class="fas fa-check"></i> Confirm Trade
                 </button>
             </form>
-            <a href="{% url 'index' %}" class="modal-btn btn-cancel">
+            <a href="{% url 'trade' %}" class="modal-btn btn-cancel">
                 <i class="fas fa-times"></i> Cancel
             </a>
         </div>

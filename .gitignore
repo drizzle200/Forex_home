@@ -13,8 +13,8 @@ myenv/
 .virtualenv/
 
 # Django Settings & Config - EXCLUDE these
-**/settings.py
-**/local_settings.py
+settings.py
+local_settings.py
 .env
 .env.*
 fly.toml

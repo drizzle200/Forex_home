@@ -1,0 +1,1012 @@
+{% extends 'trade/base/base.html' %}
+{% load static %}
+
+{% block title %}Performance Dashboard{% endblock %}
+
+{% block page_icon %}chart-pie{% endblock %}
+{% block page_title %}Performance{% endblock %}
+{% block breadcrumb %}Performance{% endblock %}
+
+{% block body %}
+<style>
+:root {
+    --primary: #10b981;
+    --primary-dark: #059669;
+    --primary-glow: rgba(16, 185, 129, 0.3);
+    --primary-soft: rgba(16, 185, 129, 0.15);
+    
+    --bg-primary: #0a0f1c;
+    --bg-secondary: #111827;
+    --bg-tertiary: #1f2937;
+    --bg-elevated: #2d3748;
+    --card-bg: #1a2332;
+    --card-hover: #232e3f;
+    --card-border: #2d3748;
+    
+    --text-primary: #f3f4f6;
+    --text-secondary: #9ca3af;
+    --text-muted: #6b7280;
+    
+    --success: #34d399;
+    --success-soft: rgba(52, 211, 153, 0.15);
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.15);
+    --info: #60a5fa;
+    --info-soft: rgba(96, 165, 250, 0.15);
+    --warning: #fbbf24;
+    --warning-soft: rgba(251, 191, 36, 0.15);
+    --purple: #c084fc;
+    --purple-soft: rgba(192, 132, 252, 0.15);
+    
+    --border: #2d3748;
+    --border-light: #374151;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    line-height: 1.5;
+}
+
+/* ===== DASHBOARD ===== */
+.dashboard {
+    width: 100%;
+    min-height: 100vh;
+    padding: 16px;
+    background: var(--bg-primary);
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.dashboard-title {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    padding: 10px 18px;
+    font-size: 18px;
+    font-weight: 600;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 12px -5px var(--primary-glow);
+}
+
+.dashboard-title i {
+    font-size: 18px;
+}
+
+.date-badge {
+    background: var(--bg-tertiary);
+    padding: 8px 16px;
+    border-radius: 30px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--border);
+}
+
+/* ===== COMPACT LAYOUT ===== */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+/* ===== CARDS ===== */
+.card {
+    background: var(--card-bg);
+    border-radius: 16px;
+   
+    overflow: hidden;
+    position: relative;
+}
+
+.card:hover {
+    border-color: transparent !important;
+    box-shadow: none !important;
+}
+
+.card-header {
+    padding: 12px 16px;
+    font-weight: 600;
+    font-size: 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(90deg, rgba(16, 185, 129, 0.05), transparent);
+}
+
+.card-header i {
+    color: var(--primary);
+    font-size: 16px;
+}
+
+.card-header .badge {
+    margin-left: auto;
+    background: var(--bg-tertiary);
+    padding: 4px 10px;
+    border-radius: 30px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+/* ===== COMPACT TABLE ===== */
+.table-compact {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.table-compact th {
+    background: var(--bg-tertiary);
+    padding: 8px 10px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+}
+
+.table-compact td {
+    padding: 8px 10px;
+    text-align: center;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.table-compact tr:last-child td {
+    border-bottom: none;
+}
+
+.table-compact tbody tr:hover {
+    background: var(--bg-tertiary);
+}
+
+.pair-cell {
+    font-weight: 600;
+    text-align: left !important;
+}
+
+.pair-link {
+    color: var(--text-secondary);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 30px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    transition: all 0.2s ease;
+    font-size: 12px;
+}
+
+.pair-link:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.pair-link i {
+    font-size: 10px;
+    opacity: 0;
+}
+
+.pair-link:hover i {
+    opacity: 1;
+}
+
+.value-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 30px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.value-positive {
+    background: var(--success-soft);
+    color: var(--success);
+}
+
+.value-negative {
+    background: var(--danger-soft);
+    color: var(--danger);
+}
+
+.value-neutral {
+    background: var(--primary-soft);
+    color: var(--primary);
+}
+
+/* ===== SIDEBAR STATS ===== */
+.stats-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Mini Gauges Row */
+.mini-gauges {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.mini-gauge {
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+    padding: 10px 8px;
+    text-align: center;
+    border: 1px solid var(--border);
+}
+
+.mini-gauge .gauge-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.mini-gauge .gauge-value {
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.mini-gauge .gauge-value small {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-weight: normal;
+}
+
+/* Mini Charts for gauges */
+.mini-chart {
+    width: 100%;
+    height: 50px;
+    margin-top: 4px;
+}
+
+/* Info Strip */
+.info-strip {
+    background: linear-gradient(135deg, #134e4a, #0d3d3a);
+    border-radius: 12px;
+    padding: 12px;
+    text-align: center;
+    border: 1px solid var(--primary);
+    box-shadow: 0 0 12px var(--primary-glow);
+    position: relative;
+    overflow: hidden;
+}
+
+.info-strip::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, var(--primary-soft), transparent);
+    animation: shine 3s infinite;
+}
+
+@keyframes shine {
+    0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+    100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+}
+
+.info-strip .label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+    position: relative;
+    z-index: 1;
+}
+
+.info-strip .value {
+    font-size: 22px;
+    font-weight: 700;
+    color: white;
+    line-height: 1.2;
+    position: relative;
+    z-index: 1;
+}
+
+.info-strip .sub {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    position: relative;
+    z-index: 1;
+}
+
+/* Stats Grid 2x3 */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+}
+
+.stat-tile {
+    background: var(--bg-tertiary);
+    border-radius: 10px;
+    padding: 10px 6px;
+    text-align: center;
+    border: 1px solid var(--border);
+    transition: all 0.2s ease;
+}
+
+.stat-tile:hover {
+    border-color: var(--primary);
+    transform: translateY(-1px);
+}
+
+.stat-tile .tile-label {
+    font-size: 9px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.stat-tile .tile-label i {
+    font-size: 10px;
+    color: var(--primary);
+}
+
+.stat-tile .tile-value {
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.stat-tile .tile-trend {
+    font-size: 8px;
+    margin-top: 2px;
+    color: var(--text-muted);
+}
+
+/* Color classes */
+.text-green { color: var(--success); }
+.text-red { color: var(--danger); }
+.text-blue { color: var(--info); }
+.text-yellow { color: var(--warning); }
+.text-primary { color: var(--primary); }
+.text-purple { color: var(--purple); }
+
+/* ===== FULL WIDTH CHART ===== */
+.chart-card {
+    margin-top: 16px;
+    padding: 16px;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.chart-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chart-title h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.chart-title i {
+    color: var(--primary);
+    font-size: 18px;
+}
+
+.chart-legend {
+    display: flex;
+    gap: 20px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.legend-dot.profit { 
+    background: var(--success);
+    box-shadow: 0 0 8px var(--success);
+}
+.legend-dot.loss { 
+    background: var(--danger);
+    box-shadow: 0 0 8px var(--danger);
+}
+
+.chart-wrapper {
+    width: 100%;
+    height: 350px;
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+    padding: 16px;
+}
+
+#performanceChart {
+    width: 100%;
+    height: 100%;
+}
+
+/* ===== TOOLTIP ===== */
+.message-box {
+    position: fixed;
+    display: none;
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    z-index: 1000;
+    border: 1px solid var(--primary);
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.hover-text {
+    cursor: help;
+    border-bottom: 1px dashed var(--primary);
+}
+
+/* ===== MOBILE ===== */
+@media (max-width: 768px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .dashboard {
+        padding: 12px;
+    }
+
+    .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .chart-wrapper {
+        height: 250px;
+        padding: 8px;
+    }
+
+    .chart-legend {
+        gap: 12px;
+        font-size: 11px;
+    }
+}
+</style>
+
+<!-- ECharts -->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+
+<div class="dashboard">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <div class="dashboard-title">
+            <i class="fas fa-chart-pie"></i> Performance
+        </div>
+        <div class="date-badge">
+            <i class="fas fa-calendar-alt"></i> Feb 1 - Mar 3, 2024
+        </div>
+    </div>
+
+    <!-- Main Grid: Left Table + Right Stats -->
+    <div class="dashboard-grid">
+        <!-- LEFT: TRADES SUMMARY TABLE (COMPACT) -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-list-alt"></i> Trades by Pair
+                <span class="badge">{{ pairs_summary|length }} pairs</span>
+            </div>
+            <div style="overflow-x: auto; max-height: 400px;">
+                <table class="table-compact">
+                    <thead>
+                        <tr>
+                            <th>Pair</th>
+                            <th>W</th>
+                            <th>L</th>
+                            <th>RR</th>
+                            <th>WR%</th>
+                            <th>P/L%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pair in pairs_summary %}
+                        <tr>
+                            <td class="pair-cell">
+                                <a href="{% url 'performance_by_pair' pair.id %}" class="pair-link">
+                                    {{ pair.pair }} <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </td>
+                            <td><span class="value-badge value-positive">{{ pair.won }}</span></td>
+                            <td><span class="value-badge value-negative">{{ pair.lost }}</span></td>
+                            <td><span class="value-badge value-neutral">{{ pair.avg_rr }}R</span></td>
+                            <td>
+                                <span class="value-badge {% if pair.winrate >= 50 %}value-positive{% else %}value-negative{% endif %}">
+                                    {{ pair.winrate }}%
+                                </span>
+                            </td>
+                            <td>
+                                <span class="value-badge {% if pair.profit_r > 0 %}value-positive{% elif pair.profit_r < 0 %}value-negative{% else %}value-neutral{% endif %}">
+                                    {{ pair.profit_r }}%
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- RIGHT: COMPACT STATS SIDEBAR -->
+        <div class="stats-sidebar">
+            <!-- Mini Gauges Row -->
+            <div class="mini-gauges">
+                <div class="mini-gauge">
+                    <div class="gauge-label">
+                        <i class="fas fa-percent"></i> Win Rate
+                    </div>
+                    <div class="gauge-value">
+                        {{ overallwinrate|default:"0" }}<small>%</small>
+                    </div>
+                    <div id="winrateMini" class="mini-chart"></div>
+                </div>
+                <div class="mini-gauge">
+                    <div class="gauge-label">
+                        <i class="fas fa-chart-line"></i> Consistency
+                    </div>
+                    <div class="gauge-value">
+                        {{ grade_consistency.consistency_score|default:"0" }}<small>/4</small>
+                    </div>
+                    <div id="consistencyMini" class="mini-chart"></div>
+                </div>
+            </div>
+
+            <!-- Expectancy Strip -->
+            <div class="info-strip">
+                <div class="label">EXPECTANCY</div>
+                <div class="value">{{ expectancy|default:"0" }}%</div>
+                <div class="sub">per trade</div>
+            </div>
+
+            <!-- Stats Grid 2x3 -->
+            <div class="stats-grid">
+                <div class="stat-tile">
+                    <div class="tile-label"><i class="fas fa-gem"></i>Consistency</div>
+                    <div class="tile-value">
+                        <span class="hover-text {% if grade_consistency.consistency_level >= 3 %}text-green{% elif grade_consistency.consistency_level == 2 %}text-yellow{% else %}text-red{% endif %}" 
+                              data-message="Based on RVS, RR consistency, and trade frequency">
+                            {{ grade_consistency.consistency_tier }}
+                        </span>
+                    </div>
+                    <div class="tile-trend">{{ grade_consistency.consistency_score|default:"0" }}/4</div>
+                </div>
+
+                <div class="stat-tile">
+                    <div class="tile-label"><i class="fas fa-balance-scale"></i> Avg RR</div>
+                    <div class="tile-value text-primary">{{ avg_risk_reward|default:"0" }}R</div>
+                    <div class="tile-trend">risk/reward</div>
+                </div>
+
+                <div class="stat-tile">
+                    <div class="tile-label"><i class="fas fa-exclamation-triangle"></i> RVS</div>
+                    <div class="tile-value text-purple">{{ avg_rvs|default:"0" }}</div>
+                    <div class="tile-trend hover-text" data-message="Rule Violation Score - Measures adherence to trading rules">violations</div>
+                </div>
+
+                <div class="stat-tile">
+                    <div class="tile-label"><i class="fas fa-clock"></i> Today</div>
+                    <div class="tile-value text-blue">{{ todays_trades|default:"0" }}</div>
+                    <div class="tile-trend">trades</div>
+                </div>
+
+                <div class="stat-tile">
+                    <div class="tile-label"><i class="fas fa-chart-bar"></i> RR Dev</div>
+                    <div class="tile-value text-yellow">{{ std_dev_rr|default:"0" }}</div>
+                    <div class="tile-trend">std dev</div>
+                </div>
+
+                <div class="stat-tile">
+                    <div class="tile-label"><i class="fas fa-dollar-sign"></i> Today P&L</div>
+                    <div class="tile-value {% if todays_profit > 0 %}text-green{% elif todays_profit < 0 %}text-red{% endif %}">
+                        {% if todays_profit > 0 %}+{% endif %}{{ todays_profit|default:"0" }}%
+                    </div>
+                    <div class="tile-trend">
+                        {% if todays_profit > 0 %}▲{% elif todays_profit < 0 %}▼{% else %}●{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM: CHART (FULL WIDTH) -->
+    <div class="card chart-card">
+        <div class="chart-header">
+            <div class="chart-title">
+                <i class="fas fa-chart-line"></i>
+                <h3>Profitability Trend Analysis</h3>
+            </div>
+            <div class="chart-legend">
+                <div class="legend-item">
+                    <span class="legend-dot profit"></span>
+                    <span>Profit Zone (>0%)</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot loss"></span>
+                    <span>Loss Zone (<0%)</span>
+                </div>
+            </div>
+        </div>
+        <div class="chart-wrapper">
+            <div id="performanceChart"></div>
+        </div>
+    </div>
+</div>
+
+<!-- TOOLTIP -->
+<div id="message-box" class="message-box"></div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // Tooltip logic
+    const tooltip = document.getElementById("message-box");
+    
+    document.querySelectorAll(".hover-text").forEach(el => {
+        el.addEventListener("mouseenter", function (e) {
+            tooltip.textContent = this.dataset.message;
+            tooltip.style.display = "block";
+            updateTooltipPosition(e);
+        });
+
+        el.addEventListener("mousemove", function (e) {
+            updateTooltipPosition(e);
+        });
+
+        el.addEventListener("mouseleave", function () {
+            tooltip.style.display = "none";
+        });
+    });
+
+    function updateTooltipPosition(e) {
+        tooltip.style.left = (e.pageX + 15) + "px";
+        tooltip.style.top = (e.pageY + 15) + "px";
+    }
+
+    // Win Rate Mini Gauge
+    const winrateValue = Number("{{ overallwinrate|default:'0' }}");
+    const winrateMini = echarts.init(document.getElementById('winrateMini'));
+    winrateMini.setOption({
+        series: [{
+            type: 'gauge',
+            center: ['50%', '50%'],
+            radius: '80%',
+            startAngle: 210,
+            endAngle: -30,
+            min: 0,
+            max: 100,
+            progress: {
+                show: true,
+                width: 6,
+                roundCap: true,
+                itemStyle: { color: { type: 'linear', x: 0, y: 0, x2: 1, y2: 0,
+                    colorStops: [
+                        { offset: 0, color: '#f87171' },
+                        { offset: 0.5, color: '#fbbf24' },
+                        { offset: 1, color: '#34d399' }
+                    ]
+                }}
+            },
+            axisLine: { lineStyle: { width: 6, color: [[0.4, '#f87171'],[0.7, '#fbbf24'],[1, '#34d399']] }},
+            axisTick: { show: false },
+            splitLine: { show: false },
+            axisLabel: { show: false },
+            detail: { show: false },
+            data: [{ value: winrateValue }]
+        }]
+    });
+
+    // Consistency Mini Gauge
+    const consistencyValue = {{ grade_consistency.consistency_score|default:"0" }};
+    const consistencyMini = echarts.init(document.getElementById('consistencyMini'));
+    consistencyMini.setOption({
+        series: [{
+            type: 'gauge',
+            center: ['50%', '50%'],
+            radius: '80%',
+            startAngle: 210,
+            endAngle: -30,
+            min: 0,
+            max: 4,
+            progress: {
+                show: true,
+                width: 6,
+                roundCap: true,
+                itemStyle: { color: { type: 'linear', x: 0, y: 0, x2: 1, y2: 0,
+                    colorStops: [
+                        { offset: 0, color: '#f87171' },
+                        { offset: 0.33, color: '#fbbf24' },
+                        { offset: 0.67, color: '#c084fc' },
+                        { offset: 1, color: '#34d399' }
+                    ]
+                }}
+            },
+            axisLine: { lineStyle: { width: 6, color: [[0.33, '#f87171'],[0.67, '#fbbf24'],[1, '#34d399']] }},
+            axisTick: { show: false },
+            splitLine: { show: false },
+            axisLabel: { show: false },
+            detail: { show: false },
+            data: [{ value: consistencyValue }]
+        }]
+    });
+
+    // Performance Chart with ECharts
+const labels = {{ dates|safe }};
+const dataPoints = {{ performance|safe }};
+
+const performanceChart = echarts.init(document.getElementById('performanceChart'));
+
+performanceChart.setOption({
+    backgroundColor: 'transparent',
+    grid: {
+        left: '6%',
+        right: '6%',
+        bottom: '12%',
+        top: '8%',
+        containLabel: true
+    },
+    tooltip: {
+        trigger: 'axis',
+        axisPointer: { 
+            type: 'shadow',
+            shadowStyle: { color: 'rgba(16, 185, 129, 0.1)' }
+        },
+        backgroundColor: '#1e293b',
+        borderColor: '#10b981',
+        borderWidth: 2,
+        textStyle: { color: '#f3f4f6', fontSize: 8 },
+        formatter: function(params) {
+            const value = params[0].value;
+            // Format to one decimal place
+            const formattedValue = value.toFixed(1);
+            const color = value >= 0 ? '#34d399' : '#f87171';
+            const sign = value >= 0 ? '+' : '';
+            return `
+                <div style="font-weight:100; margin-bottom:5px;">${params[0].name}</div>
+                <div style="color:${color}">
+                    <span style="font-size:12px; font-weight:700;">${sign}${formattedValue}%</span>
+                </div>
+            `;
+        }
+    },
+    xAxis: {
+        type: 'category',
+        data: labels,
+        axisLine: { lineStyle: { color: '#2d3748' } },
+        axisLabel: { 
+            color: '#9ca3af', 
+            rotate: labels.length > 10 ? 35 : 0,
+            fontSize: 11,
+            margin: 10
+        },
+        axisTick: { show: false }
+    },
+    yAxis: {
+        type: 'value',
+        axisLine: { show: false },
+        axisLabel: { 
+            color: '#9ca3af', 
+            formatter: function(value) {
+                return value.toFixed(1) + '%'; // Y-axis labels with one decimal
+            },
+            fontSize: 11
+        },
+        splitLine: { 
+            lineStyle: { 
+                color: '#2d3748', 
+                type: 'dashed',
+                opacity: 0.5
+            } 
+        }
+    },
+    series: [{
+        data: dataPoints,
+        type: 'line',
+        smooth: true,
+        symbol: 'circle',
+        symbolSize: 8,
+        lineStyle: { 
+            width: 2, 
+            color: '#10b981',
+            shadowColor: 'rgba(16, 185, 129, 0.3)',
+            shadowBlur: 10,
+            shadowOffsetY: 4
+        },
+        areaStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: 'rgba(16, 185, 129, 0.4)' },
+                { offset: 0.5, color: 'rgba(16, 185, 129, 0.1)' },
+                { offset: 1, color: 'rgba(16, 185, 129, 0)' }
+            ])
+        },
+        itemStyle: {
+            color: '#f3f4f6',
+            borderColor: '#10b981',
+            borderWidth: 2,
+            shadowColor: 'rgba(16, 185, 129, 0.5)',
+            shadowBlur: 10
+        },
+        emphasis: {
+            itemStyle: {
+                color: '#10b981',
+                borderColor: '#f3f4f6',
+                borderWidth: 3,
+                shadowBlur: 15
+            },
+            lineStyle: {
+                width: 4,
+                shadowBlur: 15
+            }
+        },
+        markPoint: {
+            data: [
+                { 
+                    type: 'max', 
+                    name: 'Peak Performance', 
+                    symbolSize: 25,
+                    label: {
+                        formatter: function(params) {
+                            return params.value.toFixed(1) + '%'; // MarkPoint with one decimal
+                        }
+                    }
+                },
+                { 
+                    type: 'min', 
+                    name: 'Low Point', 
+                    symbolSize: 25,
+                    label: {
+                        formatter: function(params) {
+                            return params.value.toFixed(1) + '%'; // MarkPoint with one decimal
+                        }
+                    }
+                }
+            ],
+            symbol: 'circle',
+            symbolSize: 40,
+            label: { 
+                color: 'white', 
+                fontWeight: 'bold',
+                fontSize: 11,
+                backgroundColor: 'rgba(0,0,0,0.6)',
+                padding: [4, 8],
+                borderRadius: 4
+            },
+            itemStyle: {
+                color: {
+                    type: 'radial',
+                    colorStops: [
+                        { offset: 0, color: '#fbbf24' },
+                        { offset: 1, color: '#f59e0b' }
+                    ]
+                }
+            }
+        },
+        markLine: {
+            data: [
+                { 
+                    type: 'average', 
+                    name: 'Average Performance', 
+                    lineStyle: { 
+                        color: '#fbbf24', 
+                        type: 'dashed',
+                        width: 2,
+                        shadowColor: 'rgba(251, 191, 36, 0.3)',
+                        shadowBlur: 8
+                    },
+                    label: {
+                        formatter: function(params) {
+                            return params.value.toFixed(1) + '%'; // Average line label with one decimal
+                        }
+                    }
+                },
+                {
+                    yAxis: 0,
+                    name: 'Break Even',
+                    lineStyle: {
+                        color: '#f87171',
+                        type: 'dashed',
+                        width: 1,
+                        opacity: 0.5
+                    }
+                }
+            ],
+            label: { 
+                color: '#fbbf24',
+                fontSize: 11,
+                backgroundColor: 'rgba(0,0,0,0.6)',
+                padding: [4, 8],
+                borderRadius: 4
+            }
+        }
+    }],
+    dataZoom: [
+        { 
+            type: 'slider', 
+            show: true, 
+            start: 0, 
+            end: 100, 
+            backgroundColor: '#1f2937',
+            borderColor: '#2d3748',
+            fillerColor: 'rgba(16, 185, 129, 0.2)',
+            handleStyle: {
+                color: '#10b981',
+                borderColor: '#10b981'
+            },
+            textStyle: { color: '#9ca3af' }
+        }
+    ]
+});
+
+// Handle resize
+window.addEventListener('resize', () => {
+    winrateChart.resize();
+    consistencyChart.resize();
+    performanceChart.resize();
+});
+
+// Auto-refresh data every 60 seconds (optional)
+// setInterval(() => {
+//     location.reload();
+// }, 60000);
+});
+</script>
+
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}

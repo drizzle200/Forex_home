@@ -3,18 +3,10 @@ from . import views
 from django.contrib import admin
 #
 urlpatterns=[
- 
-    path('login/', views.login_view, name='login'),
-    path('logout/', views.logout_view, name='logout'),
-    path('profile/', views.profile_view, name='profile'),
     path(
-        '', 
-        views.home_view, 
-        name="index"),
-    path(
-        'trade/', 
-        views.trade_view, 
-        name='trade' 
+        'home/', 
+        views.index_view, 
+        name='index' 
         ),
     path(
         'journal', 
@@ -41,7 +33,10 @@ urlpatterns=[
         views.export_trades_to_excel, 
         name='export_trades'
         ),
-  
+    path(
+        '', 
+        views.home_view, 
+        name="home"),
     path(
         'academy/', 
         views.academy_view, 
