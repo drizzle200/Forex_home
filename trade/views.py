@@ -1375,10 +1375,10 @@ def prepare_chart_data(trade_count=40):
     for t in trades_list:
         try:
             # Windows
-            dates.append(t.timestamp.strftime("%#m/%#d"))
+            dates.append(t.timestamp.strftime("%Y-%m-%d"))
         except ValueError:
             # Unix/Linux/Mac
-            dates.append(t.timestamp.strftime("%-m/%-d"))
+            dates.append(t.timestamp.strftime("%Y-%m-%d"))
     
     # Build cumulative performance
     performance = []
