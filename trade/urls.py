@@ -65,7 +65,7 @@ urlpatterns=[
     
     path(
         "delete/<int:trade_id>/confirm/", 
-        views.delete_trade_confirm, 
+        views.delete_trade_view, 
         name="delete_trade_confirm"
         ),
     path(

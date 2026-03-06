@@ -9,6 +9,7 @@ import string
 
 # Create your models here.
 class Pairs(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     name = models.CharField(max_length=50, null=True, blank=True)
      
 
@@ -16,6 +17,8 @@ class Pairs(models.Model):
         return self.name
 
 class Trades(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)  
+
     trade_id = models.IntegerField(null=True, blank=True)
 
     PAIR_CHOICES = [
@@ -157,6 +160,8 @@ class Trades(models.Model):
         return f'{self.trade_id} - {self.buy_or_sell}'
 
 class Advice(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)  
+
     CATEGORY_CHOICES = [
         ('motivation', '💪 Motivation'),
         ('discipline', '🎯 Discipline'),
@@ -354,6 +359,8 @@ class Advice(models.Model):
 
 
 class Mood(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)  
+
     MOOD_CHOICES = [
         ('confident', '😊 Confident'),
         ('cautious', '🤔 Cautious'),

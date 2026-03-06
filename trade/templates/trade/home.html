@@ -1179,7 +1179,7 @@
 <div class="welcome-section">
     <div class="welcome-content">
         <div class="welcome-text">
-            <h1>Welcome back, <span>Trader</span> 👋</h1>
+            <h1>Hi, <span>{{ user.first_name|default:user.username }}</span> 👋</h1>
             <p>
                 <i class="fas fa-calendar"></i> {{ current_date|default:"today" }}
             </p>
@@ -1532,7 +1532,7 @@
 
     <!-- Quick Actions -->
     <div class="quick-actions-grid">
-        <a href="{% url 'index' %}" class="quick-action-btn">
+        <a href="{% url 'trade' %}" class="quick-action-btn">
             <div class="quick-action-icon">📝</div>
             <div class="quick-action-text">
                 <div class="quick-action-title">New Trade</div>
@@ -1570,7 +1570,40 @@
     </div>
 </div>
 <script>
-// Mood selection with gamified response and disappearance
+// Improved CSRF token helper
+function getCsrfToken() {
+    // Try to get from cookie first
+    const cookieToken = getCookie('csrftoken');
+    if (cookieToken) return cookieToken;
+    
+    // Try to get from meta tag
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    if (meta) return meta.getAttribute('content');
+    
+    // Try to get from hidden input
+    const input = document.querySelector('input[name="csrfmiddlewaretoken"]');
+    if (input) return input.value;
+    
+    return null;
+}
+
+// Cookie helper
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Mood selection with gamified response
 function selectMood(mood) {
     // Get the clicked element
     const element = document.querySelector(`[data-mood="${mood}"]`);
@@ -1590,23 +1623,39 @@ function selectMood(mood) {
         element.style.animation = '';
     }, 500);
     
+    // Get CSRF token
+    const csrfToken = getCsrfToken();
+    
+    if (!csrfToken) {
+        showNotification('Security token missing. Please refresh the page.', 'error');
+        return;
+    }
+    
     // Save mood via AJAX
     fetch('/save-mood/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
+            'X-CSRFToken': csrfToken
         },
         body: JSON.stringify({
             mood: mood,
             notes: ''
         })
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => { 
+                throw new Error(err.error || `HTTP error! status: ${response.status}`); 
+            });
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
-            // Store in localStorage that mood was selected today
+            // Store in localStorage
             localStorage.setItem('lastMoodDate', new Date().toDateString());
+            localStorage.setItem('lastMoodData', JSON.stringify(data));
             
             // Hide the mood selection section
             const moodSection = document.getElementById('moodSection');
@@ -1614,23 +1663,41 @@ function selectMood(mood) {
                 moodSection.style.display = 'none';
             }
             
-            showMoodResponse(data);
-            updateMoodStats();
+            // Hide the default selected card if it exists
+            const selectedCard = document.getElementById('moodSelectedCard');
+            if (selectedCard) {
+                selectedCard.style.display = 'none';
+            }
             
-            // After 5 seconds, reload to show the "Already Selected" view
-            setTimeout(() => {
-                location.reload();
-            }, 5000);
+            // Show the persistent mood response
+            showPersistentMoodResponse(data);
+            updateMoodStats();
+        } else {
+            showNotification(data.error || 'Failed to save mood', 'error');
         }
     })
     .catch(error => {
-        console.error('Error saving mood:', error);
-        showNotification('Failed to save mood. Please try again.', 'error');
+        // Check if it's the unique constraint error
+        if (error.message.includes('UNIQUE constraint failed')) {
+            // User already has a mood today - just show the persistent card
+            showNotification('You already logged your mood today', 'info');
+            
+            // Hide mood section and show persistent card
+            const moodSection = document.getElementById('moodSection');
+            if (moodSection) {
+                moodSection.style.display = 'none';
+            }
+            
+            // Fetch today's mood and show it
+            fetchTodayMood();
+        } else {
+            showNotification('Failed to save mood: ' + error.message, 'error');
+        }
     });
 }
 
-// Show gamified response
-function showMoodResponse(data) {
+// Show persistent mood response (stays until tomorrow)
+function showPersistentMoodResponse(data) {
     // Create or get response container
     let responseDiv = document.getElementById('moodResponse');
     if (!responseDiv) {
@@ -1638,30 +1705,49 @@ function showMoodResponse(data) {
         responseDiv.id = 'moodResponse';
         responseDiv.className = 'mood-response';
         
-        // Insert after mood section or selected card
+        // Insert after mood section
         const moodSection = document.getElementById('moodSection');
-        const selectedCard = document.getElementById('moodSelectedCard');
         if (moodSection) {
             moodSection.parentNode.insertBefore(responseDiv, moodSection.nextSibling);
-        } else if (selectedCard) {
-            selectedCard.parentNode.insertBefore(responseDiv, selectedCard.nextSibling);
         } else {
             document.querySelector('.dashboard-container').appendChild(responseDiv);
         }
     }
     
-    // Create response HTML
+    // Get mood display name
+    const moodDisplay = getMoodDisplayName(data.mood);
+    
+    // Create persistent response HTML
     responseDiv.innerHTML = `
-        <div class="response-card ${data.animation}" style="border-left-color: ${data.color}; background: linear-gradient(135deg, ${data.color}15, transparent);">
-            <div class="response-emoji" style="border-color: ${data.color};">${data.emoji}</div>
-            <div class="response-content">
-                <h4 style="color: white;">${data.created ? '✨ First mood today!' : '🔄 Mood updated!'}</h4>
-                <p style="color: var(--text-muted);">${data.message}</p>
-                <div class="response-action" style="background: ${data.color}20; color: ${data.color};">${data.action}</div>
+        <div class="mood-selected-card" style="margin-bottom: 0; animation: slideIn 0.5s ease;">
+            <div class="selected-mood-content">
+                <div class="selected-mood-badge" style="border-color: ${data.color || '#6b7280'};">
+                    <span class="large-emoji">${data.emoji || '😐'}</span>
+                    <span class="selected-mood-name">${moodDisplay}</span>
+                </div>
+                
+                <div class="mood-message-card" style="background: linear-gradient(135deg, ${data.color || '#6b7280'}15, transparent); border-left: 4px solid ${data.color || '#6b7280'}; border-radius: 16px; padding: 20px; width: 100%;">
+                    <p style="color: white; font-size: 16px; margin-bottom: 10px; text-align: center;">${data.message || 'Thanks for sharing your mood!'}</p>
+                    <div style="display: flex; justify-content: center;">
+                        <span style="background: ${data.color || '#6b7280'}20; color: ${data.color || '#6b7280'}; padding: 6px 16px; border-radius: 30px; font-weight: 500; font-size: 14px;">${data.action || 'Keep trading mindfully'}</span>
+                    </div>
+                </div>
+                
+                <!-- Streak Display -->
+                <div class="streak-display">
+                    <div class="streak-icon">🔥</div>
+                    <div class="streak-info">
+                        <span class="streak-value" id="streakValue">${data.streak || 0}</span>
+                        <span class="streak-label">Day Streak</span>
+                    </div>
+                </div>
+                
+                <!-- Comeback Message -->
+                <div class="comeback-message">
+                    <i class="fas fa-moon"></i>
+                    <p>Come back tomorrow to log your mood again!</p>
+                </div>
             </div>
-        </div>
-        <div class="streak-notification" style="margin-top: 15px; text-align: center; padding: 15px; background: var(--card); border-radius: 12px; border: 1px solid var(--border);">
-            <span style="color: var(--warning); font-weight: 600; font-size: 18px;">🔥 ${data.streak} day streak!</span>
         </div>
     `;
     
@@ -1673,25 +1759,42 @@ function showMoodResponse(data) {
     if (data.mood === 'confident' || data.mood === 'energetic' || data.mood === 'focused') {
         createConfetti();
     }
-    
-    // Scroll to response
-    responseDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// Helper function to get mood display name
+function getMoodDisplayName(mood) {
+    const moodNames = {
+        'confident': 'Confident',
+        'cautious': 'Cautious',
+        'neutral': 'Neutral',
+        'stressed': 'Stressed',
+        'energetic': 'Energetic',
+        'tired': 'Tired',
+        'focused': 'Focused',
+        'anxious': 'Anxious'
+    };
+    return moodNames[mood] || mood;
 }
 
 // Update mood statistics
 function updateMoodStats() {
     fetch('/get-mood-stats/?days=30')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to fetch mood stats');
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
-                // Update mood count in any existing stat element
-                const moodCount = document.getElementById('moodCount');
-                if (moodCount) {
-                    const total = Object.values(data.stats || {}).reduce((sum, item) => sum + (item.count || 0), 0);
-                    moodCount.textContent = total;
+                // Update streak display if exists
+                const streakValue = document.getElementById('streakValue');
+                if (streakValue && data.streak) {
+                    streakValue.textContent = data.streak;
                 }
             }
-        });
+        })
+        .catch(() => {});
 }
 
 // Check and handle daily mood reset
@@ -1699,29 +1802,159 @@ function checkDailyMoodReset() {
     const lastMoodDate = localStorage.getItem('lastMoodDate');
     const today = new Date().toDateString();
     const moodSection = document.getElementById('moodSection');
-    const selectedCard = document.getElementById('moodSelectedCard');
+    const responseDiv = document.getElementById('moodResponse');
+    const djangoSelectedCard = document.getElementById('moodSelectedCard');
     
-    // If no mood stored today or it's a new day
-    if (!lastMoodDate || lastMoodDate !== today) {
-        // Show mood section, hide selected card
-        if (moodSection) moodSection.style.display = 'block';
-        if (selectedCard) selectedCard.style.display = 'none';
-    } else {
-        // Hide mood section, show selected card
-        if (moodSection) moodSection.style.display = 'none';
-        if (selectedCard) selectedCard.style.display = 'block';
-    }
+    // Check server-side first
+    fetch('/get-mood-stats/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (data.today_mood && data.today_mood.mood) {
+                    // User has mood today according to server
+                    if (moodSection) moodSection.style.display = 'none';
+                    if (djangoSelectedCard) djangoSelectedCard.style.display = 'none';
+                    
+                    // Create mood data object from server response
+                    const moodData = {
+                        success: true,
+                        mood: data.today_mood.mood,
+                        emoji: data.today_mood.emoji || getMoodEmoji(data.today_mood.mood),
+                        streak: data.streak || 0,
+                        created: false,
+                        message: getMoodMessage(data.today_mood.mood),
+                        action: getMoodAction(data.today_mood.mood),
+                        color: getMoodColor(data.today_mood.mood)
+                    };
+                    
+                    // Show persistent response
+                    showPersistentMoodResponse(moodData);
+                    
+                    // Update localStorage
+                    localStorage.setItem('lastMoodDate', today);
+                    localStorage.setItem('lastMoodData', JSON.stringify(moodData));
+                } else {
+                    // No mood today according to server
+                    if (moodSection) moodSection.style.display = 'block';
+                    if (responseDiv) responseDiv.style.display = 'none';
+                    if (djangoSelectedCard) djangoSelectedCard.style.display = 'none';
+                    localStorage.removeItem('lastMoodDate');
+                    localStorage.removeItem('lastMoodData');
+                }
+            }
+        })
+        .catch(() => {
+            // Fallback to localStorage check
+            if (!lastMoodDate || lastMoodDate !== today) {
+                if (moodSection) moodSection.style.display = 'block';
+                if (responseDiv) responseDiv.style.display = 'none';
+                if (djangoSelectedCard) djangoSelectedCard.style.display = 'none';
+            } else {
+                if (moodSection) moodSection.style.display = 'none';
+                if (djangoSelectedCard) djangoSelectedCard.style.display = 'none';
+                if (responseDiv) {
+                    // Show stored response
+                    responseDiv.style.display = 'block';
+                }
+            }
+        });
+}
+
+// Helper functions for mood data
+function getMoodEmoji(mood) {
+    const emojis = {
+        'confident': '😊',
+        'cautious': '🤔',
+        'neutral': '😐',
+        'stressed': '😓',
+        'energetic': '⚡',
+        'tired': '😴',
+        'focused': '🎯',
+        'anxious': '😰'
+    };
+    return emojis[mood] || '😐';
+}
+
+function getMoodMessage(mood) {
+    const messages = {
+        'confident': 'Great! Confidence is good, but stay humble. Stick to your plan.',
+        'cautious': 'Smart! Being cautious protects your capital. Consider smaller positions.',
+        'neutral': 'Balanced mindset is perfect for trading. Stay focused.',
+        'stressed': 'Take a break! Stressed trading leads to mistakes.',
+        'energetic': 'Energy is great! Channel it into discipline, not overtrading.',
+        'tired': 'Fatigue is dangerous in trading. Consider resting.',
+        'focused': 'Perfect state! Your best trades come now.',
+        'anxious': 'Anxiety leads to impulsive decisions. Breathe.'
+    };
+    return messages[mood] || 'Thanks for sharing your mood!';
+}
+
+function getMoodAction(mood) {
+    const actions = {
+        'confident': 'Trade normally with strict risk management',
+        'cautious': 'Trade with 0.5% risk instead of 1%',
+        'neutral': 'Execute your strategy as planned',
+        'stressed': 'Step away from charts. Try meditation.',
+        'energetic': 'Set a max of 3 trades today',
+        'tired': 'Review charts only, no live trading',
+        'focused': 'Look for high-probability setups',
+        'anxious': 'Demo trade only today'
+    };
+    return actions[mood] || 'Keep trading mindfully';
+}
+
+function getMoodColor(mood) {
+    const colors = {
+        'confident': '#10b981',
+        'cautious': '#f59e0b',
+        'neutral': '#6b7280',
+        'stressed': '#ef4444',
+        'energetic': '#8b5cf6',
+        'tired': '#3b82f6',
+        'focused': '#ec4899',
+        'anxious': '#f97316'
+    };
+    return colors[mood] || '#6b7280';
+}
+
+// Fetch today's mood from server
+function fetchTodayMood() {
+    fetch('/get-mood-stats/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.today_mood) {
+                const moodData = {
+                    success: true,
+                    mood: data.today_mood.mood,
+                    emoji: data.today_mood.emoji || getMoodEmoji(data.today_mood.mood),
+                    streak: data.streak || 0,
+                    created: false,
+                    message: getMoodMessage(data.today_mood.mood),
+                    action: getMoodAction(data.today_mood.mood),
+                    color: getMoodColor(data.today_mood.mood)
+                };
+                
+                localStorage.setItem('lastMoodDate', new Date().toDateString());
+                localStorage.setItem('lastMoodData', JSON.stringify(moodData));
+                
+                showPersistentMoodResponse(moodData);
+            }
+        })
+        .catch(() => {});
 }
 
 // Show notification
 function showNotification(message, type = 'info') {
-    // Create notification element if it doesn't exist
-    let notification = document.getElementById('notification');
-    if (!notification) {
-        notification = document.createElement('div');
-        notification.id = 'notification';
-        document.body.appendChild(notification);
+    // Remove any existing notification
+    const existingNotification = document.getElementById('notification');
+    if (existingNotification) {
+        existingNotification.remove();
     }
+    
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.id = 'notification';
+    document.body.appendChild(notification);
     
     // Style notification
     notification.textContent = message;
@@ -1737,13 +1970,13 @@ function showNotification(message, type = 'info') {
     notification.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
     
     // Set color based on type
-    if (type === 'success') {
-        notification.style.background = '#10b981';
-    } else if (type === 'error') {
-        notification.style.background = '#ef4444';
-    } else {
-        notification.style.background = '#3b82f6';
-    }
+    const colors = {
+        'success': '#10b981',
+        'error': '#ef4444',
+        'info': '#3b82f6',
+        'warning': '#f59e0b'
+    };
+    notification.style.background = colors[type] || colors.info;
     
     // Show notification
     notification.style.opacity = '1';
@@ -1753,6 +1986,11 @@ function showNotification(message, type = 'info') {
     setTimeout(() => {
         notification.style.opacity = '0';
         notification.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 300);
     }, 3000);
 }
 
@@ -1776,62 +2014,156 @@ function createConfetti() {
             document.body.appendChild(confetti);
             
             setTimeout(() => {
-                confetti.remove();
+                if (confetti.parentNode) {
+                    confetti.remove();
+                }
             }, 5000);
         }, i * 30);
     }
 }
 
-// Cookie helper
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
+// Add animations if not exists
+if (!document.querySelector('#mood-styles')) {
+    const style = document.createElement('style');
+    style.id = 'mood-styles';
+    style.textContent = `
+        @keyframes confetti {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+        
+        @keyframes selectPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); box-shadow: 0 0 20px var(--primary); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
             }
         }
-    }
-    return cookieValue;
+        
+        .mood-selected-card {
+            background: linear-gradient(135deg, var(--card), var(--primary-soft));
+            border-radius: 24px;
+            padding: 24px;
+            border: 1px solid var(--primary);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .mood-selected-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, var(--primary-glow), transparent 70%);
+            opacity: 0.3;
+            animation: rotate 20s linear infinite;
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .selected-mood-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .selected-mood-badge {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: var(--bg);
+            padding: 15px 30px;
+            border-radius: 60px;
+            border: 2px solid var(--primary);
+        }
+        
+        .large-emoji {
+            font-size: 48px;
+        }
+        
+        .selected-mood-name {
+            font-size: 24px;
+            font-weight: 700;
+            color: white;
+            text-transform: capitalize;
+        }
+        
+        .streak-display {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: var(--card-light);
+            padding: 15px 25px;
+            border-radius: 50px;
+        }
+        
+        .streak-icon {
+            font-size: 32px;
+        }
+        
+        .streak-info {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .streak-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--warning);
+            line-height: 1;
+        }
+        
+        .streak-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .comeback-message {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-muted);
+            font-size: 14px;
+            padding: 10px;
+            border-top: 1px dashed var(--border);
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .comeback-message i {
+            color: var(--primary);
+            animation: pulse 2s infinite;
+        }
+        
+        .mood-message-card {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+    `;
+    document.head.appendChild(style);
 }
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
-    // Check daily mood reset
     checkDailyMoodReset();
-    
-    // Fetch today's mood from server
-    fetch('/get-mood-stats/')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Update streak if element exists
-                const streakValue = document.getElementById('streakValue');
-                if (streakValue && data.streak) {
-                    streakValue.textContent = data.streak;
-                }
-                
-                // Highlight selected mood if any
-                if (data.today_mood && data.today_mood.mood) {
-                    const element = document.querySelector(`[data-mood="${data.today_mood.mood}"]`);
-                    if (element) {
-                        element.classList.add('selected');
-                    }
-                    
-                    // Update localStorage to match server
-                    localStorage.setItem('lastMoodDate', new Date().toDateString());
-                }
-            }
-        })
-        .catch(error => console.error('Error fetching mood stats:', error));
 });
-
-// Auto-refresh news ticker (optional)
-setInterval(() => {
-    console.log('Refreshing news...');
-}, 60000);
 </script>
 {% endblock %}

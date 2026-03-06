@@ -47,9 +47,9 @@
     }
 
     .journal-container {
-        max-width: 1200px;
+        max-width: 1400px;
         margin: 40px auto;
-        padding: 0 24px;
+        padding: 0 32px;
     }
 
     /* Header Section */
@@ -57,40 +57,46 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 32px;
+        margin-bottom: 40px;
         flex-wrap: wrap;
-        gap: 20px;
+        gap: 24px;
     }
 
     .title-section {
         display: flex;
         align-items: center;
-        gap: 16px;
+        gap: 20px;
     }
 
     .title-icon {
-        width: 60px;
-        height: 60px;
+        width: 70px;
+        height: 70px;
         background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-        border-radius: 18px;
+        border-radius: 20px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 30px;
+        font-size: 32px;
         color: white;
-        box-shadow: 0 10px 20px -5px var(--primary-glow);
+        box-shadow: 0 15px 25px -8px var(--primary-glow);
+        transition: transform 0.3s ease;
+    }
+
+    .title-icon:hover {
+        transform: rotate(5deg) scale(1.05);
     }
 
     .title-content h1 {
-        font-size: 32px;
+        font-size: 36px;
         font-weight: 700;
         color: white;
-        margin-bottom: 4px;
+        margin-bottom: 6px;
+        letter-spacing: -0.5px;
     }
 
     .title-content p {
         color: var(--text-muted);
-        font-size: 14px;
+        font-size: 15px;
         display: flex;
         align-items: center;
         gap: 8px;
@@ -103,29 +109,39 @@
     .stats-badge {
         background: var(--card);
         border: 1px solid var(--border);
-        border-radius: 100px;
-        padding: 12px 24px;
+        border-radius: 16px;
+        padding: 8px 24px;
         display: flex;
         align-items: center;
-        gap: 20px;
+        gap: 24px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 10px 30px -15px rgba(0,0,0,0.5);
     }
 
     .stat-item {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
+        padding: 8px 0;
     }
 
     .stat-icon {
-        width: 40px;
-        height: 40px;
+        width: 44px;
+        height: 44px;
         background: var(--primary-soft);
         border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
         color: var(--primary);
-        font-size: 18px;
+        font-size: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .stat-item:hover .stat-icon {
+        background: var(--primary);
+        color: white;
+        transform: scale(1.1);
     }
 
     .stat-info {
@@ -137,205 +153,215 @@
         color: var(--text-muted);
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        font-weight: 500;
     }
 
     .stat-value {
-        font-size: 20px;
+        font-size: 24px;
         font-weight: 700;
         color: white;
+        line-height: 1.2;
     }
 
     /* Empty State */
     .empty-state {
         background: var(--card);
-        border-radius: 30px;
-        padding: 60px 40px;
+        border-radius: 40px;
+        padding: 80px 40px;
         text-align: center;
         border: 1px solid var(--border);
-        box-shadow: 0 20px 40px -15px rgba(0,0,0,0.5);
-        animation: slideIn 0.5s ease;
+        box-shadow: 0 30px 50px -20px rgba(0,0,0,0.5);
+        animation: slideIn 0.6s cubic-bezier(0.23, 1, 0.32, 1);
     }
 
     .empty-icon {
-        width: 120px;
-        height: 120px;
+        width: 140px;
+        height: 140px;
         background: var(--primary-soft);
-        border-radius: 60px;
+        border-radius: 70px;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin: 0 auto 24px;
-        font-size: 48px;
+        margin: 0 auto 28px;
+        font-size: 56px;
         color: var(--primary);
         border: 2px solid var(--primary-glow);
-        animation: pulse 2s infinite;
+        animation: pulse 2.5s infinite;
     }
 
     @keyframes pulse {
         0% { box-shadow: 0 0 0 0 var(--primary-glow); }
-        70% { box-shadow: 0 0 0 15px rgba(26, 188, 156, 0); }
+        70% { box-shadow: 0 0 0 20px rgba(26, 188, 156, 0); }
         100% { box-shadow: 0 0 0 0 rgba(26, 188, 156, 0); }
     }
 
     .empty-state h3 {
-        font-size: 28px;
+        font-size: 32px;
         font-weight: 700;
         color: white;
-        margin-bottom: 12px;
+        margin-bottom: 14px;
     }
 
     .empty-state p {
         color: var(--text-muted);
-        font-size: 16px;
-        max-width: 400px;
+        font-size: 18px;
+        max-width: 450px;
         margin: 0 auto;
     }
 
     /* Table Card (Desktop) */
     .table-card {
         background: var(--card);
-        border-radius: 30px;
+        border-radius: 40px;
         border: 1px solid var(--border);
-        box-shadow: 0 20px 40px -15px rgba(0,0,0,0.5);
+        box-shadow: 0 30px 50px -20px rgba(0,0,0,0.5);
         overflow: hidden;
-        animation: slideIn 0.5s ease;
+        animation: slideIn 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+        backdrop-filter: blur(10px);
     }
 
     .table-header {
-        padding: 24px 28px;
-        background: linear-gradient(90deg, rgba(26, 188, 156, 0.1), transparent);
+        padding: 28px 32px;
+        background: linear-gradient(90deg, rgba(26, 188, 156, 0.15), transparent);
         border-bottom: 1px solid var(--border);
         display: flex;
         justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
-        gap: 16px;
+        gap: 20px;
     }
 
     .table-header h2 {
-        font-size: 20px;
+        font-size: 24px;
         font-weight: 600;
         color: white;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
     }
 
     .table-header h2 i {
         color: var(--primary);
-        font-size: 24px;
+        font-size: 26px;
     }
 
     .table-header h2 span {
         background: var(--primary);
         color: white;
-        padding: 4px 12px;
-        border-radius: 100px;
-        font-size: 14px;
-        margin-left: 10px;
+        padding: 6px 16px;
+        border-radius: 40px;
+        font-size: 16px;
+        margin-left: 12px;
+        font-weight: 500;
     }
 
     .filter-badge {
         display: flex;
-        gap: 8px;
+        gap: 10px;
     }
 
     .filter-btn {
         background: var(--card-light);
         border: 1px solid var(--border);
         color: var(--text-muted);
-        padding: 8px 16px;
-        border-radius: 100px;
-        font-size: 13px;
+        padding: 10px 20px;
+        border-radius: 40px;
+        font-size: 14px;
+        font-weight: 500;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: all 0.3s ease;
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
     }
 
     .filter-btn:hover {
         border-color: var(--primary);
         color: white;
         background: var(--primary-soft);
+        transform: translateY(-2px);
     }
 
     .filter-btn.active {
         background: var(--primary);
         color: white;
         border-color: var(--primary);
+        box-shadow: 0 8px 20px -8px var(--primary-glow);
     }
 
     /* Desktop Table */
-    .desktop-table {
-        display: block;
-        width: 100%;
-        border-collapse: collapse;
-    }
+ .desktop-table {
+    width: 100%;
+    border-collapse: collapse;
+}
 
-    .desktop-table th {
-        background: var(--card-light);
-        padding: 18px 20px;
-        font-size: 13px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: var(--text-muted);
-        text-align: left;
-        border-bottom: 2px solid var(--border);
-    }
+.desktop-table th {
+    background: var(--card-light);
+    padding: 20px 24px; /* Changed from 10px 24px to match td padding */
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    text-align: left;
+    border-bottom: 2px solid var(--border);
+}
 
     .desktop-table td {
-        padding: 18px 20px;
-        font-size: 14px;
+        padding: 20px 24px;
+        font-size: 15px;
         border-bottom: 1px solid var(--border);
         vertical-align: middle;
     }
 
     .desktop-table tbody tr {
-        transition: all 0.2s ease;
+        transition: all 0.3s ease;
     }
 
-    .desktop-table tbody tr:hover {
-        background: var(--card-hover);
-        transform: scale(1.01);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    }
-
+.desktop-table tbody tr:hover {
+    background: var(--card-hover);
+    /* Remove or modify these lines: */
+    /* transform: scale(1.01) translateY(-2px); */
+    /* Replace with just a translateY for vertical movement: */
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -10px rgba(0,0,0,0.5);
+}
     /* Trade ID Badge */
     .trade-id {
         background: var(--card-light);
-        padding: 6px 12px;
-        border-radius: 100px;
-        font-size: 13px;
+        padding: 8px 14px;
+        border-radius: 40px;
+        font-size: 14px;
         font-weight: 600;
         color: var(--primary);
         border: 1px solid var(--border);
         display: inline-block;
-        font-family: monospace;
+        font-family: 'Monaco', 'Menlo', monospace;
+        letter-spacing: 0.5px;
     }
 
     /* Pair Badge */
     .pair-badge {
         background: linear-gradient(135deg, var(--primary-soft), transparent);
-        padding: 6px 14px;
-        border-radius: 100px;
+        padding: 8px 18px;
+        border-radius: 40px;
         font-weight: 600;
         color: white;
         border: 1px solid var(--primary-glow);
         display: inline-block;
-        font-size: 13px;
+        font-size: 14px;
+        letter-spacing: 0.3px;
     }
 
     /* Buy/Sell Indicators */
     .direction-badge {
-        padding: 6px 14px;
-        border-radius: 100px;
-        font-size: 13px;
+        padding: 8px 18px;
+        border-radius: 40px;
+        font-size: 14px;
         font-weight: 600;
         display: inline-flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
     }
 
     .direction-badge.buy {
@@ -346,7 +372,7 @@
 
     .direction-badge.buy::before {
         content: '▲';
-        font-size: 10px;
+        font-size: 12px;
     }
 
     .direction-badge.sell {
@@ -357,38 +383,39 @@
 
     .direction-badge.sell::before {
         content: '▼';
-        font-size: 10px;
+        font-size: 12px;
     }
 
     /* Trade Type */
     .trade-type {
-        padding: 6px 12px;
+        padding: 6px 14px;
         border-radius: 8px;
         background: var(--card-light);
         color: var(--text-muted);
-        font-size: 12px;
+        font-size: 13px;
         border: 1px solid var(--border);
+        font-weight: 500;
     }
 
     /* Time Badge */
     .time-badge {
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 6px;
     }
 
     .time-main {
         font-weight: 600;
         color: white;
-        font-size: 13px;
+        font-size: 15px;
     }
 
     .time-ago {
-        font-size: 11px;
+        font-size: 12px;
         color: var(--text-muted);
         display: flex;
         align-items: center;
-        gap: 4px;
+        gap: 6px;
     }
 
     .time-ago i {
@@ -399,76 +426,77 @@
     /* Action Buttons */
     .action-buttons {
         display: flex;
-        gap: 8px;
+        gap: 12px;
         flex-wrap: wrap;
     }
 
     .btn {
         text-decoration: none;
-        padding: 10px 18px;
-        border-radius: 12px;
-        font-size: 13px;
+        padding: 12px 22px;
+        border-radius: 14px;
+        font-size: 14px;
         font-weight: 600;
         display: inline-flex;
         align-items: center;
-        gap: 8px;
-        transition: all 0.2s ease;
+        gap: 10px;
+        transition: all 0.3s ease;
         border: none;
         cursor: pointer;
+        letter-spacing: 0.3px;
     }
 
     .btn i {
-        font-size: 14px;
+        font-size: 16px;
     }
 
     .btn-journal {
         background: linear-gradient(135deg, var(--info), #2563eb);
         color: white;
-        box-shadow: 0 5px 15px -5px var(--info);
+        box-shadow: 0 8px 20px -8px var(--info);
     }
 
     .btn-journal:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px -5px var(--info);
+        transform: translateY(-3px);
+        box-shadow: 0 15px 30px -8px var(--info);
     }
 
     .btn-delete {
         background: linear-gradient(135deg, var(--danger), #dc2626);
         color: white;
-        box-shadow: 0 5px 15px -5px var(--danger);
+        box-shadow: 0 8px 20px -8px var(--danger);
     }
 
     .btn-delete:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px -5px var(--danger);
+        transform: translateY(-3px);
+        box-shadow: 0 15px 30px -8px var(--danger);
     }
 
     /* ===== MOBILE CARD VIEW ===== */
     .mobile-cards {
         display: none;
         flex-direction: column;
-        gap: 16px;
-        padding: 16px;
+        gap: 20px;
+        padding: 20px;
     }
 
     .trade-card {
         background: var(--card-light);
-        border-radius: 20px;
+        border-radius: 24px;
         border: 1px solid var(--border);
         overflow: hidden;
-        animation: slideIn 0.3s ease;
-        transition: all 0.2s ease;
+        animation: slideIn 0.4s ease;
+        transition: all 0.3s ease;
     }
 
     .trade-card:hover {
-        transform: translateY(-2px);
+        transform: translateY(-4px);
         border-color: var(--primary);
-        box-shadow: 0 10px 20px -10px var(--primary-glow);
+        box-shadow: 0 20px 30px -15px var(--primary-glow);
     }
 
     .trade-card-header {
-        padding: 16px;
-        background: linear-gradient(90deg, rgba(26, 188, 156, 0.1), transparent);
+        padding: 20px;
+        background: linear-gradient(90deg, rgba(26, 188, 156, 0.15), transparent);
         border-bottom: 1px solid var(--border);
         display: flex;
         justify-content: space-between;
@@ -478,50 +506,50 @@
     .trade-card-title {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 14px;
     }
 
     .trade-card-icon {
-        width: 40px;
-        height: 40px;
+        width: 48px;
+        height: 48px;
         background: var(--primary-soft);
-        border-radius: 12px;
+        border-radius: 16px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 20px;
+        font-size: 22px;
         color: var(--primary);
     }
 
     .trade-card-info h4 {
-        font-size: 16px;
+        font-size: 18px;
         font-weight: 600;
         color: white;
-        margin-bottom: 2px;
+        margin-bottom: 4px;
     }
 
     .trade-card-info p {
-        font-size: 12px;
+        font-size: 13px;
         color: var(--text-muted);
         display: flex;
         align-items: center;
-        gap: 4px;
+        gap: 6px;
     }
 
     .trade-card-badge {
         display: flex;
-        gap: 8px;
+        gap: 10px;
     }
 
     .trade-card-body {
-        padding: 16px;
+        padding: 20px;
     }
 
     .trade-card-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 12px 0;
+        padding: 14px 0;
         border-bottom: 1px solid var(--border);
     }
 
@@ -530,47 +558,47 @@
     }
 
     .trade-card-label {
-        font-size: 13px;
+        font-size: 14px;
         color: var(--text-muted);
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
     }
 
     .trade-card-value {
-        font-size: 14px;
+        font-size: 16px;
         font-weight: 600;
         color: white;
     }
 
     .trade-card-footer {
-        padding: 16px;
-        background: linear-gradient(90deg, rgba(0,0,0,0.2), transparent);
+        padding: 20px;
+        background: linear-gradient(90deg, rgba(0,0,0,0.3), transparent);
         border-top: 1px solid var(--border);
         display: flex;
-        gap: 12px;
+        gap: 14px;
     }
 
     .trade-card-footer .btn {
         flex: 1;
         justify-content: center;
-        padding: 12px;
+        padding: 14px;
     }
 
     /* Mobile-specific badges */
     .mobile-pair-badge {
         background: linear-gradient(135deg, var(--primary-soft), transparent);
-        padding: 4px 10px;
-        border-radius: 20px;
-        font-size: 12px;
+        padding: 6px 14px;
+        border-radius: 30px;
+        font-size: 13px;
         color: var(--primary);
         border: 1px solid var(--primary-glow);
     }
 
     .mobile-direction-badge {
-        padding: 4px 10px;
-        border-radius: 20px;
-        font-size: 12px;
+        padding: 6px 14px;
+        border-radius: 30px;
+        font-size: 13px;
         font-weight: 600;
     }
 
@@ -588,15 +616,15 @@
     .message-box {
         position: fixed;
         display: none;
-        max-width: 300px;
+        max-width: 320px;
         background: var(--card);
         color: var(--text-dark);
-        padding: 12px 16px;
-        border-radius: 12px;
-        font-size: 13px;
+        padding: 14px 20px;
+        border-radius: 16px;
+        font-size: 14px;
         z-index: 1000;
         border: 1px solid var(--primary);
-        box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5);
+        box-shadow: 0 20px 35px -10px rgba(0,0,0,0.5);
         pointer-events: none;
         backdrop-filter: blur(10px);
     }
@@ -605,13 +633,14 @@
         cursor: help;
         text-decoration: underline dotted;
         text-decoration-color: var(--primary);
+        text-underline-offset: 4px;
     }
 
     /* Animations */
     @keyframes slideIn {
         from {
             opacity: 0;
-            transform: translateY(20px);
+            transform: translateY(30px);
         }
         to {
             opacity: 1;
@@ -624,81 +653,104 @@
         to { opacity: 1; }
     }
 
+    /* Large Screen Optimizations */
+    @media (min-width: 1200px) {
+        .journal-container {
+            max-width: 1600px;
+            padding: 0 40px;
+        }
+
+        .desktop-table th {
+            padding: 22px 28px;
+            font-size: 15px;
+        }
+
+        .desktop-table td {
+            padding: 22px 28px;
+            font-size: 16px;
+        }
+
+        .btn {
+            padding: 14px 26px;
+            font-size: 15px;
+        }
+    }
+
     /* ===== MOBILE BREAKPOINT ===== */
     @media (max-width: 768px) {
         .journal-container {
-            padding: 0 16px;
-            margin: 20px auto;
+            padding: 0 20px;
+            margin: 30px auto;
         }
 
         .page-header {
             flex-direction: column;
             align-items: stretch;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
         }
 
         .title-section {
-            gap: 12px;
+            gap: 16px;
         }
 
         .title-icon {
-            width: 50px;
-            height: 50px;
-            font-size: 24px;
+            width: 60px;
+            height: 60px;
+            font-size: 28px;
         }
 
         .title-content h1 {
-            font-size: 24px;
+            font-size: 28px;
         }
 
         .title-content p {
-            font-size: 12px;
+            font-size: 13px;
         }
 
         .stats-badge {
             width: 100%;
-            justify-content: space-around;
-            padding: 10px;
-            gap: 10px;
+            justify-content: center;
+            padding: 12px;
+            gap: 20px;
         }
 
         .stat-item {
-            gap: 6px;
+            gap: 8px;
         }
 
         .stat-icon {
-            width: 32px;
-            height: 32px;
-            font-size: 14px;
-        }
-
-        .stat-value {
+            width: 38px;
+            height: 38px;
             font-size: 16px;
         }
 
+        .stat-value {
+            font-size: 18px;
+        }
+
         .stat-label {
-            font-size: 10px;
+            font-size: 11px;
         }
 
         .table-header {
-            padding: 16px;
+            padding: 20px;
         }
 
         .table-header h2 {
-            font-size: 18px;
+            font-size: 20px;
         }
 
         .filter-badge {
             width: 100%;
             overflow-x: auto;
-            padding-bottom: 4px;
-            gap: 6px;
+            padding-bottom: 6px;
+            gap: 8px;
         }
 
         .filter-btn {
             flex: 0 0 auto;
-            padding: 6px 12px;
-            font-size: 12px;
+            padding: 8px 16px;
+            font-size: 13px;
         }
 
         /* Hide desktop table, show mobile cards */
@@ -714,13 +766,13 @@
     /* Small phones */
     @media (max-width: 480px) {
         .journal-container {
-            padding: 0 12px;
+            padding: 0 16px;
         }
 
         .stats-badge {
             flex-direction: column;
             align-items: stretch;
-            border-radius: 20px;
+            border-radius: 24px;
         }
 
         .stat-item {
@@ -733,6 +785,24 @@
 
         .trade-card-footer .btn {
             width: 100%;
+        }
+
+        .empty-state {
+            padding: 60px 20px;
+        }
+
+        .empty-icon {
+            width: 100px;
+            height: 100px;
+            font-size: 40px;
+        }
+
+        .empty-state h3 {
+            font-size: 24px;
+        }
+
+        .empty-state p {
+            font-size: 15px;
         }
     }
 
@@ -761,12 +831,12 @@
     <div class="page-header">
         <div class="title-section">
             <div class="title-icon">
-                <i class="fas fa-book"></i>
+                <i class="fas fa-book-open"></i>
             </div>
             <div class="title-content">
                 <h1>Trade Journal</h1>
                 <p>
-                    <i class="fas fa-pen"></i> Record & analyze your trades
+                    <i class="fas fa-feather-alt"></i> Document & analyze your trading journey
                 </p>
             </div>
         </div>
@@ -777,16 +847,7 @@
                     <i class="fas fa-clock"></i>
                 </div>
                 <div class="stat-info">
-                    <div class="stat-label">Pending</div>
-                    <div class="stat-value">{{ trades|length }}</div>
-                </div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-icon">
-                    <i class="fas fa-hourglass-half"></i>
-                </div>
-                <div class="stat-info">
-                    <div class="stat-label">To Journal</div>
+                    <div class="stat-label">Pending Trades</div>
                     <div class="stat-value">{{ trades|length }}</div>
                 </div>
             </div>
@@ -798,7 +859,7 @@
     <div class="table-card">
         <div class="table-header">
             <h2>
-                <i class="fas fa-list"></i> Pending Trades
+                <i class="fas fa-list-check"></i> Pending Trades
                 <span id="tradeCount">{{ trades|length }}</span>
             </h2>
             <div class="filter-badge">
@@ -864,10 +925,10 @@
                         <td>
                             <div class="action-buttons">
                                 <a href="{% url 'update_trade' trade.trade_id %}" class="btn btn-journal">
-                                    <i class="fas fa-edit"></i> Journal
+                                    <i class="fas fa-pen-to-square"></i> Journal
                                 </a>
                                 <a href="{% url 'delete_trade_confirm' trade.trade_id %}" class="btn btn-delete">
-                                    <i class="fas fa-trash"></i> Delete
+                                    <i class="fas fa-trash-can"></i> Delete
                                 </a>
                             </div>
                         </td>
@@ -935,10 +996,10 @@
                 <!-- Card Footer with Actions -->
                 <div class="trade-card-footer">
                     <a href="{% url 'update_trade' trade.trade_id %}" class="btn btn-journal">
-                        <i class="fas fa-edit"></i> Journal
+                        <i class="fas fa-pen-to-square"></i> Journal
                     </a>
                     <a href="{% url 'delete_trade_confirm' trade.trade_id %}" class="btn btn-delete">
-                        <i class="fas fa-trash"></i> Delete
+                        <i class="fas fa-trash-can"></i> Delete
                     </a>
                 </div>
             </div>

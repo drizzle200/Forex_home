@@ -23,6 +23,12 @@ from .forms import NewTradeForm, TradeUpdateForm
 import joblib
 import os, pytz
 import json  
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+import re
 
 from .market_session import is_market_open, get_trading_session, get_market_volatility, get_major_news_impact,get_session_pairs,get_pair_recommendations
 
@@ -202,123 +208,375 @@ def export_trades_to_excel(request):
 # Index view
 # ---------------------------[]
 
+import random
+import pandas as pd
+import numpy as np
+from datetime import datetime
+from django.db import transaction
+from django.core.exceptions import ValidationError
+from django.shortcuts import render, redirect
 
-def index_view(request):
-    model = get_model()
+def generate_unique_trade_id():
+    """Generate a unique 4-digit trade ID."""
+    existing_ids = set(Trades.objects.values_list("trade_id", flat=True))
+    while True:
+        new_id = random.randint(1000, 9999)
+        if new_id not in existing_ids:
+            return new_id
+
+def normalize_empty_fields(trade_instance):
+    """Convert empty strings to None for all fields."""
+    for field in Trades._meta.get_fields():
+        if hasattr(trade_instance, field.name):
+            value = getattr(trade_instance, field.name)
+            if value == "":
+                setattr(trade_instance, field.name, None)
+    return trade_instance
+
+def prepare_prediction_data(trade_instance, features):
+    """
+    Prepare data for model prediction.
+    Fixed: Properly handles data types to avoid sklearn encoding issues.
+    """
+    pred_data = {}
+    
+    for col in features:
+        # Get the value and ensure it's a primitive type, not a dict
+        value = getattr(trade_instance, col, "Blank")
+        
+        # Handle different data types
+        if value is None:
+            value = "Blank"
+        elif isinstance(value, (dict, list)):
+            value = str(value)  # Convert complex types to string
+        elif not isinstance(value, (str, int, float, bool, np.number)):
+            value = str(value)  # Convert any other non-primitive to string
+        
+        pred_data[col] = [value]
+    
+    pred_df = pd.DataFrame(pred_data)
+    
+    # Convert risk_reward to numeric safely
+    if "risk_reward" in pred_df.columns:
+        pred_df["risk_reward"] = pd.to_numeric(
+            pred_df["risk_reward"], errors="coerce"
+        ).fillna(0)
+    
+    # Convert all object columns to string to avoid encoding issues
+    for col in pred_df.select_dtypes(include=['object']).columns:
+        pred_df[col] = pred_df[col].astype(str)
+    
+    return pred_df
+
+def calculate_trade_rating(probability):
+    """Calculate trade rating based on win probability."""
+    if probability >= 70:
+        return "A"
+    elif probability >= 60:
+        return "B"
+    elif probability >= 50:
+        return "C"
+    return "D"
+
+def get_trade_preview_data(trade_instance, rvs_value, rvs_grade, probability=None, rating=None):
+    """Prepare trade preview data for confirmation."""
+    exclude_fields = {
+        "id", "momentum_h4", "momentum_h1", "momentum_15m", "momentum_5m", 
+        "momentum_1m", "rvs", "rvs_grade", "risk_reward", "trade_id", 
+        "timestamp", "trade_type", "buy_or_sell", "session", "entry_place", 
+        "confirmation", "mood", "tp", "tp_reason", "setup_quality", "target",
+        "reason", "holding_time_hrs", "holding_time", "narration"
+    }
+    
+    preview_data = {}
+    
+    for field in Trades._meta.get_fields():
+        if field.name not in exclude_fields:
+            value = getattr(trade_instance, field.name, None)
+            # Handle None values
+            if value is None or value == "":
+                display_value = "Not specified"
+            else:
+                display_value = value
+            
+            # Use field name or verbose_name
+            field_label = getattr(field, 'verbose_name', field.name)
+            preview_data[str(field_label).title()] = display_value
+    
+    preview_data["RVS"] = rvs_value if rvs_value is not None else 0
+    preview_data["RVS Grade"] = rvs_grade if rvs_grade is not None else "N/A"
+    
+    if probability is not None:
+        preview_data["Win Probability (%)"] = round(probability, 1)
+        preview_data["Trade Rating"] = rating
+    
+    return preview_data
+
+def process_trade_submission(request, form, model):
+    """Process the trade form submission."""
+    new_trade = form.save(commit=False)
    
-    if request.method == "POST":
-        form = NewTradeForm(request.POST)
-
-        if form.is_valid():
-            new_trade = form.save(commit=False)
-
-            try:
-                with transaction.atomic():
-
-                    # 🔒 Restrict trade BEFORE doing any heavy work
-                    restrict_trade(
-                        pair=new_trade.pair,
-                        new_trade_type=new_trade.trade_type
-                    )
-
-                    # Unique trade ID
-                    existing_ids = set(
-                        Trades.objects.values_list("trade_id", flat=True)
-                    )
-                    new_id = random.randint(1000, 9999)
-                    while new_id in existing_ids:
-                        new_id = random.randint(1000, 9999)
-
-                    new_trade.trade_id = new_id
-                    new_trade.timestamp = datetime.now()
-
-                    if not new_trade.session:
-                        new_trade.session = get_trading_session()
-
-                    # Normalize empty fields
-                    for field in Trades._meta.get_fields():
-                        if hasattr(new_trade, field.name):
-                            if getattr(new_trade, field.name) in ["", None]:
-                                setattr(new_trade, field.name, None)
-
-                    # Prediction
+    try:
+        with transaction.atomic():
+            # Restrict trade before doing any heavy work
+            restrict_trade(
+                pair=new_trade.pair,
+                new_trade_type=new_trade.trade_type
+            )
+            
+            # Set basic trade info
+            new_trade.trade_id = generate_unique_trade_id()
+            new_trade.timestamp = datetime.now()
+            
+            if not new_trade.session:
+                new_trade.session = get_trading_session()
+            
+            # Normalize empty fields to None
+            new_trade = normalize_empty_fields(new_trade)
+            
+            # Calculate RVS
+            new_trade = calculate_rvs(new_trade)
+            
+            # Initialize prediction variables
+            probability = None
+            rating = None
+            
+            # Make prediction if model exists
+            if model:
+                try:
+                    pred_df = prepare_prediction_data(new_trade, FEATURES)
+                    probability = model.predict_proba(pred_df)[0][1] * 100
+                    rating = calculate_trade_rating(probability)
+                except Exception as e:
+                    # Log the error but don't break the trade creation
+                    print(f"Prediction error: {e}")
                     probability = None
                     rating = None
-                    if model:
-                        pred_data = {
-                            col: [getattr(new_trade, col, "Blank")]
-                            for col in FEATURES
-                        }
-                        pred_df = pd.DataFrame(pred_data)
-                        pred_df["risk_reward"] = pd.to_numeric(
-                            pred_df["risk_reward"], errors="coerce"
-                        ).fillna(0)
-
-                        probability = model.predict_proba(pred_df)[0][1] * 100
-                        rating = (
-                            "A" if probability >= 70 else
-                            "B" if probability >= 60 else
-                            "C" if probability >= 50 else
-                            "D"
-                        )
-
-                    # RVS calculation
-                    new_trade = calculate_rvs(new_trade)
-
-                    # Trade preview
-                    trade_preview_data = {}
-                    exclude_fields = {
-                        "id", "momentum_h4", "momentum_h1", "momentum_15m",
-                        "momentum_5m", "momentum_1m", "rvs", "rvs_grade","risk_reward",
-                        "trade_id", "timestamp", "trade_type", "buy_or_sell",
-                        "session", "entry_place", "confirmation", "mood",
-                        "tp", "tp_reason", "setup_quality", "target",
-                        "reason", "holding_time_hrs", "holding_time",
-                        "narration"
-                    }
-
-                    for field in Trades._meta.get_fields():
-                        if field.name not in exclude_fields:
-                            trade_preview_data[field.verbose_name.title()] = \
-                                getattr(new_trade, field.name, None)
-
-                    trade_preview_data["RVS"] = new_trade.rvs
-                    trade_preview_data["RVS Grade"] = new_trade.rvs_grade
-
-                    if probability is not None:
-                        trade_preview_data["Win Probability (%)"] = round(probability, 1)
-                        trade_preview_data["Trade Rating"] = rating
-
-                    if "confirm_save" in request.POST:
-                        new_trade.save()
-                        return redirect("index")
-
-            except ValidationError as e:
-                form.add_error(None, e.message)
-
-            return render(request, "trade/index.html", {
+            
+            # Prepare preview data
+            preview_data = get_trade_preview_data(
+                new_trade, 
+                new_trade.rvs, 
+                new_trade.rvs_grade,
+                probability, 
+                rating
+            )
+            
+            # Check if user confirmed save
+            if "confirm_save" in request.POST:
+              
+                new_trade.save()
+                return redirect("journal")
+            
+            # Return preview for confirmation
+            return render(request, "trade/trade.html", {
                 "form": form,
                 "show_confirm": True,
-                "trade_preview": trade_preview_data if "trade_preview_data" in locals() else None,
+                "trade_preview": preview_data,
             })
+            
+    except ValidationError as e:
+        form.add_error(None, e.message)
+        return render(request, "trade/trade.html", {
+            "form": form,
+            "show_confirm": False,
+        })
 
+
+def login_view(request):
+    """Handle both login and registration"""
+    
+    # Redirect if already logged in
+    if request.user.is_authenticated:
+        return redirect('index')
+    
+    context = {}
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        # ===== LOGIN HANDLING =====
+        if action == 'login':
+            username = request.POST.get('username', '').strip()
+            password = request.POST.get('password', '')
+            
+            # Validate inputs
+            if not username or not password:
+                messages.error(request, 'Please fill in all fields')
+                return redirect('login')
+            
+            # Authenticate user
+            user = authenticate(request, username=username, password=password)
+            
+            if user is not None:
+                login(request, user)
+                messages.success(request, f'Welcome back, {username}!')
+                
+                # Redirect to next page if specified
+                next_url = request.GET.get('next', 'index')
+                return redirect(next_url)
+            else:
+                messages.error(request, 'Invalid username or password')
+        
+        # ===== REGISTRATION HANDLING =====
+        elif action == 'register':
+            username = request.POST.get('username', '').strip()
+            email = request.POST.get('email', '').strip()
+            password1 = request.POST.get('password1', '')
+            password2 = request.POST.get('password2', '')
+            
+            # Validation
+            errors = []
+            
+            # Check if all fields are filled
+            if not all([username, email, password1, password2]):
+                errors.append('All fields are required')
+            
+            # Username validation
+            if len(username) < 3:
+                errors.append('Username must be at least 3 characters')
+            elif not re.match('^[a-zA-Z0-9_]+$', username):
+                errors.append('Username can only contain letters, numbers, and underscores')
+            
+            # Email validation
+            if email and not re.match(r'^[^@]+@[^@]+\.[^@]+$', email):
+                errors.append('Please enter a valid email address')
+            
+            # Password validation
+            if len(password1) < 6:
+                errors.append('Password must be at least 6 characters')
+            
+            if password1 != password2:
+                errors.append('Passwords do not match')
+            
+            # Check if username exists
+            if User.objects.filter(username=username).exists():
+                errors.append('Username already taken')
+            
+            # Check if email exists
+            if email and User.objects.filter(email=email).exists():
+                errors.append('Email already registered')
+            
+            if errors:
+                for error in errors:
+                    messages.error(request, error)
+                return redirect('login')
+            
+            # Create user
+            try:
+                user = User.objects.create_user(
+                    username=username,
+                    email=email,
+                    password=password1
+                )
+                
+                # Log the user in
+                login(request, user)
+                messages.success(request, f'Welcome to Trade Entry, {username}!')
+                return redirect('index')
+                
+            except Exception as e:
+                messages.error(request, 'An error occurred. Please try again.')
+    
+    return render(request, 'trade/login.html', context)
+
+
+def logout_view(request):
+    """Handle logout"""
+    logout(request)
+    messages.success(request, 'You have been logged out successfully')
+    return redirect('login')
+
+
+@login_required
+def profile_view(request):
+    """View and edit user profile"""
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'update_profile':
+            email = request.POST.get('email', '').strip()
+            first_name = request.POST.get('first_name', '').strip()
+            last_name = request.POST.get('last_name', '').strip()
+            
+            # Validate email
+            if email and not re.match(r'^[^@]+@[^@]+\.[^@]+$', email):
+                messages.error(request, 'Please enter a valid email address')
+                return redirect('profile')
+            
+            # Update user
+            user = request.user
+            user.email = email
+            user.first_name = first_name
+            user.last_name = last_name
+            user.save()
+            
+            messages.success(request, 'Profile updated successfully')
+            return redirect('profile')
+        
+        elif action == 'change_password':
+            current = request.POST.get('current_password', '')
+            new1 = request.POST.get('new_password1', '')
+            new2 = request.POST.get('new_password2', '')
+            
+            # Verify current password
+            if not request.user.check_password(current):
+                messages.error(request, 'Current password is incorrect')
+                return redirect('profile')
+            
+            # Validate new password
+            if len(new1) < 6:
+                messages.error(request, 'New password must be at least 6 characters')
+                return redirect('profile')
+            
+            if new1 != new2:
+                messages.error(request, 'New passwords do not match')
+                return redirect('profile')
+            
+            # Change password
+            request.user.set_password(new1)
+            request.user.save()
+            
+            # Re-authenticate to keep user logged in
+            user = authenticate(
+                request, 
+                username=request.user.username, 
+                password=new1
+            )
+            login(request, user)
+            
+            messages.success(request, 'Password changed successfully')
+            return redirect('profile')
+    
+    return render(request, 'trade/profile.html', {'user': request.user})
+
+@login_required
+def trade_view(request):
+    """Main view for creating new trades."""
+    model = get_model()
+    
+    if request.method == "POST":
+        form = NewTradeForm(request.POST)
+        
+        if form.is_valid():
+            return process_trade_submission(request, form, model)
     else:
         form = NewTradeForm()
-   
-    return render(request, "trade/index.html", {
+        
+    
+    return render(request, "trade/trade.html", {
         "form": form,
         "show_confirm": False,
     })
 
-
-
+@login_required
 def journal_view(request):
     trades = Trades.objects.filter(target__isnull=True)
     return render( request, 'trade/journal.html', {
     'trades':trades,
         })
 
-
+@login_required
 def update_trade_view(request, trade_id):
     trade = get_object_or_404(Trades, trade_id=trade_id)
 
@@ -372,11 +630,13 @@ def delete_trade_confirm(request, trade_id):
     
 
 @require_POST
+@login_required
 def delete_trade(request, trade_id):
     trade = get_object_or_404(Trades, trade_id=trade_id)
     trade.delete()
     return redirect("journal")
 
+@login_required
 def performance_view(request):
     # 2️⃣ Calculate overall statistics
     stats = calculate_overall_stats()
@@ -440,6 +700,7 @@ def performance_view(request):
 
 #@login_required
 #@csrf_exempt
+
 def save_mood(request):
     """Save user's mood with gamified response"""
     if request.method == 'POST':
@@ -1114,10 +1375,10 @@ def prepare_chart_data(trade_count=40):
     for t in trades_list:
         try:
             # Windows
-            dates.append(t.timestamp.strftime("%#m/%#d"))
+            dates.append(t.timestamp.strftime("%Y-%m-%d"))
         except ValueError:
             # Unix/Linux/Mac
-            dates.append(t.timestamp.strftime("%-m/%-d"))
+            dates.append(t.timestamp.strftime("%Y-%m-%d"))
     
     # Build cumulative performance
     performance = []
@@ -1230,7 +1491,7 @@ def get_mood_stats_for_dashboard(user, days=30):
     }
 
 
-
+@login_required
 def trades_view(request):
 
     trades = Trades.objects.filter(target__in=[0, 1]).order_by("-timestamp")[:12]
@@ -1243,6 +1504,8 @@ from .market_session import is_market_open, get_trading_session
 
 from .market_session import is_market_open, get_trading_session, get_market_volatility, get_major_news_impact
 
+
+@login_required
 def home_view(request):
     import pytz
     eat = pytz.timezone('Africa/Dar_es_Salaam')
@@ -1411,6 +1674,8 @@ def home_view(request):
         'mood_achievements': mood_achievements,
         'mood_stats': mood_stats,
     })
+
+@login_required
 def performance_by_pair_view(request, pair_id):
 
     pair = get_object_or_404(Pairs, id=pair_id)
@@ -1518,6 +1783,7 @@ def performance_by_pair_view(request, pair_id):
         }
     )
 
+@login_required
 def academy_view(request):
 
     return  render(request, 'trade/academy/academy.html', {

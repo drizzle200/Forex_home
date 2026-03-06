@@ -481,15 +481,21 @@ body {
     display: none;
     background: var(--bg-elevated);
     color: var(--text-primary);
-    padding: 8px 12px;
+    padding: 12px 16px;  /* Increased padding for better readability */
     border-radius: 8px;
     font-size: 12px;
     z-index: 1000;
     border: 1px solid var(--primary);
     pointer-events: none;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    
+    /* Add these lines for multi-line support */
+    white-space: pre-line;  /* Respects line breaks in the text */
+    line-height: 1.6;       /* Better line spacing between lines */
+    max-width: 280px;       /* Prevents the tooltip from getting too wide */
+    word-wrap: break-word;  /* Breaks long words if necessary */
+    text-align: left;       /* Ensures text is left-aligned */
 }
-
 .hover-text {
     cursor: help;
     border-bottom: 1px dashed var(--primary);
@@ -620,12 +626,20 @@ body {
             <div class="stats-grid">
                 <div class="stat-tile">
                     <div class="tile-label"><i class="fas fa-gem"></i>Consistency</div>
-                    <div class="tile-value">
-                        <span class="hover-text {% if grade_consistency.consistency_level >= 3 %}text-green{% elif grade_consistency.consistency_level == 2 %}text-yellow{% else %}text-red{% endif %}" 
-                              data-message="Based on RVS, RR consistency, and trade frequency">
-                            {{ grade_consistency.consistency_tier }}
-                        </span>
-                    </div>
+                 <div class="tile-value">
+                     <span class="hover-text 
+                         {% if grade_consistency.consistency_level >= 3 %}text-green
+                         {% elif grade_consistency.consistency_level == 2 %}text-yellow
+                         {% else %}text-red{% endif %}" 
+                         data-message="To improve consistency:
+                 1. Execute two or less trades per day
+                 2. Don't take trades where RVS is greater than 4
+                 3. Aim normal risk reward based on your average
+                 4. Reduce repeated mistakes in losing trades">
+                         
+                         {{ grade_consistency.consistency_tier }}
+                     </span>
+                 </div>
                     <div class="tile-trend">{{ grade_consistency.consistency_score|default:"0" }}/4</div>
                 </div>
 

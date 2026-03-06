@@ -5,8 +5,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
 <meta name="theme-color" content="#0f172a">
+<meta name="csrf-token" content="{{ csrf_token }}">
 <title>{% block title %}Forex home{% endblock %}</title>
-
+<link rel="stylesheet" href="{% static 'css/home.css' %}">
 <style>
 :root {
     /* Dark Theme Colors - Enhanced */
@@ -1585,5 +1586,8 @@ tr:hover td {
 <!-- Optional: Add Inter font -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
+{% block extra_js %}
+<script src="{% static 'js/home.js' %}"></script>
+{% endblock %}
 </body>
 </html>

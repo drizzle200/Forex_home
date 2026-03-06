@@ -3,42 +3,52 @@ from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse, JsonResponse
 from datetime import datetime, time, timedelta
-from django.utils.timezone import localtime,now
+from django.utils.timezone import localtime, now
 from collections import Counter
 import pandas as pd
 from django.shortcuts import render, redirect, get_object_or_404
-from django.conf import settings
 from django.forms.models import model_to_dict
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.linear_model import LogisticRegression
-from sklearn.pipeline import Pipeline
-from sklearn.impute import SimpleImputer
-from django.db.models import Avg,Sum,Count, StdDev, Q, Case, When, Value, FloatField, Max, Min
+from django.db.models import Avg, Sum, Count, StdDev, Q, Case, When, Value, FloatField, Max, Min
 from django.utils import timezone
-from django.views.decorators.http import require_POST,require_GET
-from .models import Trades, Pairs,Advice,  Mood
-from .services import restrict_trade
-from .forms import NewTradeForm, TradeUpdateForm
-import joblib
-import os, pytz
-import json  
-from django.shortcuts import render, redirect
+from django.views.decorators.http import require_POST, require_GET
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+import os
+import json
 import re
 
-from .market_session import is_market_open, get_trading_session, get_market_volatility, get_major_news_impact,get_session_pairs,get_pair_recommendations
+from .models import Trades, Pairs, Advice, Mood
+from .services import restrict_trade
+from .forms import NewTradeForm, TradeUpdateForm
+from .market_session import (
+    is_market_open, get_trading_session, get_market_volatility, 
+    get_major_news_impact, get_session_pairs, get_pair_recommendations
+)
+from .utils import (
+    # Model functions
+    get_model, train_model,
+    
+    # Trade ID and data normalization
+    generate_unique_trade_id, normalize_empty_fields,
+    
+    # Prediction helpers
+    prepare_prediction_data, calculate_trade_rating, get_trade_preview_data,
+    
+    # RVS calculation
+    calculate_rvs,
+    
+    # Statistics functions (all accept queryset parameter)
+    calculate_overall_stats, get_pairs_summary, analyze_losing_reasons,
+    get_today_trading_data, get_yesterday_trading_data, get_all_time_stats,
+    get_recent_activity, calculate_consistency_grade, prepare_chart_data,
+    
+    # Mood tracking functions
+    get_mood_streak, get_mood_achievements, get_mood_stats_for_dashboard
+)
 
 
-# ---------------------------
-# Global model cache
-# ---------------------------
-
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "trained_model.pkl")
-MODEL = None
 FEATURES = [
     "pair", "momentum_h4", "momentum_h1", "momentum_15m", "momentum_5m", "momentum_1m",
     "session", "entry_place", "buy_or_sell", "setup_quality",
@@ -46,342 +56,8 @@ FEATURES = [
 ]
 
 # ---------------------------
-# Model training / loading
+# Authentication Views
 # ---------------------------
-
-def train_model():
-    global MODEL
-    trades_qs = Trades.objects.filter(target__in=[0, 1])
-    trades_list = list(trades_qs.values(*FEATURES, "target"))
-
-    if not trades_list:
-        print("⚠ No valid trades with target found. Model not trained.")
-        return None
-
-    X = pd.DataFrame(trades_list)
-    y = X.pop("target")
-
-    # Ensure numeric values are proper
-    X["risk_reward"] = pd.to_numeric(X["risk_reward"], errors="coerce")
-    X["setup_quality"] = pd.to_numeric(X["setup_quality"], errors="coerce")
-
-    # --- Check number of classes ---
-    if len(y.unique()) < 2:
-        print("⚠ Not enough classes to train model. Need at least 2 classes.")
-        return None
-
-    categorical_features = [
-        "pair", "momentum_h4", "momentum_h1", "momentum_15m",
-        "momentum_5m", "momentum_1m", "session", "entry_place",
-        "buy_or_sell", "trade_type", "confirmation", "mood", "tp", "tp_reason"
-    ]
-    numeric_features = ["risk_reward", "setup_quality"]
-
-    # Pipelines
-    categorical_pipeline = Pipeline([
-        ("imputer", SimpleImputer(strategy="most_frequent")),
-        ("encoder", OneHotEncoder(handle_unknown="ignore"))
-    ])
-    numeric_pipeline = Pipeline([
-        ("imputer", SimpleImputer(strategy="mean"))
-    ])
-
-    preprocessor = ColumnTransformer([
-        ("cat", categorical_pipeline, categorical_features),
-        ("num", numeric_pipeline, numeric_features)
-    ])
-
-    model = Pipeline([
-        ("preprocessor", preprocessor),
-        ("classifier", LogisticRegression(max_iter=2000, solver="lbfgs"))
-    ])
-
-    model.fit(X, y)
-    print("✅ Model trained successfully.")
-
-    joblib.dump(model, MODEL_PATH)  # Save for future fast loading
-    MODEL = model
-    return model
-
-def get_model():
-    global MODEL
-    if MODEL is not None:
-        return MODEL
-
-    try:
-        if os.path.exists(MODEL_PATH):
-            MODEL = joblib.load(MODEL_PATH)
-            print("✅ Loaded model from disk.")
-            return MODEL
-    except Exception as e:
-        print("⚠ Model load failed. Retraining...", e)
-        return train_model()
-
-    return train_model()
- 
-
-# ---------------------------
-# RVS calculation
-# ---------------------------
-def calculate_rvs(trade):
-    rvs = 0
-    row = model_to_dict(trade)
-
-    if row.get("confirmation", "").lower() == "no":
-        rvs += 2
-
-    momentums = [
-        row.get("momentum_h4"), row.get("momentum_h1"),
-        row.get("momentum_15m"), row.get("momentum_5m")
-    ]
-    momentums = [m for m in momentums if m]
-    if len(set(momentums)) > 1:
-        rvs += 3
-
-    if row.get("entry_place", "").lower() == "other":
-        rvs += 2
-
-    if row.get("setup_quality") and row["setup_quality"] <= 4:
-        rvs += 2
-
-    if row.get("mood", "").lower() != "calm":
-        rvs += 3
-
-    if rvs == 0:
-        rvs_grade = "A+"
-    elif rvs <= 2:
-        rvs_grade = "A"
-    elif rvs <= 5:
-        rvs_grade = "B"
-    elif rvs <= 8:
-        rvs_grade = "C"
-    else:
-        rvs_grade = "F"
-
-    trade.rvs = rvs
-    trade.rvs_grade = rvs_grade
-    return trade
-
-############
-
-#restrict trade for correlated pairs
-
-
-
-def export_trades_to_excel(request):
-    """
-    Export Trades data to Excel file and return as download response.
-    Handles timezone-aware datetimes by converting them to naive local time.
-    """
-    # Fetch all trades
-    trades_qs = Trades.objects.all()
-    
-    # Convert queryset to list of dicts
-    trades_list = list(trades_qs.values())
-    
-    # Convert timezone-aware datetimes to naive
-    for trade in trades_list:
-        for key, value in trade.items():
-            if hasattr(value, 'tzinfo') and value.tzinfo is not None:
-                trade[key] = localtime(value).replace(tzinfo=None)
-    
-    # Convert to DataFrame
-    df = pd.DataFrame(trades_list)
-    
-    # Optional: remove unwanted columns
-    exclude_cols = ['id']
-    df = df[[col for col in df.columns if col not in exclude_cols]]
-    
-    # Prepare Excel response
-    response = HttpResponse(
-        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    )
-    response['Content-Disposition'] = 'attachment; filename="trades.xlsx"'
-    
-    with pd.ExcelWriter(response, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='Trades')
-    
-    return response
-
-
-# ---------------------------
-# Index view
-# ---------------------------[]
-
-import random
-import pandas as pd
-import numpy as np
-from datetime import datetime
-from django.db import transaction
-from django.core.exceptions import ValidationError
-from django.shortcuts import render, redirect
-
-def generate_unique_trade_id():
-    """Generate a unique 4-digit trade ID."""
-    existing_ids = set(Trades.objects.values_list("trade_id", flat=True))
-    while True:
-        new_id = random.randint(1000, 9999)
-        if new_id not in existing_ids:
-            return new_id
-
-def normalize_empty_fields(trade_instance):
-    """Convert empty strings to None for all fields."""
-    for field in Trades._meta.get_fields():
-        if hasattr(trade_instance, field.name):
-            value = getattr(trade_instance, field.name)
-            if value == "":
-                setattr(trade_instance, field.name, None)
-    return trade_instance
-
-def prepare_prediction_data(trade_instance, features):
-    """
-    Prepare data for model prediction.
-    Fixed: Properly handles data types to avoid sklearn encoding issues.
-    """
-    pred_data = {}
-    
-    for col in features:
-        # Get the value and ensure it's a primitive type, not a dict
-        value = getattr(trade_instance, col, "Blank")
-        
-        # Handle different data types
-        if value is None:
-            value = "Blank"
-        elif isinstance(value, (dict, list)):
-            value = str(value)  # Convert complex types to string
-        elif not isinstance(value, (str, int, float, bool, np.number)):
-            value = str(value)  # Convert any other non-primitive to string
-        
-        pred_data[col] = [value]
-    
-    pred_df = pd.DataFrame(pred_data)
-    
-    # Convert risk_reward to numeric safely
-    if "risk_reward" in pred_df.columns:
-        pred_df["risk_reward"] = pd.to_numeric(
-            pred_df["risk_reward"], errors="coerce"
-        ).fillna(0)
-    
-    # Convert all object columns to string to avoid encoding issues
-    for col in pred_df.select_dtypes(include=['object']).columns:
-        pred_df[col] = pred_df[col].astype(str)
-    
-    return pred_df
-
-def calculate_trade_rating(probability):
-    """Calculate trade rating based on win probability."""
-    if probability >= 70:
-        return "A"
-    elif probability >= 60:
-        return "B"
-    elif probability >= 50:
-        return "C"
-    return "D"
-
-def get_trade_preview_data(trade_instance, rvs_value, rvs_grade, probability=None, rating=None):
-    """Prepare trade preview data for confirmation."""
-    exclude_fields = {
-        "id", "momentum_h4", "momentum_h1", "momentum_15m", "momentum_5m", 
-        "momentum_1m", "rvs", "rvs_grade", "risk_reward", "trade_id", 
-        "timestamp", "trade_type", "buy_or_sell", "session", "entry_place", 
-        "confirmation", "mood", "tp", "tp_reason", "setup_quality", "target",
-        "reason", "holding_time_hrs", "holding_time", "narration"
-    }
-    
-    preview_data = {}
-    
-    for field in Trades._meta.get_fields():
-        if field.name not in exclude_fields:
-            value = getattr(trade_instance, field.name, None)
-            # Handle None values
-            if value is None or value == "":
-                display_value = "Not specified"
-            else:
-                display_value = value
-            
-            # Use field name or verbose_name
-            field_label = getattr(field, 'verbose_name', field.name)
-            preview_data[str(field_label).title()] = display_value
-    
-    preview_data["RVS"] = rvs_value if rvs_value is not None else 0
-    preview_data["RVS Grade"] = rvs_grade if rvs_grade is not None else "N/A"
-    
-    if probability is not None:
-        preview_data["Win Probability (%)"] = round(probability, 1)
-        preview_data["Trade Rating"] = rating
-    
-    return preview_data
-
-def process_trade_submission(request, form, model):
-    """Process the trade form submission."""
-    new_trade = form.save(commit=False)
-   
-    try:
-        with transaction.atomic():
-            # Restrict trade before doing any heavy work
-            restrict_trade(
-                pair=new_trade.pair,
-                new_trade_type=new_trade.trade_type
-            )
-            
-            # Set basic trade info
-            new_trade.trade_id = generate_unique_trade_id()
-            new_trade.timestamp = datetime.now()
-            
-            if not new_trade.session:
-                new_trade.session = get_trading_session()
-            
-            # Normalize empty fields to None
-            new_trade = normalize_empty_fields(new_trade)
-            
-            # Calculate RVS
-            new_trade = calculate_rvs(new_trade)
-            
-            # Initialize prediction variables
-            probability = None
-            rating = None
-            
-            # Make prediction if model exists
-            if model:
-                try:
-                    pred_df = prepare_prediction_data(new_trade, FEATURES)
-                    probability = model.predict_proba(pred_df)[0][1] * 100
-                    rating = calculate_trade_rating(probability)
-                except Exception as e:
-                    # Log the error but don't break the trade creation
-                    print(f"Prediction error: {e}")
-                    probability = None
-                    rating = None
-            
-            # Prepare preview data
-            preview_data = get_trade_preview_data(
-                new_trade, 
-                new_trade.rvs, 
-                new_trade.rvs_grade,
-                probability, 
-                rating
-            )
-            
-            # Check if user confirmed save
-            if "confirm_save" in request.POST:
-              
-                new_trade.save()
-                return redirect("journal")
-            
-            # Return preview for confirmation
-            return render(request, "trade/index.html", {
-                "form": form,
-                "show_confirm": True,
-                "trade_preview": preview_data,
-            })
-            
-    except ValidationError as e:
-        form.add_error(None, e.message)
-        return render(request, "trade/trade.html", {
-            "form": form,
-            "show_confirm": False,
-        })
-
 
 def login_view(request):
     """Handle both login and registration"""
@@ -473,7 +149,7 @@ def login_view(request):
                 # Log the user in
                 login(request, user)
                 messages.success(request, f'Welcome to Trade Entry, {username}!')
-                return redirect('index')
+                return redirect('home')
                 
             except Exception as e:
                 messages.error(request, 'An error occurred. Please try again.')
@@ -550,6 +226,83 @@ def profile_view(request):
     
     return render(request, 'trade/profile.html', {'user': request.user})
 
+
+# ---------------------------
+# Trade Management Views
+# ---------------------------
+
+def process_trade_submission(request, form, model):
+    """Process the trade form submission."""
+    new_trade = form.save(commit=False)
+    
+    # Assign trade to logged-in user
+    new_trade.user = request.user
+   
+    try:
+        with transaction.atomic():
+            # Restrict trade before doing any heavy work
+            restrict_trade(
+                pair=new_trade.pair,
+                new_trade_type=new_trade.trade_type
+            )
+            
+            # Set basic trade info
+            new_trade.trade_id = generate_unique_trade_id()
+            new_trade.timestamp = datetime.now()
+            
+            if not new_trade.session:
+                new_trade.session = get_trading_session()
+            
+            # Normalize empty fields to None
+            new_trade = normalize_empty_fields(new_trade)
+            
+            # Calculate RVS
+            new_trade = calculate_rvs(new_trade)
+            
+            # Initialize prediction variables
+            probability = None
+            rating = None
+            
+            # Make prediction if model exists
+            if model:
+                try:
+                    pred_df = prepare_prediction_data(new_trade, FEATURES)
+                    probability = model.predict_proba(pred_df)[0][1] * 100
+                    rating = calculate_trade_rating(probability)
+                except Exception as e:
+                    print(f"Prediction error: {e}")
+                    probability = None
+                    rating = None
+            
+            # Prepare preview data
+            preview_data = get_trade_preview_data(
+                new_trade, 
+                new_trade.rvs, 
+                new_trade.rvs_grade,
+                probability, 
+                rating
+            )
+            
+            # Check if user confirmed save
+            if "confirm_save" in request.POST:
+                new_trade.save()
+                return redirect("journal")
+            
+            # Return preview for confirmation
+            return render(request, "trade/trade.html", {
+                "form": form,
+                "show_confirm": True,
+                "trade_preview": preview_data,
+            })
+            
+    except ValidationError as e:
+        form.add_error(None, e.message)
+        return render(request, "trade/trade.html", {
+            "form": form,
+            "show_confirm": False,
+        })
+
+
 @login_required
 def trade_view(request):
     """Main view for creating new trades."""
@@ -563,22 +316,31 @@ def trade_view(request):
     else:
         form = NewTradeForm()
         
-    
     return render(request, "trade/trade.html", {
         "form": form,
         "show_confirm": False,
     })
 
+
 @login_required
 def journal_view(request):
-    trades = Trades.objects.filter(target__isnull=True)
-    return render( request, 'trade/journal.html', {
-    'trades':trades,
-        })
+    """View for open trades (target is null)."""
+    # Filter by logged-in user
+    trades = Trades.objects.filter(
+        user=request.user,
+        target__isnull=True
+    ).order_by('-timestamp')
+
+    return render(request, 'trade/journal.html', {
+        'trades': trades,
+    })
+
 
 @login_required
 def update_trade_view(request, trade_id):
-    trade = get_object_or_404(Trades, trade_id=trade_id)
+    """Update an existing trade."""
+    # Ensure user can only update their own trades
+    trade = get_object_or_404(Trades, trade_id=trade_id, user=request.user)
 
     old_target = trade.target
 
@@ -622,8 +384,11 @@ def update_trade_view(request, trade_id):
     )
 
 
-def delete_trade_confirm(request, trade_id):
-    trade = get_object_or_404(Trades, trade_id=trade_id)
+@login_required
+def delete_trade_view(request, trade_id):
+    """Confirm trade deletion."""
+    # Ensure user can only delete their own trades
+    trade = get_object_or_404(Trades, trade_id=trade_id, user=request.user)
     return render(request, "trade/delete_trade_confirm.html", {
         "trade": trade
     })
@@ -632,20 +397,71 @@ def delete_trade_confirm(request, trade_id):
 @require_POST
 @login_required
 def delete_trade(request, trade_id):
-    trade = get_object_or_404(Trades, trade_id=trade_id)
+    """Delete a trade."""
+    # Ensure user can only delete their own trades
+    trade = get_object_or_404(Trades, trade_id=trade_id, user=request.user)
     trade.delete()
     return redirect("journal")
 
+
+@login_required
+def trades_view(request):
+    """View for closed trades (target is not null)."""
+    # Filter by logged-in user
+    trades = Trades.objects.filter(
+        user=request.user,
+        target__in=[0, 1]
+    ).order_by("-timestamp")[:12]
+    
+    return render(request, "trade/trades.html", {
+        'trades': trades,
+    })
+
+
+# ---------------------------
+# Performance Views
+# ---------------------------
+
 @login_required
 def performance_view(request):
-    # 2️⃣ Calculate overall statistics
-    stats = calculate_overall_stats()
+    """Performance dashboard - user specific."""
+    # Filter all queries by logged-in user
+    user_trades = Trades.objects.filter(user=request.user)
     
-    # 3️⃣ Get pairs summary
-    pairs_summary = get_pairs_summary()
+    # If no trades yet, show empty dashboard
+    if not user_trades.exists():
+        return render(request, 'trade/performance.html', {
+            'grade_consistency': {"consistency_score": 0, "consistency_max": 4, 
+                                 "consistency_level": 1, "consistency_tier": "Low", 
+                                 "consistency_percent": 0},
+            'expectancy': 0,
+            'avg_rvs': 0,
+            'avg_risk_reward': 0,
+            "pairs_summary": [],
+            'most_common_reason': None,
+            'most_common_count': 0,
+            'most_common_percentage': 0,
+            'message': "No trades yet. Start trading to see performance data!",
+            'reason_breakdown': [],
+            'total_losing_analyzed': 0,
+            'unique_reasons': 0,
+            "overallwinrate": 0,
+            "overalllossrate": 0,
+            'todays_trades': 0,
+            'todays_profit': 0,
+            'std_dev_rr': 0,
+            'performance': [],
+            'dates': [],
+        })
     
-    # 4️⃣ Analyze losing reasons - NOW HANDLES DICTIONARY RETURN
-    analysis = analyze_losing_reasons()  # This returns a dictionary
+    # Calculate overall statistics (user-specific)
+    stats = calculate_overall_stats(user_trades)
+    
+    # Get pairs summary (user-specific)
+    pairs_summary = get_pairs_summary(user_trades)
+    
+    # Analyze losing reasons (user-specific)
+    analysis = analyze_losing_reasons(user_trades)
     
     # Extract values from analysis
     most_common_reason = analysis['most_common_reason']
@@ -656,19 +472,19 @@ def performance_view(request):
     total_losing_analyzed = analysis['total_losing_analyzed']
     unique_reasons = analysis['unique_reasons']
     
-    # 5️⃣ Get today's trading data
-    today_data = get_today_trading_data()
+    # Get today's trading data (user-specific)
+    today_data = get_today_trading_data(user_trades)
     
-    # 6️⃣ Calculate consistency grade
+    # Calculate consistency grade (user-specific)
     grade_consistency = calculate_consistency_grade(
         today_data['todays_trades'],
         stats['avg_rvs'],
         stats['std_dev_rr'],
-        most_common_reason  # This still works with the extracted value
+        most_common_reason
     )
     
-    # 7️⃣ Prepare performance chart data
-    chart_data = prepare_chart_data()
+    # Prepare performance chart data (user-specific)
+    chart_data = prepare_chart_data(user_trades)
     
     return render(request, 'trade/performance.html', {
         'grade_consistency': grade_consistency,
@@ -698,836 +514,175 @@ def performance_view(request):
         'dates': chart_data['dates'],
     })
 
-#@login_required
-#@csrf_exempt
 
-def save_mood(request):
-    """Save user's mood with gamified response"""
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            mood = data.get('mood')
-            notes = data.get('notes', '')
-            
-            # Check if already have mood for today
-            today = timezone.now().date()
-            existing_mood = Mood.objects.filter(user=request.user, date=today).first()
-            
-            if existing_mood:
-                # Update existing mood
-                existing_mood.mood = mood
-                existing_mood.notes = notes
-                existing_mood.save()
-                created = False
-            else:
-                # Create new mood
-                existing_mood = Mood.objects.create(
-                    user=request.user,
-                    mood=mood,
-                    notes=notes
-                )
-                created = True
-            
-            # Get recommendation
-            recommendation = Mood.get_mood_recommendation(mood)
-            
-            # Get today's stats (you can calculate these from your trade data)
-            today_trades = Trades.objects.filter(
-                timestamp__date=today,
-                user=request.user
-            )
-            
-            # Update mood with trading data (optional)
-            existing_mood.trades_count = today_trades.count()
-            existing_mood.profit_loss = calculate_daily_profit(today_trades)
-            existing_mood.save()
-            
-            # Gamified response
-            response_data = {
-                'success': True,
-                'mood': mood,
-                'emoji': Mood.MOOD_EMOJIS.get(mood, '😐'),
-                'color': Mood.MOOD_COLORS.get(mood, '#6b7280'),
-                'message': recommendation['message'],
-                'action': recommendation['action'],
-                'animation': recommendation['animation'],
-                'created': created,
-                'streak': get_mood_streak(request.user),
+@login_required
+def performance_by_pair_view(request, pair_id):
+    """Performance for a specific pair - user specific."""
+    pair = get_object_or_404(Pairs, id=pair_id)
+    
+    # Filter trades by both pair AND user
+    user_trades = Trades.objects.filter(user=request.user)
+    
+    # Get next pair (user doesn't matter for pair navigation)
+    next_pair = Pairs.objects.filter(id__gt=pair.id).order_by("id").first()
+    previous_pair = Pairs.objects.filter(id__lt=pair.id).order_by("-id").first()
+    
+    # Get trades for this pair and user
+    trades = list(user_trades.filter(
+        pair=pair,
+        target__isnull=False
+    ).order_by("timestamp")[:40])
+    
+    if not trades:
+        # No trades for this pair yet
+        return render(
+            request,
+            "trade/performance_by_pair.html",
+            {
+                "next_pair": next_pair,
+                "previous_pair": previous_pair,
+                "max_wins": 0,
+                "max_losses": 0,
+                "average_holding_time": "",
+                "best_entry_place": "N/A",
+                "best_trade_type": "N/A",
+                "most_winning_session": "N/A",
+                "pair": pair,
+                "dates": [],
+                "performance": [],
             }
-            
-            return JsonResponse(response_data)
-            
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)}, status=400)
-    
-    return JsonResponse({'success': False, 'error': 'Invalid method'}, status=405)
-
-
-def get_mood_stats(request):
-    """Get mood statistics for charts"""
-    days = int(request.GET.get('days', 30))
-    stats = Mood.get_mood_stats(days)
-    
-    # Get today's mood
-    today_mood = Mood.get_today_mood(request.user if request.user.is_authenticated else None)
-    
-    # Prepare chart data
-    chart_data = {
-        'labels': [],
-        'values': [],
-        'colors': [],
-    }
-    
-    for mood_code, data in stats.items():
-        chart_data['labels'].append(data['name'])
-        chart_data['values'].append(data['count'])
-        chart_data['colors'].append(data['color'])
-    
-    return JsonResponse({
-        'success': True,
-        'stats': stats,
-        'chart_data': chart_data,
-        'today_mood': {
-            'mood': today_mood.mood if today_mood else None,
-            'emoji': Mood.MOOD_EMOJIS.get(today_mood.mood, '') if today_mood else '',
-        } if today_mood else None
-    })
-
-
-def get_mood_streak(user):
-    """Calculate user's mood logging streak"""
-    moods = Mood.objects.filter(user=user).order_by('-date')
-    if not moods.exists():
-        return 0
-    
-    streak = 1
-    last_date = moods.first().date
-    
-    for mood in moods[1:]:
-        if (last_date - mood.date).days == 1:
-            streak += 1
-            last_date = mood.date
-        else:
-            break
-    
-    return streak
-
-
-def calculate_daily_profit(trades_queryset):
-    """Calculate profit for a day's trades"""
-    profit = 0
-    for trade in trades_queryset.filter(target__in=[0, 1]):
-        if trade.target == 1:
-            profit += trade.risk_reward or 0
-        else:
-            profit -= 1
-    return round(profit, 2)
-
-def calculate_overall_stats():
-    """Calculate overall statistics from trades"""
-    # Aggregate stats from last 20 trades
-     # 1️⃣ Get last 20 closed trades
-    last_20_trades = Trades.objects.filter(
-        target__in=[0, 1]
-    ).order_by("-timestamp")[:30]
-    last_2_trades = Trades.objects.filter(
-        target__in=[0, 1]
-    ).order_by("-timestamp")[:2]
-    
-    stats = last_20_trades.aggregate(
-        total_trades=Count("id"),
-        all_won=Count("id", filter=Q(target=1)),
-        all_lost=Count("id", filter=Q(target=0)),
-        avg_risk_reward=Avg("risk_reward", filter=Q(target=1)),
-        std_dev_rr=StdDev("risk_reward"),
-    )
-    
-    # Aggregate RVS from last 2 trades
-    rvs_stats = last_2_trades.aggregate(        
-        avg_rvs=Avg("rvs"),
-    )
-    
-    total_trades = stats["total_trades"] or 0
-    all_won = stats["all_won"] or 0
-    all_lost = stats["all_lost"] or 0
-    
-    # Calculate winrate safely
-    if total_trades > 0:
-        overallwinrate = round((all_won / total_trades) * 100, 2)
-        overalllossrate = round((all_lost / total_trades) * 100, 2)
-    else:
-        overallwinrate = 0
-        overalllossrate = 0
-    
-    avg_risk_reward = round(stats["avg_risk_reward"] or 0, 2)
-    std_dev_rr = round(stats["std_dev_rr"] or 0, 2)
-    avg_rvs = round(rvs_stats["avg_rvs"] or 0, 2)
-    
-    # Calculate expectancy
-    expectancy = round(
-        ((overallwinrate / 100) * avg_risk_reward) -
-        ((overalllossrate / 100) * 1),
-        2
-    )
-    
-    return {
-        'total_trades': total_trades,
-        'all_won': all_won,
-        'all_lost': all_lost,
-        'overallwinrate': overallwinrate,
-        'overalllossrate': overalllossrate,
-        'avg_risk_reward': avg_risk_reward,
-        'std_dev_rr': std_dev_rr,
-        'avg_rvs': avg_rvs,
-        'expectancy': expectancy,
-    }
-
-
-def get_pairs_summary():
-    """Generate summary statistics for each trading pair"""
-    pairs_summary = []
-    pairs = Pairs.objects.all()
-
-    for pair in pairs:
-        trades = pair.trades.filter(target__in=[0, 1])
-    
-        if not trades.exists():
-            continue
-    
-        won = trades.filter(target=1).count()
-        lost = trades.filter(target=0).count()
-        total = won + lost
-    
-        winrate = round((won / total) * 100, 2) if total > 0 else 0
-    
-        # Sum of winning RR
-        total_win_rr = trades.filter(target=1).aggregate(
-            total_rr=Sum("risk_reward")
-        )["total_rr"] or 0
-    
-        # Total loss R (each loss = -1R)
-        total_loss_rr = lost * 1
-    
-        # Net Profit in R
-        net_profit = round(total_win_rr - total_loss_rr, 2)
-      
-        avg_rr = trades.filter(target=1).aggregate(
-            avg_rr=Avg("risk_reward")
-        )["avg_rr"] or 0
-    
-        avg_rr = round(avg_rr, 2)
-    
-        pairs_summary.append({
-            "id": pair.id,
-            "pair": pair.name,
-            "won": won,
-            "lost": lost,
-            "avg_rr": avg_rr,
-            "winrate": winrate,
-            "profit_r": net_profit,   
-        })
-    
-    return pairs_summary
-
-
-def analyze_losing_reasons():
-    """Analyze most common reasons for losing trades and generate advice"""
-    # Get last 50 losing trades for better sample size (or all if you prefer)
-    losing_trades = Trades.objects.filter(target=0).order_by("-timestamp")[:50]
-    reasons = list(losing_trades.values_list("reason", flat=True))
-    
-    # Filter out None values
-    reasons = [r for r in reasons if r]
-    
-    if reasons:
-        # Count occurrences
-        reason_counts = Counter(reasons)
-        most_common_reason, count = reason_counts.most_common(1)[0]
-        
-        # Calculate percentage
-        total_reasons = len(reasons)
-        percentage = round((count / total_reasons) * 100, 1) if total_reasons > 0 else 0
-    else:
-        most_common_reason = None
-        count = 0
-        percentage = 0
-        reason_counts = Counter()
-
-    # Message mapping
-    message_map = {
-        "Psycho/Mood": "🧠 Refresh your psychology, avoid emotional trading and take rest if necessary",
-        "Wrong Structure": "📐 Review trade structures, ensure proper analysis before executing trade",
-        "Trend": "📈 Follow the Trend carefully, avoid forcing trades against it",
-        "FOMO": "🎯 Avoid fear of missing out, there are plenty of chances to come, just trade your plan",
-        "Greed": "💰 Control Greed, just take profit according to your plan",
-        "No Confirmation": "⏳ Wait for confirmation, patience increases your probability for success",
-        "Momentum": "⚡ Avoid weak Momentums, always wait for the best setups",
-        "News": "📰 Be cautious around News, it is very risky",
-        "Other": "🛑 Stop trading for a while, review your strategy and evaluate yourself!",
-    }
-    
-    # Get message with emoji
-    message = message_map.get(most_common_reason, "🌟 You are doing great! Keep up the good work!")
-    
-    # Also get the full breakdown of all reasons (optional)
-    reason_breakdown = []
-    for reason, reason_count in reason_counts.most_common():
-        reason_breakdown.append({
-            'reason': reason,
-            'count': reason_count,
-            'percentage': round((reason_count / total_reasons) * 100, 1) if total_reasons > 0 else 0,
-            'message': message_map.get(reason, "Review your strategy for this issue")
-        })
-    
-    return {
-        'most_common_reason': most_common_reason,
-        'most_common_count': count,
-        'most_common_percentage': percentage,
-        'message': message,
-        'total_losing_analyzed': len(reasons),
-        'reason_breakdown': reason_breakdown,  # Full breakdown of all reasons
-        'unique_reasons': len(reason_counts),   # Number of different reasons
-    }
-
-
-def get_today_trading_data():
-    """Get today's trading statistics"""
-    local_now = timezone.localtime(timezone.now())
-    today = local_now.date()
-    
-    todays_trades = Trades.objects.filter(timestamp__date=today).count()
-    
-    # Today's closed trades profit/loss
-    todays_profit = Trades.objects.filter(
-        timestamp__date=today,
-        target__in=[0, 1]
-    ).aggregate(
-        total_profit=Sum(
-            Case(
-                When(target=1, then="risk_reward"),  # Win = +RR
-                When(target=0, then=Value(-1)),      # Loss = -1R
-                output_field=FloatField(),
-            )
         )
-    )["total_profit"] or 0
-    todays_profit = round(todays_profit, 2)
     
-    return {
-        'todays_trades': todays_trades,
-        'todays_profit': todays_profit,
-        'today_date': today,
-    }
-def get_yesterday_trading_data():
-    """Get yesterday's trading statistics"""
-    local_now = timezone.localtime(timezone.now())
-    yesterday = local_now.date() - timedelta(days=1)
+    # Prepare lists
+    risk_rewards = [t.risk_reward for t in trades]
+    targets = [t.target for t in trades]
+    dates = [t.timestamp.strftime("%Y-%m-%d") for t in trades]
     
-    yesterday_trades = Trades.objects.filter(timestamp__date=yesterday).count()
-    
-    # Yesterday's closed trades profit/loss
-    yesterday_profit = Trades.objects.filter(
-        timestamp__date=yesterday,
-        target__in=[0, 1]
-    ).aggregate(
-        total_profit=Sum(
-            Case(
-                When(target=1, then="risk_reward"),  # Win = +RR
-                When(target=0, then=Value(-1)),      # Loss = -1R
-                output_field=FloatField(),
-            )
-        )
-    )["total_profit"] or 0
-    yesterday_profit = round(yesterday_profit, 2)
-    
-    # Get winrate for yesterday
-    yesterday_wins = Trades.objects.filter(
-        timestamp__date=yesterday,
-        target=1
-    ).count()
-    
-    yesterday_total = Trades.objects.filter(
-        timestamp__date=yesterday,
-        target__in=[0, 1]
-    ).count()
-    
-    yesterday_winrate = round((yesterday_wins / yesterday_total * 100), 2) if yesterday_total > 0 else 0
-    
-    return {
-        'yesterday_trades': yesterday_trades,
-        'yesterday_profit': yesterday_profit,
-        'yesterday_date': yesterday,
-        'yesterday_wins': yesterday_wins,
-        'yesterday_losses': yesterday_total - yesterday_wins if yesterday_total > 0 else 0,
-        'yesterday_total': yesterday_total,
-        'yesterday_winrate': yesterday_winrate,
-    }
-
-def get_all_time_stats():
-    """Get all-time trading statistics"""
-    # All closed trades
-    all_trades = Trades.objects.filter(target__in=[0, 1])
-    
-    total_trades = all_trades.count()
-    
-    if total_trades == 0:
-        return {
-            'total_trades': 0,
-            'total_wins': 0,
-            'total_losses': 0,
-            'winrate': 0,
-            'lossrate': 0,
-            'total_profit_r': 0,
-            'avg_risk_reward': 0,
-            'best_trade': 0,
-            'worst_trade': 0,
-            'longest_win_streak': 0,
-            'longest_loss_streak': 0,
-            'total_days_traded': 0,
-            'avg_trades_per_day': 0,
-            'profit_factor': 0,
-            'expectancy': 0,
-            'total_r_multiple': 0,
-        }
-    
-    # Basic counts
-    total_wins = all_trades.filter(target=1).count()
-    total_losses = all_trades.filter(target=0).count()
-    
-    # Winrate
-    winrate = round((total_wins / total_trades) * 100, 2)
-    lossrate = round((total_losses / total_trades) * 100, 2)
-    
-    # Profit calculations
-    total_win_rr = all_trades.filter(target=1).aggregate(
-        total=Sum("risk_reward")
-    )["total"] or 0
-    
-    total_loss_rr = total_losses * 1  # Each loss = -1R
-    
-    total_profit_r = round(total_win_rr - total_loss_rr, 2)
-    
-    # Average risk-reward on winning trades
-    avg_risk_reward = round(
-        all_trades.filter(target=1).aggregate(
-            avg=Avg("risk_reward")
-        )["avg"] or 0, 2
-    )
-    
-    # Best and worst trades
-    best_trade = round(
-        all_trades.filter(target=1).aggregate(
-            best=Max("risk_reward")
-        )["best"] or 0, 2
-    )
-    
-    worst_trade = round(
-        all_trades.filter(target=0).aggregate(
-            worst=Min("risk_reward")  # This will be the smallest loss (closest to 0)
-        )["worst"] or 0, 2
-    )
-    
-    # Get the actual biggest loss (lowest value)
-    biggest_loss = round(
-        all_trades.filter(target=0).aggregate(
-            biggest=Min("risk_reward")  # Most negative
-        )["biggest"] or 0, 2
-    )
-    
-    # Calculate streaks
-    trades_chrono = all_trades.order_by('timestamp').values_list('target', flat=True)
-    
-    longest_win_streak = 0
-    longest_loss_streak = 0
-    current_win_streak = 0
-    current_loss_streak = 0
-    
-    for target in trades_chrono:
-        if target == 1:  # Win
-            current_win_streak += 1
-            current_loss_streak = 0
-            longest_win_streak = max(longest_win_streak, current_win_streak)
-        else:  # Loss
-            current_loss_streak += 1
-            current_win_streak = 0
-            longest_loss_streak = max(longest_loss_streak, current_loss_streak)
-    
-    # Days traded
-    trading_days = all_trades.dates('timestamp', 'day').count()
-    avg_trades_per_day = round(total_trades / trading_days, 2) if trading_days > 0 else 0
-    
-    # Profit factor (Gross Profit / Gross Loss)
-    gross_profit = total_win_rr
-    gross_loss = total_loss_rr
-    profit_factor = round(gross_profit / gross_loss, 2) if gross_loss > 0 else float('inf')
-    
-    # Expectancy
-    expectancy = round(
-        ((winrate / 100) * avg_risk_reward) - ((lossrate / 100) * 1),
-        2
-    )
-    
-    # Total R multiple (how many times you've grown your account)
-    total_r_multiple = round(total_profit_r, 2)
-    
-    # Performance by month
-    monthly_performance = []
-    months = all_trades.dates('timestamp', 'month').distinct()
-    
-    for month in months:
-        month_trades = all_trades.filter(timestamp__year=month.year, timestamp__month=month.month)
-        month_wins = month_trades.filter(target=1).count()
-        month_total = month_trades.count()
-        
-        month_win_rr = month_trades.filter(target=1).aggregate(
-            total=Sum("risk_reward")
-        )["total"] or 0
-        
-        month_loss_rr = month_trades.filter(target=0).count() * 1
-        
-        monthly_performance.append({
-            'month': month.strftime('%B %Y'),
-            'trades': month_total,
-            'wins': month_wins,
-            'losses': month_total - month_wins,
-            'winrate': round((month_wins / month_total) * 100, 2) if month_total > 0 else 0,
-            'profit_r': round(month_win_rr - month_loss_rr, 2),
-        })
-    
-    # Performance by pair
-    pair_performance = []
-    pairs = Pairs.objects.all()
-    
-    for pair in pairs:
-        pair_trades = pair.trades.filter(target__in=[0, 1])
-        if pair_trades.exists():
-            pair_wins = pair_trades.filter(target=1).count()
-            pair_total = pair_trades.count()
-            
-            pair_win_rr = pair_trades.filter(target=1).aggregate(
-                total=Sum("risk_reward")
-            )["total"] or 0
-            
-            pair_loss_rr = pair_trades.filter(target=0).count() * 1
-            
-            pair_performance.append({
-                'pair': pair.name,
-                'trades': pair_total,
-                'wins': pair_wins,
-                'losses': pair_total - pair_wins,
-                'winrate': round((pair_wins / pair_total) * 100, 2),
-                'profit_r': round(pair_win_rr - pair_loss_rr, 2),
-                'avg_rr': round(
-                    pair_trades.filter(target=1).aggregate(
-                        avg=Avg("risk_reward")
-                    )["avg"] or 0, 2
-                ),
-            })
-    
-    # Sort pair performance by profit
-    pair_performance.sort(key=lambda x: x['profit_r'], reverse=True)
-    
-    return {
-        # Basic stats
-        'total_trades': total_trades,
-        'total_wins': total_wins,
-        'total_losses': total_losses,
-        'winrate': winrate,
-        'lossrate': lossrate,
-        
-        # Profit stats
-        'total_profit_r': total_profit_r,
-        'total_win_rr': round(total_win_rr, 2),
-        'total_loss_rr': total_loss_rr,
-        'avg_risk_reward': avg_risk_reward,
-        
-        # Trade extremes
-        'best_trade': best_trade,
-        'worst_trade': worst_trade,
-        'biggest_loss': biggest_loss,
-        
-        # Streaks
-        'longest_win_streak': longest_win_streak,
-        'longest_loss_streak': longest_loss_streak,
-        'current_win_streak': current_win_streak,
-        'current_loss_streak': current_loss_streak,
-        
-        # Time-based
-        'total_days_traded': trading_days,
-        'avg_trades_per_day': avg_trades_per_day,
-        
-        # Key metrics
-        'profit_factor': profit_factor,
-        'expectancy': expectancy,
-        'total_r_multiple': total_r_multiple,
-        
-        # Detailed breakdowns
-        'monthly_performance': monthly_performance,
-        'pair_performance': pair_performance,
-        
-        # Best and worst pairs
-        'best_pair': pair_performance[0] if pair_performance else None,
-        'worst_pair': pair_performance[-1] if len(pair_performance) > 1 else None,
-    }
-
-
-def get_recent_activity(days=7):
-    """Get trading activity for the last X days"""
-    end_date = timezone.localtime(timezone.now()).date()
-    start_date = end_date - timedelta(days=days)
-    
-    daily_stats = []
-    
-    for i in range(days):
-        current_date = end_date - timedelta(days=i)
-        day_trades = Trades.objects.filter(
-            timestamp__date=current_date,
-            target__in=[0, 1]
-        )
-        
-        if day_trades.exists():
-            wins = day_trades.filter(target=1).count()
-            total = day_trades.count()
-            
-            day_win_rr = day_trades.filter(target=1).aggregate(
-                total=Sum("risk_reward")
-            )["total"] or 0
-            
-            day_loss_rr = day_trades.filter(target=0).count() * 1
-            
-            daily_stats.append({
-                'date': current_date,
-                'date_formatted': current_date.strftime('%a, %b %d'),
-                'trades': total,
-                'wins': wins,
-                'losses': total - wins,
-                'winrate': round((wins / total) * 100, 2),
-                'profit_r': round(day_win_rr - day_loss_rr, 2),
-            })
-        else:
-            daily_stats.append({
-                'date': current_date,
-                'date_formatted': current_date.strftime('%a, %b %d'),
-                'trades': 0,
-                'wins': 0,
-                'losses': 0,
-                'winrate': 0,
-                'profit_r': 0,
-            })
-    
-    # Reverse to have oldest first
-    daily_stats.reverse()
-    
-    return daily_stats
-
-def calculate_consistency_grade(todays_trades, avg_rvs, std_dev_rr, most_common_reason):
-    """Calculate trader consistency grade based on multiple factors"""
-    score = 0
-    max_score = 4
-
-    # Rule 1: Overtrading check
-    if todays_trades <= 2:
-        score += 1
-
-    # Rule 2: RVS control
-    if avg_rvs < 4:
-        score += 1
-
-    # Rule 3: RR execution consistency
-    if std_dev_rr <= 1:
-        score += 1
-
-    # Rule 4: No strategy breaking
-    if most_common_reason is None:
-        score += 1
-
-    # Tier mapping
-    tier_map = {
-        4: ("Mastery", 4),
-        3: ("High", 3),
-        2: ("Medium", 2),
-    }
-    
-    tier, level = tier_map.get(score, ("Low", 1))
-
-    return {
-        "consistency_score": score,
-        "consistency_max": max_score,
-        "consistency_level": level,
-        "consistency_tier": tier,
-        "consistency_percent": int((score / max_score) * 100),
-    }
-
-
-def prepare_chart_data(trade_count=40):
-    """Prepare data for performance chart"""
-    last_trades = Trades.objects.filter(
-        target__in=[0, 1]
-    ).order_by("-timestamp")[:trade_count]  # latest first
-    
-    # Reverse for chronological order
-    trades_list = list(last_trades)[::-1]
-    
-    risk_rewards = [t.risk_reward for t in trades_list]
-    targets = [t.target for t in trades_list]
-    
-    # Format dates (platform independent)
-    dates = []
-    for t in trades_list:
-        try:
-            # Windows
-            dates.append(t.timestamp.strftime("%Y-%m-%d"))
-        except ValueError:
-            # Unix/Linux/Mac
-            dates.append(t.timestamp.strftime("%Y-%m-%d"))
-    
-    # Build cumulative performance
+    # Build cumulative performance in chronological order
     performance = []
     cum_value = 0
+    
     for rr, t in zip(risk_rewards, targets):
         if t == 1:
             cum_value += rr
-        else:
+        elif t == 0:
             cum_value -= 1
-        performance.append(round(cum_value, 2))  # Round to 2 decimal places
+        performance.append(cum_value)
     
-    return {
-        'performance': performance,
-        'dates': dates,
-        'risk_rewards': risk_rewards,
-        'targets': targets,
-    }   
+    # Get last 20 trades for this pair and user
+    recent_trades = user_trades.filter(
+        pair=pair,
+        target__isnull=False
+    ).order_by("-timestamp")[:20]
+    
+    # --- categorical stats ---
+    session = recent_trades.values_list("session", flat=True)
+    trade_type = recent_trades.values_list("trade_type", flat=True)
+    entry_place = recent_trades.values_list("entry_place", flat=True)
 
+    # --- average holding time (minutes) ---
+    average_minutes = recent_trades.aggregate(
+        avg_ht=Avg("holding_time")
+    )["avg_ht"]
 
-def get_mood_streak(user):
-    """Calculate user's mood logging streak"""
-    moods = Mood.objects.filter(user=user).order_by('-date')
-    if not moods.exists():
-        return 0
-    
-    streak = 1
-    last_date = moods.first().date
-    
-    for mood in moods[1:]:
-        if (last_date - mood.date).days == 1:
-            streak += 1
-            last_date = mood.date
+    # --- format holding time ---
+    average_holding_time = ""
+
+    if average_minutes:
+        average_minutes = int(average_minutes)
+        hours, minutes = divmod(average_minutes, 60)
+
+        if hours and minutes:
+            average_holding_time = f"{hours}h {minutes}m"
+        elif hours:
+            average_holding_time = f"{hours}h"
         else:
-            break
+            average_holding_time = f"{minutes}m"
     
-    return streak
+    # --- most common values ---
+    try:
+        best_trade_type = Counter(trade_type).most_common(1)[0][0]
+    except IndexError:
+        best_trade_type = "N/A"
+
+    try:
+        most_winning_session = Counter(session).most_common(1)[0][0]
+    except IndexError:
+        most_winning_session = "N/A"
+
+    try:
+        best_entry_place = Counter(entry_place).most_common(1)[0][0]
+    except IndexError:
+        best_entry_place = "N/A"
+    
+    def get_max_streaks(trades):
+        max_wins = 0
+        max_losses = 0
+        current_wins = 0
+        current_losses = 0
+        for trade in trades:
+            if trade.target == 1:
+                current_wins += 1
+                current_losses = 0
+                max_wins = max(max_wins, current_wins)
+            elif trade.target == 0:
+                current_losses += 1
+                current_wins = 0
+                max_losses = max(max_losses, current_losses)
+        return max_wins, max_losses
+    
+    max_wins, max_losses = get_max_streaks(recent_trades)
+
+    return render(
+        request,
+        "trade/performance_by_pair.html",
+        {
+            "next_pair": next_pair,
+            "previous_pair": previous_pair,
+            "max_wins": max_wins,
+            "max_losses": max_losses,
+            "average_holding_time": average_holding_time,
+            "best_entry_place": best_entry_place,
+            "best_trade_type": best_trade_type,
+            "most_winning_session": most_winning_session,
+            "pair": pair,
+            "dates": dates,
+            "performance": performance,
+        }
+    )
 
 
-def get_mood_achievements(user):
-    """Calculate mood logging achievements"""
-    streak = get_mood_streak(user)
-    total_logs = Mood.objects.filter(user=user).count()
-    
-    achievements = []
-    
-    # Streak achievements
-    if streak >= 30:
-        achievements.append({'icon': '👑', 'title': 'Mood Legend', 'desc': '30 day streak!'})
-    elif streak >= 14:
-        achievements.append({'icon': '🏆', 'title': 'Mood Champion', 'desc': '14 day streak!'})
-    elif streak >= 7:
-        achievements.append({'icon': '🔥', 'title': 'Week Warrior', 'desc': '7 day streak!'})
-    elif streak >= 3:
-        achievements.append({'icon': '⚡', 'title': 'On Fire', 'desc': '3 day streak!'})
-    
-    # Total logs achievements
-    if total_logs >= 100:
-        achievements.append({'icon': '🌟', 'title': 'Mood Master', 'desc': '100 mood logs'})
-    elif total_logs >= 50:
-        achievements.append({'icon': '💫', 'title': 'Mood Expert', 'desc': '50 mood logs'})
-    elif total_logs >= 30:
-        achievements.append({'icon': '🎯', 'title': 'Getting Consistent', 'desc': '30 mood logs'})
-    elif total_logs >= 10:
-        achievements.append({'icon': '📊', 'title': 'Just Started', 'desc': '10 mood logs'})
-    
-    return achievements[:3]  # Return top 3 achievements
-
-
-def get_mood_stats_for_dashboard(user, days=30):
-    """Get mood statistics for dashboard charts"""
-    end_date = timezone.now().date()
-    start_date = end_date - timedelta(days=days)
-    
-    moods = Mood.objects.filter(
-        user=user, 
-        date__gte=start_date, 
-        date__lte=end_date
-    ).order_by('date')
-    
-    # Prepare data for charts
-    mood_counts = {}
-    daily_moods = []
-    
-    for mood_code, _ in Mood.MOOD_CHOICES:
-        count = moods.filter(mood=mood_code).count()
-        if count > 0:
-            mood_counts[mood_code] = {
-                'count': count,
-                'percentage': round((count / moods.count()) * 100, 1) if moods.count() > 0 else 0,
-                'emoji': Mood.MOOD_EMOJIS.get(mood_code, '😐'),
-                'color': Mood.MOOD_COLORS.get(mood_code, '#6b7280'),
-                'name': dict(Mood.MOOD_CHOICES).get(mood_code, mood_code)
-            }
-    
-    # Get last 7 days for trend
-    for i in range(7):
-        day = end_date - timedelta(days=i)
-        day_mood = moods.filter(date=day).first()
-        daily_moods.append({
-            'date': day.strftime('%a'),
-            'mood': day_mood.mood if day_mood else None,
-            'emoji': Mood.MOOD_EMOJIS.get(day_mood.mood, '❌') if day_mood else '❌',
-        })
-    
-    return {
-        'total_logs': moods.count(),
-        'mood_counts': mood_counts,
-        'daily_moods': daily_moods,
-        'most_common': max(mood_counts.items(), key=lambda x: x[1]['count'])[0] if mood_counts else None,
-    }
-
-
-@login_required
-def trades_view(request):
-
-    trades = Trades.objects.filter(target__in=[0, 1]).order_by("-timestamp")[:12]
-    
-    return render(request, "trade/trades.html",{
-    'trades':trades,
-        })
-
-from .market_session import is_market_open, get_trading_session
-
-from .market_session import is_market_open, get_trading_session, get_market_volatility, get_major_news_impact
-
+# ---------------------------
+# Home Dashboard View
+# ---------------------------
 
 @login_required
 def home_view(request):
+    """Home dashboard - user specific."""
     import pytz
     eat = pytz.timezone('Africa/Dar_es_Salaam')
     now_eat = timezone.now().astimezone(eat)
     current_time_local = now_eat.strftime('%I:%M %p')
     current_date_local = now_eat.strftime('%A, %B %d, %Y')
     
-    # Get all-time stats
-    all_time_stats = get_all_time_stats()
+    # Filter all trade queries by logged-in user
+    user_trades = Trades.objects.filter(user=request.user)
     
-    # Get last 7 days activity
-    weekly_activity = get_recent_activity(days=7)
+    # Get all-time stats (user-specific)
+    all_time_stats = get_all_time_stats(user_trades)
     
-    # Get last 30 days activity
-    monthly_activity = get_recent_activity(days=30)
+    # Get last 7 days activity (user-specific)
+    weekly_activity = get_recent_activity(user_trades, days=7)
     
-    today_data = get_today_trading_data()
-    yesterday_data = get_yesterday_trading_data()
-    stats = calculate_overall_stats()
+    # Get last 30 days activity (user-specific)
+    monthly_activity = get_recent_activity(user_trades, days=30)
+    
+    today_data = get_today_trading_data(user_trades)
+    yesterday_data = get_yesterday_trading_data(user_trades)
+    stats = calculate_overall_stats(user_trades)
 
-    # Get losing reasons analysis
-    analysis = analyze_losing_reasons()
+    # Get losing reasons analysis (user-specific)
+    analysis = analyze_losing_reasons(user_trades)
     
     # Extract values from analysis
     most_common_reason = analysis['most_common_reason']
@@ -1536,17 +691,17 @@ def home_view(request):
     message = analysis['message']
     reason_breakdown = analysis['reason_breakdown']
     
-    # Get market session information
+    # Get market session information (not user-specific - global market data)
     market_info = is_market_open()
     trading_session_data = get_trading_session()
     market_volatility = get_market_volatility()
     news_impact = get_major_news_impact()
     
-    # Get session pairs and recommendations
+    # Get session pairs and recommendations (not user-specific)
     session_pairs_data = get_session_pairs()
     pair_recommendations = get_pair_recommendations()
     
-    # Get comprehensive performance analysis
+    # Get comprehensive performance analysis (user-specific)
     issues, severity = Advice.analyze_performance(stats)
     advice = Advice.get_performance_based_advice(stats)
     
@@ -1590,16 +745,11 @@ def home_view(request):
         mood_streak = get_mood_streak(request.user)
         mood_achievements = get_mood_achievements(request.user)
     
-    # Get mood statistics for charts (last 30 days)
+    # Get mood statistics for charts (last 30 days) - user-specific
     mood_stats = get_mood_stats_for_dashboard(request.user) if request.user.is_authenticated else {}
     
-    # DEBUG: Print to console
-    est = pytz.timezone('US/Eastern')
-    now_est = timezone.now().astimezone(est)
-    
-
-    
     return render(request, 'trade/home.html', {
+        'user': request.user,
         # Trading session & market info
         'trading_session': current_session,
         'market_open': market_open,
@@ -1675,140 +825,232 @@ def home_view(request):
         'mood_stats': mood_stats,
     })
 
+
+# ---------------------------
+# Mood Tracking Views
+# ---------------------------
+
 @login_required
-def performance_by_pair_view(request, pair_id):
-
-    pair = get_object_or_404(Pairs, id=pair_id)
-    # Get next pair
-    next_pair = Pairs.objects.filter(id__gt=pair.id).order_by("id").first()
+def save_mood(request):
+    """Save user's mood with gamified response"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            mood = data.get('mood')
+            notes = data.get('notes', '')
+            
+            # Check if already have mood for today
+            today = timezone.now().date()
+            existing_mood = Mood.objects.filter(user=request.user, date=today).first()
+            
+            if existing_mood:
+                # Update existing mood
+                existing_mood.mood = mood
+                existing_mood.notes = notes
+                existing_mood.save()
+                created = False
+            else:
+                # Create new mood
+                existing_mood = Mood.objects.create(
+                    user=request.user,
+                    mood=mood,
+                    notes=notes
+                )
+                created = True
+            
+            # Get recommendation
+            recommendation = Mood.get_mood_recommendation(mood)
+            
+            # Get today's trades for this user
+            today_trades = Trades.objects.filter(
+                timestamp__date=today,
+                user=request.user
+            )
+            
+            # Calculate daily profit (simple version)
+            profit_loss = 0
+            for trade in today_trades.filter(target__in=[0, 1]):
+                if trade.target == 1:
+                    profit_loss += trade.risk_reward or 0
+                else:
+                    profit_loss -= 1
+            
+            # Update mood with trading data (optional)
+            existing_mood.trades_count = today_trades.count()
+            existing_mood.profit_loss = round(profit_loss, 2)
+            existing_mood.save()
+            
+            # Gamified response
+            response_data = {
+                'success': True,
+                'mood': mood,
+                'emoji': Mood.MOOD_EMOJIS.get(mood, '😐'),
+                'color': Mood.MOOD_COLORS.get(mood, '#6b7280'),
+                'message': recommendation['message'],
+                'action': recommendation['action'],
+                'animation': recommendation['animation'],
+                'created': created,
+                'streak': get_mood_streak(request.user),
+            }
+            
+            return JsonResponse(response_data)
+            
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
     
-    # Get previous pair
-    previous_pair = Pairs.objects.filter(id__lt=pair.id).order_by("-id").first()
-    ###############
-    # Get trades (ascending timestamp)
-    trades = list(pair.trades.filter(target__isnull=False).order_by("timestamp")[:40])
+    return JsonResponse({'success': False, 'error': 'Invalid method'}, status=405)
+
+@login_required
+def get_mood_stats(request):
+    """Get mood statistics for charts - user specific."""
+    days = int(request.GET.get('days', 30))
     
-    # Prepare lists
-    risk_rewards = [t.risk_reward for t in trades]
-    targets = [t.target for t in trades]
-    dates = [t.timestamp.strftime("%Y-%m-%d") for t in trades]
+    # Get moods for the current user only
+    end_date = timezone.now().date()
+    start_date = end_date - timedelta(days=days)
     
-    # Build cumulative performance in chronological order
-    performance = []
-    cum_value = 0
-    
-    for rr, t in zip(risk_rewards, targets):
-        if t == 1:
-            cum_value += rr
-        elif t == 0:
-            cum_value -= 1
-        performance.append(cum_value)
-    
-    #  last 20 winning trades with holding_time    
-    trades = pair.trades.filter(target__isnull=False).order_by("-timestamp")[:20]
-    # --- categorical stats ---
-    session = trades.values_list("session", flat=True)
-    trade_type = trades.values_list("trade_type", flat=True)
-    entry_place = trades.values_list("entry_place", flat=True)
-
-    # --- average holding time (minutes) ---
-    average_minutes = trades.aggregate(
-        avg_ht=Avg("holding_time")
-    )["avg_ht"]
-
-    # --- format holding time ---
-    average_holding_time = ""
-
-    if average_minutes:
-        average_minutes = int(average_minutes)
-        hours, minutes = divmod(average_minutes, 60)
-
-        if hours and minutes:
-            average_holding_time = f"{hours}h {minutes}m"
-        elif hours:
-            average_holding_time = f"{hours}h"
-        else:
-            average_holding_time = f"{minutes}m"
-    
- 
-    # --- most common values ---
-    try:
-        best_trade_type = Counter(trade_type).most_common(1)[0][0]
-    except IndexError:
-        best_trade_type = "N/A"
-
-    try:
-        most_winning_session = Counter(session).most_common(1)[0][0]
-    except IndexError:
-        most_winning_session = "N/A"
-
-    try:
-        best_entry_place = Counter(entry_place).most_common(1)[0][0]
-    except IndexError:
-        best_entry_place = "N/A"
-    
-
-    def get_max_treaks(trades):
-        max_wins = 0
-        max_losses = 0
-        current_wins = 0
-        current_losses = 0
-        for trade in trades:
-            if trade.target == 1:
-                current_wins += 1
-                current_losses =0
-                max_wins = max(max_wins,current_wins)
-            elif trade.target == 0:
-                current_losses += 1
-                current_wins = 0
-                max_losses = max(max_losses,current_losses)
-        return max_wins,max_losses
-    max_wins, max_losses = get_max_treaks(trades)    
-
-    return render(
-        request,
-        "trade/performance_by_pair.html",
-        {
-            "next_pair": next_pair,
-            "previous_pair": previous_pair,
-            "max_wins":max_wins,
-            "max_losses":max_losses,
-            "average_holding_time": average_holding_time,
-            "best_entry_place": best_entry_place,
-            "best_trade_type": best_trade_type,
-            "most_winning_session": most_winning_session,
-            "pair": pair,
-            "dates": dates,
-            "performance": performance,
-        }
+    # Filter moods for current user within date range
+    user_moods = Mood.objects.filter(
+        user=request.user,
+        date__gte=start_date,
+        date__lte=end_date
     )
+    
+    # Calculate stats manually instead of calling class method
+    total = user_moods.count()
+    stats = {}
+    
+    if total > 0:
+        for mood_code, mood_name in Mood.MOOD_CHOICES:
+            count = user_moods.filter(mood=mood_code).count()
+            if count > 0:
+                # Extract just the emoji from the choice if needed
+                # mood_name might be "😊 Confident", so we need to clean it
+                clean_name = mood_name.split(' ')[-1] if ' ' in mood_name else mood_name
+                
+                stats[mood_code] = {
+                    'name': clean_name,
+                    'count': count,
+                    'percentage': round((count / total) * 100, 1),
+                    'emoji': Mood.MOOD_EMOJIS.get(mood_code, '😐'),
+                    'color': Mood.MOOD_COLORS.get(mood_code, '#6b7280'),
+                }
+    
+    # Get today's mood
+    today_mood = Mood.get_today_mood(request.user)
+    
+    # Prepare chart data
+    chart_data = {
+        'labels': [],
+        'values': [],
+        'colors': [],
+    }
+    
+    for mood_code, data in stats.items():
+        chart_data['labels'].append(data['name'])
+        chart_data['values'].append(data['count'])
+        chart_data['colors'].append(data['color'])
+    
+    # Get streak
+    streak = 0
+    if request.user.is_authenticated:
+        streak = get_mood_streak(request.user)  # Make sure this function is imported
+    
+    return JsonResponse({
+        'success': True,
+        'stats': stats,
+        'chart_data': chart_data,
+        'streak': streak,
+        'today_mood': {
+            'mood': today_mood.mood if today_mood else None,
+            'emoji': Mood.MOOD_EMOJIS.get(today_mood.mood, '') if today_mood else '',
+            'name': today_mood.get_mood_display() if today_mood else None,
+        } if today_mood else None
+    })
+
+# ---------------------------
+# Export Views
+# ---------------------------
 
 @login_required
-def academy_view(request):
-
-    return  render(request, 'trade/academy/academy.html', {
+def export_trades_to_excel(request):
+    """
+    Export user's trades to Excel file.
+    """
+    # Fetch only current user's trades
+    trades_qs = Trades.objects.filter(user=request.user)
     
-    })
+    if not trades_qs.exists():
+        messages.error(request, 'No trades to export')
+        return redirect('trades_view')
+    
+    # Convert queryset to list of dicts
+    trades_list = list(trades_qs.values())
+    
+    # Convert timezone-aware datetimes to naive
+    for trade in trades_list:
+        for key, value in trade.items():
+            if hasattr(value, 'tzinfo') and value.tzinfo is not None:
+                trade[key] = localtime(value).replace(tzinfo=None)
+    
+    # Convert to DataFrame
+    df = pd.DataFrame(trades_list)
+    
+    # Remove unwanted columns
+    exclude_cols = ['id', 'user_id']  # Don't need user_id in export
+    df = df[[col for col in df.columns if col not in exclude_cols]]
+    
+    # Prepare Excel response
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename="trades_{request.user.username}_{timezone.now().date()}.xlsx"'
+    
+    with pd.ExcelWriter(response, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Trades')
+    
+    return response
 
 
-def p(request):
+# ---------------------------
+# API Views
+# ---------------------------
 
-    return render(request, 'trade/p.html', {
-
-    })
 @require_GET
+@login_required
 def performance_overview(request):
     """
-    Returns overall performance metrics for dashboard.
+    Returns overall performance metrics for dashboard - user specific.
     """
-
+    user_trades = Trades.objects.filter(user=request.user)
+    stats = calculate_overall_stats(user_trades)
+    
     data = {
-        "winrate": 62,          # %
-        "lossrate": 38,         # %
-        "expectancy": 1.8,      # R
-        "avg_rr": 2.4,          # R
-        "avg_risk": -1.0,       # R
-        "rvs": 12,              # sample size
+        "winrate": stats.get('overallwinrate', 0),
+        "lossrate": stats.get('overalllossrate', 0),
+        "expectancy": stats.get('expectancy', 0),
+        "avg_rr": stats.get('avg_risk_reward', 0),
+        "avg_risk": -1.0,
+        "rvs": stats.get('avg_rvs', 0),
     }
 
     return JsonResponse(data)
+
+
+# ---------------------------
+# Academy Views
+# ---------------------------
+
+@login_required
+def academy_view(request):
+    """Academy page."""
+    return render(request, 'trade/academy/academy.html', {})
+
+
+# ---------------------------
+# Test Views
+# ---------------------------
+
+def p(request):
+    """Test page."""
+    return render(request, 'trade/p.html', {})

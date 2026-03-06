@@ -76,10 +76,24 @@ USE_I18N = True
 USE_TZ = True
 
 # Static files
+# At the bottom of your settings.py, add:
+
+# Static files (CSS, JavaScript, Images)
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+# URL for static files
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+
+# Where Django collects static files for production
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Additional static directories
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+
+# For development, ensure this is set
+DEBUG = True
 
 
 LOGIN_URL = '/login/'  # or whatever your login URL path is
