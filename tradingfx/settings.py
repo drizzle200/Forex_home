@@ -11,7 +11,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Security
 SECRET_KEY = 'django-insecure-n8daet-k0j71klc-g=mz610sxpz3i20d=y-pjabh#k*7xgow_j'
 DEBUG = True
-ALLOWED_HOSTS = ['localhost', '127.0.0.1','0.0.0.0','*.fly.dev']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1','0.0.0.0','fxhome.fly.dev']
 
 # Application definition
 INSTALLED_APPS = [
