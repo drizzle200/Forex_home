@@ -18,14 +18,49 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-n8daet-k0j71kl
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-# Allow Fly.io domain and local
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,.fly.dev').split(',')
+# Get the Fly.io app name from environment
+FLY_APP_NAME = os.environ.get('FLY_APP_NAME', '')
+FLY_DOMAIN = f"{FLY_APP_NAME}.fly.dev" if FLY_APP_NAME else ""
 
-# CSRF Trusted Origins for Fly.io
-CSRF_TRUSTED_ORIGINS = [
+# Comprehensive ALLOWED_HOSTS configuration
+DEFAULT_ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '.fly.dev',  # This matches any subdomain of fly.dev
+    'fly.dev',
+]
+
+# Add the specific Fly domain if available
+if FLY_DOMAIN:
+    DEFAULT_ALLOWED_HOSTS.append(FLY_DOMAIN)
+
+# Get ALLOWED_HOSTS from environment or use defaults
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', ','.join(DEFAULT_ALLOWED_HOSTS)).split(',')
+
+# Clean up any whitespace
+ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS if host.strip()]
+
+# CSRF Trusted Origins - Comprehensive configuration
+DEFAULT_CSRF_ORIGINS = [
+    'http://localhost',
+    'http://127.0.0.1',
     'https://*.fly.dev',
     'http://*.fly.dev',
 ]
+
+# Add specific Fly domain if available
+if FLY_DOMAIN:
+    DEFAULT_CSRF_ORIGINS.append(f'https://{FLY_DOMAIN}')
+    DEFAULT_CSRF_ORIGINS.append(f'http://{FLY_DOMAIN}')
+
+# Get CSRF_TRUSTED_ORIGINS from environment or use defaults
+CSRF_TRUSTED_ORIGINS = os.environ.get(
+    'CSRF_TRUSTED_ORIGINS', 
+    ','.join(DEFAULT_CSRF_ORIGINS)
+).split(',')
+
+# Clean up any whitespace
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in CSRF_TRUSTED_ORIGINS if origin.strip()]
 
 
 # Application definition
@@ -74,7 +109,7 @@ WSGI_APPLICATION = 'tradingfx.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': '/data/db.sqlite3',  # CHANGED: Use volume path for persistence
+        'NAME': '/data/db.sqlite3',  # Use volume path for persistence
     }
 }
 
@@ -104,21 +139,55 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
-STATIC_ROOT = '/data/staticfiles'  # CHANGED: Store static files in volume
+STATIC_ROOT = '/data/staticfiles'  # Store static files in volume
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files (if you ever need them)
 MEDIA_URL = '/media/'
-MEDIA_ROOT = '/data/media'  # ADDED: For user-uploaded files
+MEDIA_ROOT = '/data/media'  # For user-uploaded files
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Logging configuration for debugging (optional but helpful)
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': os.environ.get('DJANGO_LOG_LEVEL', 'INFO'),
+            'propagate': False,
+        },
+        'django.security.DisallowedHost': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+    },
+}
 
 # Security settings for production
 if not DEBUG:
     # For Fly.io - SSL is terminated at the proxy level
     SECURE_SSL_REDIRECT = False  # Changed from True to False
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')  # Added this line
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     
     # Keep these for security
     SESSION_COOKIE_SECURE = True
@@ -126,3 +195,8 @@ if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = 'DENY'
+    
+    # Additional security headers (optional but recommended)
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
