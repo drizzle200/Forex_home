@@ -27,7 +27,7 @@ DEFAULT_ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
     '.fly.dev',  # This matches any subdomain of fly.dev
-    'fly.dev',
+    'fxhome.fly.dev',
 ]
 
 # Add the specific Fly domain if available
