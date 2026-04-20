@@ -19,7 +19,7 @@ def get_trading_session():
     minute_est = now_est.minute
     time_decimal_est = hour_est + minute_est / 60.0
     
-    print(f"DEBUG - Hour EST: {hour_est}, Minute: {minute_est}, Decimal: {time_decimal_est}")
+   
     
     # Define trading sessions in EST (in chronological order)
     sessions = [
@@ -126,25 +126,26 @@ def get_trading_session():
         start = session['start']
         end = session['end']
         
-        print(f"Checking {session['name']}: {start} - {end}")
+      
         
         # Handle sessions that DON'T span midnight (start < end)
         if start < end:
             if start <= time_decimal_est < end:
                 current_session = session.copy()
-                print(f"✓ MATCHED: {session['name']} at {time_decimal_est}")
+                
                 break
         
         # Handle sessions that DO span midnight (start > end, like Asian Session)
         else:  # start > end (e.g., 19 to 3)
             if time_decimal_est >= start or time_decimal_est < end:
                 current_session = session.copy()
-                print(f"✓ MATCHED (overnight): {session['name']} at {time_decimal_est}")
+            
+            
                 break
     
     # If still no session found (shouldn't happen), default to Asian
     if not current_session:
-        print(f"⚠ No session matched, defaulting to Asian")
+   
         current_session = sessions[4].copy()  # Asian Session
     
     # Add time info
@@ -160,10 +161,7 @@ def get_trading_session():
     next_session = get_next_session_simple(hour_est)
     current_session['next_session'] = next_session['name']
     current_session['time_until_next'] = next_session['time_until']
-    
-    print(f"✅ FINAL SESSION: {current_session['name']}")
-    print("-" * 50)
-    
+
     return current_session
 
 

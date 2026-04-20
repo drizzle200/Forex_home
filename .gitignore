@@ -1,18 +1,15 @@
-
-# Python
-__pycache__/
-*.pyc
-
-# Django
-db.sqlite3
-media/
-staticfiles/
-
-# Virtual environment
-venv/
-env/
+# Django Settings & Config - EXCLUDE these
+settings.py
+*/settings.py                    # ← ADD THIS (ignores settings.py in any subdirectory)
+tradingfx/settings.py            # ← OR ADD THIS (exact path)
+local_settings.py
 .env
+.env.*
+fly.toml
+Dockerfile
+.dockerignore
 
-# IDE
-.vscode/
-.idea/
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
