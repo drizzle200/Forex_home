@@ -912,24 +912,19 @@ body {
                 vs yesterday ({{ yesterday_profit|floatformat:2|default:"0.00" }})
             </div>
         </div>
-        <div class="stat-card card">
-            <div class="stat-header"><div class="stat-icon">📈</div><div class="stat-title">Win Rate</div></div>
-            <div class="stat-value {% if overallwinrate >= 50 %}positive{% else %}negative{% endif %}">
-                {{ overallwinrate|floatformat:1|default:"0" }}%
-            </div>
-            <div class="stat-trend"><i class="fas fa-chart-line"></i> {{ total_trades|default:"0" }} total trades</div>
-        </div>
-        <div class="stat-card card">
-            <div class="stat-header"><div class="stat-icon">🎯</div><div class="stat-title">Total Trades</div></div>
-            <div class="stat-value">{{ total_trades|default:"0" }}</div>
-            <div class="stat-trend"><i class="fas fa-clock"></i> All time</div>
-        </div>
-        <div class="stat-card card">
-            <div class="stat-header"><div class="stat-icon">💰</div><div class="stat-title">Accumulated profit</div></div>
-            <div class="stat-value text-blue">{% if overall_profit > 0 %}+{% endif %}{{ overall_profit|floatformat:2|default:"0.00" }}</div>
-            <div class="stat-trend"><i class="fas fa-fire trend-up"></i> Since you started</div>
-        </div>
+<div class="stat-card card">
+    <div class="stat-header">
+        <div class="stat-icon">💰</div>
+        <div class="stat-title">Accumulated profit</div>
     </div>
+    <div class="stat-value {% if overall_profit > 0 %}text-blue{% elif overall_profit < 0 %}negative{% else %}text-white{% endif %}">
+        {% if overall_profit > 0 %}+{% endif %}{{ overall_profit|floatformat:2|default:"0.00" }}
+    </div>
+    <div class="stat-trend">
+        <i class="fas {% if overall_profit > 0 %}fa-arrow-up trend-up{% elif overall_profit < 0 %}fa-arrow-down trend-down{% else %}fa-minus trend-neutral{% endif %}"></i>
+        Since you started
+    </div>
+</div>
 
     <!-- ===== TRADING SESSION ===== -->
     <div class="session-card card">
