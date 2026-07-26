@@ -1,0 +1,719 @@
+{% extends 'trade/base/base.html' %}
+{% load static %}
+
+{% block title %}Home | Journal{% endblock %}
+
+{% block body %}
+<style>
+:root {
+    --bg-primary: #0a0f1c;
+    --bg-secondary: #111827;
+    --bg-tertiary: #1a2332;
+    --text-primary: #f3f4f6;
+    --text-secondary: #9ca3af;
+    --text-muted: #6b7280;
+    --border: #2d3748;
+    --primary: #10b981;
+    --primary-soft: rgba(16, 185, 129, 0.08);
+    --success: #34d399;
+    --success-soft: rgba(52, 211, 153, 0.10);
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.10);
+    --info: #60a5fa;
+    --info-soft: rgba(96, 165, 250, 0.10);
+    --warning: #fbbf24;
+    --warning-soft: rgba(251, 191, 36, 0.10);
+    --purple: #c084fc;
+    --purple-soft: rgba(192, 132, 252, 0.10);
+    
+    /* Neumorphism shadows - SOFT */
+    --neu-shadow: 6px 6px 14px rgba(0,0,0,0.5), -6px -6px 14px rgba(30, 40, 60, 0.10);
+    --neu-shadow-inset: inset 3px 3px 6px rgba(0,0,0,0.5), inset -3px -3px 6px rgba(30, 40, 60, 0.08);
+    --neu-shadow-sm: 3px 3px 8px rgba(0,0,0,0.4), -3px -3px 8px rgba(30, 40, 60, 0.08);
+    --neu-shadow-hover: 8px 8px 18px rgba(0,0,0,0.6), -8px -8px 18px rgba(30, 40, 60, 0.15);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Inter', system-ui, sans-serif;
+    min-height: 100vh;
+}
+
+/* ===== OVERRIDE BASE CARD HOVER ===== */
+.card:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: var(--neu-shadow-hover) !important;
+    border-color: transparent !important;
+}
+
+.card::before {
+    display: none !important;
+}
+
+/* ===== LAYOUT ===== */
+.journal-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 16px;
+}
+
+/* ===== HEADER ===== */
+.journal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.journal-header h1 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.journal-header h1 i {
+    color: var(--primary);
+}
+
+.header-stats {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.stat-pill {
+    background: var(--bg-tertiary);
+    border-radius: 30px;
+    padding: 5px 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    box-shadow: var(--neu-shadow-sm);
+    border: 1px solid transparent;
+}
+
+.stat-pill i {
+    color: var(--primary);
+    font-size: 12px;
+}
+
+.stat-pill .stat-label {
+    color: var(--text-muted);
+}
+
+.stat-pill .stat-value {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* ===== FILTER BAR ===== */
+.filter-bar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    background: var(--bg-tertiary);
+    padding: 4px 6px;
+    border-radius: 30px;
+    box-shadow: var(--neu-shadow-sm);
+    border: 1px solid transparent;
+}
+
+.filter-group .filter-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    padding: 0 8px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.filter-btn {
+    background: transparent;
+    border: none;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filter-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255,255,255,0.03);
+}
+
+.filter-btn.active {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+}
+
+/* ===== TABLE CARD ===== */
+.table-card {
+    background: var(--bg-tertiary);
+    border-radius: 14px;
+    box-shadow: var(--neu-shadow);
+    overflow: hidden;
+    border: 1px solid transparent;
+    transition: all 0.25s ease;
+}
+
+.table-card:hover {
+    box-shadow: var(--neu-shadow-hover);
+    border-color: transparent;
+}
+
+.table-card .card-header {
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255,255,255,0.02);
+}
+
+.table-card .card-header i {
+    color: var(--primary);
+    margin-right: 8px;
+}
+
+.table-card .card-header .badge-count {
+    background: var(--bg-secondary);
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+/* ===== COMPACT TABLE ===== */
+.table-scroll {
+    overflow-x: auto;
+    padding: 2px;
+}
+
+.table-scroll::-webkit-scrollbar {
+    height: 4px;
+}
+
+.table-scroll::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 4px;
+}
+
+.table-scroll::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+}
+
+.compact-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    min-width: 900px;
+}
+
+.compact-table thead th {
+    background: var(--bg-secondary);
+    padding: 8px 12px;
+    text-align: left;
+    font-weight: 500;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+}
+
+.compact-table tbody tr {
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    transition: all 0.15s ease;
+}
+
+.compact-table tbody tr:last-child { border-bottom: none; }
+.compact-table tbody tr:hover { 
+    background: rgba(16, 185, 129, 0.04);
+}
+
+.compact-table tbody td {
+    padding: 8px 12px;
+    vertical-align: middle;
+    color: var(--text-secondary);
+    font-size: 11px;
+}
+
+/* ===== BADGES ===== */
+.badge-sm {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 500;
+}
+
+.badge-id {
+    background: var(--bg-secondary);
+    color: var(--text-muted);
+    font-family: monospace;
+    font-size: 10px;
+    padding: 2px 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.04);
+}
+
+.badge-pair {
+    background: var(--primary-soft);
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.badge-buy {
+    background: var(--success-soft);
+    color: var(--success);
+}
+
+.badge-sell {
+    background: var(--danger-soft);
+    color: var(--danger);
+}
+
+.badge-type {
+    background: var(--info-soft);
+    color: var(--info);
+}
+
+.badge-pending {
+    background: var(--warning-soft);
+    color: var(--warning);
+}
+
+/* ===== TIME CELL ===== */
+.time-cell {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+}
+
+.time-cell .date {
+    color: var(--text-primary);
+    font-size: 11px;
+}
+
+.time-cell .time {
+    color: var(--text-muted);
+    font-size: 9px;
+}
+
+/* ===== ACTION BUTTONS ===== */
+.action-group {
+    display: flex;
+    gap: 4px;
+    justify-content: flex-end;
+}
+
+.action-btn {
+    background: var(--bg-secondary);
+    border: none;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 10px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: var(--neu-shadow-sm);
+}
+
+.action-btn:hover {
+    color: var(--text-primary);
+    transform: translateY(-1px);
+    box-shadow: var(--neu-shadow-hover);
+}
+
+.action-btn.journal:hover {
+    color: var(--primary);
+}
+
+.action-btn.delete:hover {
+    color: var(--danger);
+}
+
+/* ===== EMPTY STATE ===== */
+.empty-state {
+    text-align: center;
+    padding: 50px 20px;
+    background: var(--bg-tertiary);
+    border-radius: 14px;
+    box-shadow: var(--neu-shadow);
+    border: 1px solid transparent;
+}
+
+.empty-icon {
+    font-size: 48px;
+    opacity: 0.4;
+    margin-bottom: 12px;
+    display: block;
+}
+
+.empty-state h3 {
+    color: var(--text-primary);
+    font-size: 18px;
+    margin-bottom: 6px;
+}
+
+.empty-state p {
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.empty-state .action-btn {
+    margin-top: 16px;
+    padding: 8px 24px;
+    font-size: 12px;
+    background: var(--primary);
+    color: white;
+}
+
+.empty-state .action-btn:hover {
+    background: var(--primary);
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .journal-container { padding: 0 10px; }
+    
+    .journal-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .journal-header h1 { font-size: 17px; }
+    
+    .header-stats { gap: 6px; }
+    .stat-pill { font-size: 10px; padding: 4px 10px; }
+    
+    .filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .filter-group {
+        flex-wrap: wrap;
+        padding: 6px 8px;
+        border-radius: 16px;
+        justify-content: center;
+    }
+    
+    /* Mobile card view */
+    .compact-table {
+        display: none;
+    }
+    
+    .mobile-cards {
+        display: flex !important;
+        flex-direction: column;
+        gap: 10px;
+        padding: 4px;
+    }
+    
+    .mobile-trade-card {
+        background: var(--bg-tertiary);
+        border-radius: 14px;
+        padding: 12px 14px;
+        box-shadow: var(--neu-shadow-sm);
+        border: 1px solid transparent;
+        transition: all 0.2s ease;
+    }
+    
+    .mobile-trade-card:hover {
+        box-shadow: var(--neu-shadow-hover);
+        border-color: transparent;
+    }
+    
+    .mobile-trade-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 3px 0;
+        font-size: 11px;
+    }
+    
+    .mobile-trade-row .label {
+        color: var(--text-muted);
+        font-size: 9px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    
+    .mobile-trade-row .value {
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+    
+    .mobile-trade-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    
+    .mobile-trade-header .pair {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    
+    .mobile-actions {
+        display: flex;
+        gap: 6px;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid rgba(255,255,255,0.05);
+    }
+    
+    .mobile-actions .action-btn {
+        flex: 1;
+        justify-content: center;
+        padding: 6px 12px;
+        font-size: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .mobile-trade-card { padding: 10px 12px; }
+    .mobile-trade-row { font-size: 10px; }
+    .mobile-trade-header .pair { font-size: 13px; }
+}
+</style>
+
+<!-- ===== JOURNAL CONTAINER ===== -->
+<div class="journal-container">
+
+    <!-- ===== HEADER ===== -->
+    <div class="journal-header">
+        <h1><i class="fas fa-book-open"></i> Trade Journal</h1>
+        <div class="header-stats">
+            <div class="stat-pill">
+                <i class="fas fa-clock"></i>
+                <span class="stat-label">Pending</span>
+                <span class="stat-value">{{ trades|length }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== FILTER BAR ===== -->
+    <div class="filter-bar">
+        <div class="filter-group">
+            <span class="filter-label"><i class="fas fa-filter"></i></span>
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="buy">🟢 Buy</button>
+            <button class="filter-btn" data-filter="sell">🔴 Sell</button>
+        </div>
+    </div>
+
+    {% if trades %}
+    <!-- ===== TABLE CARD ===== -->
+    <div class="table-card">
+        <div class="card-header">
+            <span><i class="fas fa-list"></i> Pending Trades</span>
+            <span class="badge-count">{{ trades|length }} entries</span>
+        </div>
+        <div class="table-scroll">
+            <table class="compact-table" id="journalTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Pair</th>
+                        <th>Direction</th>
+                        <th>Type</th>
+                        <th>Executed</th>
+                        <th>Holding</th>
+                        <th style="text-align:right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for trade in trades %}
+                    <tr data-direction="{{ trade.buy_or_sell|lower }}">
+                        <td><span class="badge-id">#{{ trade.trade_id }}</span></td>
+                        <td><span class="badge-sm badge-pair">{{ trade.pair }}</span></td>
+                        <td>
+                            <span class="badge-sm {% if trade.buy_or_sell == 'Buy' or trade.buy_or_sell == 'BUY' %}badge-buy{% else %}badge-sell{% endif %}">
+                                {{ trade.buy_or_sell }}
+                            </span>
+                        </td>
+                        <td><span class="badge-sm badge-type">{{ trade.trade_type|truncatechars:12 }}</span></td>
+                        <td>
+                            <div class="time-cell">
+                                <span class="date">{{ trade.timestamp|date:"m/d/Y" }}</span>
+                                <span class="time">{{ trade.timestamp|date:"H:i" }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="time-cell">
+                                <span class="date">{{ trade.timestamp|timesince|truncatechars:10 }}</span>
+                                <span class="time"><i class="fas fa-hourglass-start"></i> ago</span>
+                            </div>
+                        </td>
+                        <td style="text-align:right;">
+                            <div class="action-group">
+                                <a href="{% url 'update_trade' trade.trade_id %}" class="action-btn journal" title="Journal Trade">
+                                    <i class="fas fa-pen"></i> Journal
+                                </a>
+                                <a href="{% url 'delete_trade_confirm' trade.trade_id %}" class="action-btn delete" title="Delete">
+                                    <i class="fas fa-trash-alt"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ===== MOBILE CARDS ===== -->
+    <div class="mobile-cards" style="display:none;">
+        {% for trade in trades %}
+        <div class="mobile-trade-card" data-direction="{{ trade.buy_or_sell|lower }}">
+            <div class="mobile-trade-header">
+                <span class="pair">{{ trade.pair }}</span>
+                <span class="badge-sm {% if trade.buy_or_sell == 'Buy' or trade.buy_or_sell == 'BUY' %}badge-buy{% else %}badge-sell{% endif %}">
+                    {{ trade.buy_or_sell }}
+                </span>
+            </div>
+            <div class="mobile-trade-row">
+                <span class="label">ID</span>
+                <span class="value">#{{ trade.trade_id }}</span>
+            </div>
+            <div class="mobile-trade-row">
+                <span class="label">Type</span>
+                <span class="value">{{ trade.trade_type|default:"—" }}</span>
+            </div>
+            <div class="mobile-trade-row">
+                <span class="label">Executed</span>
+                <span class="value">{{ trade.timestamp|date:"m/d/Y H:i" }}</span>
+            </div>
+            <div class="mobile-trade-row">
+                <span class="label">Holding</span>
+                <span class="value">{{ trade.timestamp|timesince|truncatechars:15 }}</span>
+            </div>
+            <div class="mobile-actions">
+                <a href="{% url 'update_trade' trade.trade_id %}" class="action-btn journal">
+                    <i class="fas fa-pen"></i> Journal
+                </a>
+                <a href="{% url 'delete_trade_confirm' trade.trade_id %}" class="action-btn delete">
+                    <i class="fas fa-trash-alt"></i> Delete
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <!-- ===== EMPTY STATE ===== -->
+    <div class="empty-state">
+        <span class="empty-icon">📓</span>
+        <h3>All Caught Up!</h3>
+        <p>No pending trades to journal. Start a new trade or take a break.</p>
+        <a href="{% url 'trade' %}" class="action-btn">
+            <i class="fas fa-plus"></i> New Trade
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // ===== FILTER FUNCTIONALITY =====
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const rows = document.querySelectorAll('#journalTable tbody tr');
+    const mobileCards = document.querySelectorAll('.mobile-trade-card');
+
+    function filterTable() {
+        const activeFilter = document.querySelector('.filter-btn.active');
+        const filter = activeFilter ? activeFilter.dataset.filter : 'all';
+
+        rows.forEach(row => {
+            const direction = row.dataset.direction;
+            if (filter === 'all' || direction === filter) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        mobileCards.forEach(card => {
+            const direction = card.dataset.direction;
+            if (filter === 'all' || direction === filter) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            filterBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            filterTable();
+        });
+    });
+
+    // ===== MOBILE DETECTION =====
+    function handleMobileView() {
+        const isMobile = window.innerWidth <= 768;
+        const table = document.querySelector('.compact-table');
+        const mobileCards = document.querySelector('.mobile-cards');
+
+        if (table && mobileCards) {
+            if (isMobile) {
+                table.style.display = 'none';
+                mobileCards.style.display = 'flex';
+            } else {
+                table.style.display = '';
+                mobileCards.style.display = 'none';
+            }
+        }
+    }
+
+    handleMobileView();
+    window.addEventListener('resize', handleMobileView);
+});
+</script>
+{% endblock %}

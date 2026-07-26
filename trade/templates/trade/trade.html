@@ -1,0 +1,1357 @@
+{% extends 'trade/base/base.html' %}
+{% load static %}
+
+{% block title %}Home | Trade Entry{% endblock %}
+
+{% block page_icon %}chart-line{% endblock %}
+{% block page_title %}New Trade Entry{% endblock %}
+{% block breadcrumb %}Trade Entry{% endblock %}
+
+{% block body %}
+<style>
+:root {
+    --bg-primary: #0a0f1c;
+    --bg-secondary: #111827;
+    --bg-tertiary: #1a2332;
+    --text-primary: #f3f4f6;
+    --text-secondary: #9ca3af;
+    --text-muted: #6b7280;
+    --border: #2d3748;
+    --primary: #10b981;
+    --primary-soft: rgba(16, 185, 129, 0.08);
+    --success: #34d399;
+    --success-soft: rgba(52, 211, 153, 0.10);
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.10);
+    --info: #60a5fa;
+    --info-soft: rgba(96, 165, 250, 0.10);
+    --warning: #fbbf24;
+    --warning-soft: rgba(251, 191, 36, 0.10);
+    --purple: #c084fc;
+    --purple-soft: rgba(192, 132, 252, 0.10);
+    
+    /* Neumorphism shadows - SOFT */
+    --neu-shadow: 6px 6px 14px rgba(0,0,0,0.5), -6px -6px 14px rgba(30, 40, 60, 0.10);
+    --neu-shadow-inset: inset 3px 3px 6px rgba(0,0,0,0.5), inset -3px -3px 6px rgba(30, 40, 60, 0.08);
+    --neu-shadow-sm: 3px 3px 8px rgba(0,0,0,0.4), -3px -3px 8px rgba(30, 40, 60, 0.08);
+    --neu-shadow-hover: 8px 8px 18px rgba(0,0,0,0.6), -8px -8px 18px rgba(30, 40, 60, 0.15);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Inter', system-ui, sans-serif;
+    min-height: 100vh;
+}
+
+/* ===== OVERRIDE BASE CARD HOVER ===== */
+.card:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: var(--neu-shadow-hover) !important;
+    border-color: transparent !important;
+}
+
+.card::before {
+    display: none !important;
+}
+
+/* ===== LAYOUT ===== */
+.trade-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 16px;
+}
+
+/* ===== PROGRESS BAR ===== */
+.progress-wrapper {
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+    padding: 4px;
+    box-shadow: var(--neu-shadow-sm);
+    border: 1px solid transparent;
+    margin-bottom: 16px;
+}
+
+.progress-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    padding: 0 6px;
+}
+
+.step-counter {
+    background: var(--primary-soft);
+    color: var(--primary);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.step-name {
+    color: var(--text-secondary);
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.step-name i {
+    color: var(--primary);
+    font-size: 12px;
+}
+
+.progress-bar-container {
+    width: 100%;
+    height: 6px;
+    background: var(--bg-secondary);
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: var(--neu-shadow-inset);
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), var(--purple));
+    border-radius: 6px;
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 0%;
+}
+
+/* ===== MAIN TRADE CARD ===== */
+.trade-card {
+    background: var(--bg-tertiary);
+    border-radius: 14px;
+    box-shadow: var(--neu-shadow);
+    border: 1px solid transparent;
+    overflow: hidden;
+    transition: all 0.25s ease;
+}
+
+.trade-card:hover {
+    box-shadow: var(--neu-shadow-hover);
+    border-color: transparent;
+}
+
+.trade-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(16, 185, 129, 0.03);
+}
+
+.header-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--primary-soft);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: var(--primary);
+    box-shadow: var(--neu-shadow-sm);
+}
+
+.header-content { flex: 1; }
+.header-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+.header-subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.header-subtitle i {
+    color: var(--primary);
+}
+
+/* ===== STEP CONTAINER ===== */
+.step-container {
+    padding: 16px 20px;
+}
+
+.step-card {
+    display: none;
+    animation: fadeIn 0.25s ease;
+}
+
+.step-card.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.step-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.step-title span {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 500;
+}
+
+.step-title .required-badge {
+    background: var(--danger-soft);
+    color: var(--danger);
+}
+
+/* ===== OPTIONS GRID ===== */
+.options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 8px;
+}
+
+.option {
+    background: var(--bg-secondary);
+    padding: 10px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 500;
+    box-shadow: var(--neu-shadow-inset);
+    position: relative;
+}
+
+.option:hover {
+    border-color: var(--primary);
+    color: var(--text-primary);
+    transform: translateY(-2px);
+}
+
+.option.selected {
+    border-color: var(--primary);
+    background: var(--primary-soft);
+    color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
+}
+
+.option.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 4px;
+    right: 6px;
+    color: var(--primary);
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.option[data-value=""] {
+    opacity: 0.6;
+    font-style: italic;
+}
+
+.option[data-value=""]:hover {
+    opacity: 1;
+    border-color: var(--warning);
+    color: var(--warning);
+}
+
+.option[data-value=""].selected {
+    border-color: var(--warning);
+    background: var(--warning-soft);
+    color: var(--warning);
+}
+
+.option[data-value=""].selected::after {
+    color: var(--warning);
+    content: '✗';
+}
+
+/* ===== INPUT FIELD ===== */
+.input-wrapper {
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    padding: 4px;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+    box-shadow: var(--neu-shadow-inset);
+}
+
+.input-wrapper:focus-within {
+    border-color: var(--primary);
+    box-shadow: var(--neu-shadow-inset), 0 0 0 3px rgba(16, 185, 129, 0.08);
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 14px;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 500;
+    outline: none;
+}
+
+.form-control::placeholder {
+    color: var(--text-muted);
+    font-weight: normal;
+}
+
+.input-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.input-hint i {
+    color: var(--primary);
+}
+
+/* ===== NAVIGATION BUTTONS ===== */
+.navigation-buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 0 20px 16px;
+}
+
+.btn-nav {
+    flex: 1;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: var(--neu-shadow-sm);
+}
+
+.btn-nav.prev {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+}
+
+.btn-nav.prev:hover:not(:disabled) {
+    color: var(--text-primary);
+    transform: translateX(-2px);
+    box-shadow: var(--neu-shadow-hover);
+}
+
+.btn-nav.next {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-nav.next:hover:not(:disabled) {
+    transform: translateX(2px);
+    box-shadow: var(--neu-shadow-hover);
+}
+
+.btn-nav:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ===== SUBMIT BUTTON ===== */
+.btn-submit {
+    width: calc(100% - 40px);
+    margin: 0 20px 16px;
+    padding: 12px 20px;
+    background: var(--success);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: var(--neu-shadow-sm);
+}
+
+.btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--neu-shadow-hover);
+}
+
+.btn-submit i {
+    font-size: 16px;
+}
+
+/* ===== STEP INDICATOR DOTS ===== */
+.step-indicator-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 20px 12px;
+}
+
+.dot {
+    width: 6px;
+    height: 6px;
+    background: var(--border);
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.dot.active {
+    background: var(--primary);
+    transform: scale(1.4);
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+}
+
+.dot.completed {
+    background: var(--success);
+}
+
+/* ===== ERROR BOX ===== */
+.error-box {
+    background: var(--danger-soft);
+    border: 1px solid var(--danger);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin: 0 20px 12px;
+    color: #fecaca;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    animation: fadeIn 0.3s ease;
+}
+
+.error-icon {
+    width: 24px;
+    height: 24px;
+    background: var(--danger);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 13px;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+/* ===== MODAL ===== */
+.modal-bg {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(6px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.25s ease;
+}
+
+.modal-box {
+    background: var(--bg-tertiary);
+    width: 90%;
+    max-width: 480px;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid transparent;
+    box-shadow: var(--neu-shadow-hover);
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-header {
+    background: var(--primary-soft);
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.modal-header h3 {
+    color: var(--text-primary);
+    font-size: 17px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.modal-header h3 i {
+    color: var(--primary);
+}
+
+.modal-body {
+    padding: 16px 20px;
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+.preview-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.preview-table tr {
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.preview-table tr:last-child {
+    border-bottom: none;
+}
+
+.preview-table td {
+    padding: 8px 6px;
+    font-size: 12px;
+}
+
+.preview-table td:first-child {
+    color: var(--text-muted);
+    font-weight: 500;
+    width: 40%;
+}
+
+.preview-table td:last-child {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.modal-footer {
+    padding: 12px 20px 16px;
+    background: var(--bg-secondary);
+    border-top: 1px solid rgba(255,255,255,0.04);
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.modal-btn {
+    flex: 1;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    border: none;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    box-shadow: var(--neu-shadow-sm);
+    min-width: 100px;
+}
+
+.modal-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--neu-shadow-hover);
+}
+
+.btn-confirm {
+    background: var(--success);
+    color: white;
+}
+
+.btn-draft {
+    background: var(--warning-soft);
+    color: var(--warning);
+    border: 1px solid rgba(251, 191, 36, 0.2);
+}
+
+.btn-draft:hover {
+    background: var(--warning);
+    color: var(--bg-primary);
+}
+
+.btn-cancel {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+}
+
+.btn-cancel:hover {
+    color: var(--text-primary);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 640px) {
+    .trade-container { padding: 0 10px; }
+    
+    .trade-header { padding: 12px 14px; }
+    .header-icon { width: 34px; height: 34px; font-size: 17px; }
+    .header-title { font-size: 15px; }
+    
+    .step-container { padding: 12px 14px; }
+    .step-title { font-size: 13px; }
+    
+    .options-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+    }
+    
+    .option {
+        padding: 8px 10px;
+        font-size: 11px;
+        position: relative;
+    }
+    
+    .navigation-buttons { padding: 0 14px 12px; }
+    .btn-nav { padding: 8px 12px; font-size: 12px; }
+    .btn-submit { width: calc(100% - 28px); margin: 0 14px 12px; padding: 10px 16px; font-size: 13px; }
+    .step-indicator-dots { padding: 0 14px 8px; }
+    
+    .modal-box { width: 95%; }
+    .modal-header { padding: 14px 16px; }
+    .modal-header h3 { font-size: 15px; }
+    .modal-body { padding: 12px 14px; }
+    .modal-footer { 
+        padding: 10px 14px 14px; 
+        flex-direction: column;
+    }
+    .modal-btn { 
+        width: 100%; 
+        min-width: unset;
+    }
+}
+
+@media (max-width: 400px) {
+    .options-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+</style>
+
+<div class="trade-container">
+
+    <!-- ===== PROGRESS BAR ===== -->
+    <div class="progress-wrapper">
+        <div class="progress-stats">
+            <span class="step-counter" id="stepCounter">Step 1/15</span>
+            <span class="step-name" id="stepName">
+                <i class="fas fa-flag"></i> Select Pair
+            </span>
+        </div>
+        <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="progressBar" style="width: 6.66%"></div>
+        </div>
+    </div>
+
+    <!-- ===== MAIN TRADE CARD ===== -->
+    <div class="trade-card card">
+
+        <!-- Header -->
+        <div class="trade-header">
+            <div class="header-icon"><i class="fas fa-chart-line"></i></div>
+            <div class="header-content">
+                <div class="header-title">New Trade Entry</div>
+                <div class="header-subtitle">
+                    <i class="fas fa-info-circle"></i>
+                    Record your trade with precision
+                </div>
+            </div>
+        </div>
+
+        {% if form.non_field_errors %}
+        <div class="error-box">
+            <span class="error-icon">!</span>
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+
+        <form method="post" action="{% url 'trade' %}" id="tradeForm">
+            {% csrf_token %}
+            
+            <!-- Hidden inputs -->
+            {% for field in form %}
+                <input type="hidden" name="{{ field.name }}" id="{{ field.name }}" class="hidden-field" value="{{ field.value|default:'' }}">
+            {% endfor %}
+            <input type="hidden" name="show_confirm" id="show_confirm" value="0">
+
+            <!-- Steps Container -->
+            <div class="step-container">
+                <!-- Step 0: Pair -->
+                <div class="step-card active" data-step="0" data-name="Select Pair" data-required="true">
+                    <div class="step-title">
+                        <i class="fas fa-exchange-alt"></i> Currency Pair
+                        <span class="required-badge">Required</span>
+                    </div>
+                    <div class="options-grid">
+                        {% for val, label in form.fields.pair.choices %}
+                            {% if label == '---------' %}
+                                <div class="option" data-field="pair" data-value="">None</div>
+                            {% else %}
+                                <div class="option" data-field="pair" data-value="{{ val }}">{{ label }}</div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Step 1: Momentum H4 -->
+                <div class="step-card" data-step="1" data-name="H4 Momentum" data-required="false">
+                    <div class="step-title">
+                        <i class="fas fa-chart-bar"></i> H4 Momentum
+                        <span>Optional</span>
+                    </div>
+                    <div class="options-grid">
+                        {% for val, label in form.fields.momentum_h4.choices %}
+                            {% if label == '---------' %}
+                                <div class="option" data-field="momentum_h4" data-value="">None</div>
+                            {% else %}
+                                <div class="option" data-field="momentum_h4" data-value="{{ val }}">{{ label }}</div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Step 2: Momentum H1 -->
+                <div class="step-card" data-step="2" data-name="H1 Momentum" data-required="false">
+                    <div class="step-title">
+                        <i class="fas fa-chart-bar"></i> H1 Momentum
+                        <span>Optional</span>
+                    </div>
+                    <div class="options-grid">
+                        {% for val, label in form.fields.momentum_h1.choices %}
+                            {% if label == '---------' %}
+                                <div class="option" data-field="momentum_h1" data-value="">None</div>
+                            {% else %}
+                                <div class="option" data-field="momentum_h1" data-value="{{ val }}">{{ label }}</div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Step 3: Momentum 15m -->
+                <div class="step-card" data-step="3" data-name="15m Momentum" data-required="false">
+                    <div class="step-title">
+                        <i class="fas fa-chart-line"></i> 15m Momentum
+                        <span>Optional</span>
+                    </div>
+                    <div class="options-grid">
+                        {% for val, label in form.fields.momentum_15m.choices %}
+                            {% if label == '---------' %}
+                                <div class="option" data-field="momentum_15m" data-value="">None</div>
+                            {% else %}
+                                <div class="option" data-field="momentum_15m" data-value="{{ val }}">{{ label }}</div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Step 4: Momentum 5m -->
+                <div class="step-card" data-step="4" data-name="5m Momentum" data-required="false">
+                    <div class="step-title">
+                        <i class="fas fa-chart-line"></i> 5m Momentum
+                        <span>Optional</span>
+                    </div>
+                    <div class="options-grid">
+                        {% for val, label in form.fields.momentum_5m.choices %}
+                            {% if label == '---------' %}
+                                <div class="option" data-field="momentum_5m" data-value="">None</div>
+                            {% else %}
+                                <div class="option" data-field="momentum_5m" data-value="{{ val }}">{{ label }}</div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Step 5: Momentum 1m -->
+                <div class="step-card" data-step="5" data-name="1m Momentum" data-required="false">
+                    <div class="step-title">
+                        <i class="fas fa-chart-line"></i> 1m Momentum
+                        <span>Optional</span>
+                    </div>
+                    <div class="options-grid">
+                        {% for val, label in form.fields.momentum_1m.choices %}
+                            {% if label == '---------' %}
+                                <div class="option" data-field="momentum_1m" data-value="">None</div>
+                            {% else %}
+                                <div class="option" data-field="momentum_1m" data-value="{{ val }}">{{ label }}</div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Step 6: Entry Place -->
+                <div class="step-card" data-step="6" data-name="Entry Place" data-required="true">
+                    <div class="step-title">
+                        <i class="fas fa-map-marker-alt"></i> Entry Place
+                        <span class="required-badge">Required</span>
+                    </div>
+                    <div class="options-grid">
+                        {% for val, label in form.fields.entry_place.choices %}
+                            {% if label == '---------' %}
+                                <div class="option" data-field="entry_place" data-value="">None</div>
+                            {% else %}
+                                <div class="option" data-field="entry_place" data-value="{{ val }}">{{ label }}</div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Step 7: Buy/Sell -->
+                <div class="step-card" data-step="7" data-name="Direction" data-required="true">
+                    <div class="step-title">
+                        <i class="fas fa-arrow-trend-up"></i> Trade Direction
+                        <span class="required-badge">Required</span>
+                    </div>
+                    <div class="options-grid">
+                        {% for val, label in form.fields.buy_or_sell.choices %}
+                            {% if label == '---------' %}
+                                <div class="option" data-field="buy_or_sell" data-value="">None</div>
+                            {% else %}
+                                <div class="option" data-field="buy_or_sell" data-value="{{ val }}">{{ label }}</div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Step 8: Setup Quality -->
+                <div class="step-card" data-step="8" data-name="Setup Quality" data-required="true">
+                    <div class="step-title">
+                        <i class="fas fa-star"></i> Setup Quality
+                        <span class="required-badge">Required</span>
+                    </div>
+                    <div class="options-grid">
+                        {% for val, label in form.fields.setup_quality.choices %}
+                            {% if label == '---------' %}
+                                <div class="option" data-field="setup_quality" data-value="">None</div>
+                            {% else %}
+                                <div class="option" data-field="setup_quality" data-value="{{ val }}">{{ label }}</div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Step 9: Trade Type -->
+                <div class="step-card" data-step="9" data-name="Trade Type" data-required="true">
+                    <div class="step-title">
+                        <i class="fas fa-tag"></i> Trade Type
+                        <span class="required-badge">Required</span>
+                    </div>
+                    <div class="options-grid">
+                        {% for val, label in form.fields.trade_type.choices %}
+                            {% if label == '---------' %}
+                                <div class="option" data-field="trade_type" data-value="">None</div>
+                            {% else %}
+                                <div class="option" data-field="trade_type" data-value="{{ val }}">{{ label }}</div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Step 10: Confirmation -->
+                <div class="step-card" data-step="10" data-name="Confirmation" data-required="true">
+                    <div class="step-title">
+                        <i class="fas fa-check-double"></i> Confirmation
+                        <span class="required-badge">Required</span>
+                    </div>
+                    <div class="options-grid">
+                        {% for val, label in form.fields.confirmation.choices %}
+                            {% if label == '---------' %}
+                                <div class="option" data-field="confirmation" data-value="">None</div>
+                            {% else %}
+                                <div class="option" data-field="confirmation" data-value="{{ val }}">{{ label }}</div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Step 11: Mood -->
+                <div class="step-card" data-step="11" data-name="Mood" data-required="true">
+                    <div class="step-title">
+                        <i class="fas fa-smile"></i> Trading Mood
+                        <span class="required-badge">Required</span>
+                    </div>
+                    <div class="options-grid">
+                        {% for val, label in form.fields.mood.choices %}
+                            {% if label == '---------' %}
+                                <div class="option" data-field="mood" data-value="">None</div>
+                            {% else %}
+                                <div class="option" data-field="mood" data-value="{{ val }}">{{ label }}</div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Step 12: TP -->
+                <div class="step-card" data-step="12" data-name="Take Profit" data-required="true">
+                    <div class="step-title">
+                        <i class="fas fa-bullseye"></i> Take Profit (TP)
+                        <span class="required-badge">Required</span>
+                    </div>
+                    <div class="options-grid">
+                        {% for val, label in form.fields.tp.choices %}
+                            {% if label == '---------' %}
+                                <div class="option" data-field="tp" data-value="">None</div>
+                            {% else %}
+                                <div class="option" data-field="tp" data-value="{{ val }}">{{ label }}</div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Step 13: TP Reason -->
+                <div class="step-card" data-step="13" data-name="TP Reason" data-required="true">
+                    <div class="step-title">
+                        <i class="fas fa-comment"></i> TP Reason
+                        <span class="required-badge">Required</span>
+                    </div>
+                    <div class="options-grid">
+                        {% for val, label in form.fields.tp_reason.choices %}
+                            {% if label == '---------' %}
+                                <div class="option" data-field="tp_reason" data-value="">None</div>
+                            {% else %}
+                                <div class="option" data-field="tp_reason" data-value="{{ val }}">{{ label }}</div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Step 14: Risk Reward -->
+                <div class="step-card" data-step="14" data-name="Risk Reward" data-required="true">
+                    <div class="step-title">
+                        <i class="fas fa-scale-balanced"></i> Risk Reward Ratio
+                        <span class="required-badge">Required</span>
+                    </div>
+                    <div class="input-wrapper">
+                        <input type="number" step="0.1" min="0.1" class="form-control" 
+                               id="input_risk_reward" placeholder="e.g., 2.5" value="{{ form.risk_reward.value|default:'' }}">
+                    </div>
+                    <div class="input-hint">
+                        <i class="fas fa-info-circle"></i>
+                        Enter the risk-to-reward ratio (e.g., 2.5 for 1:2.5)
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step Indicator Dots -->
+            <div class="step-indicator-dots" id="stepDots">
+                {% for i in "123456789012345"|make_list %}
+                <span class="dot {% if forloop.first %}active{% endif %}" data-step="{{ forloop.counter0 }}"></span>
+                {% endfor %}
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="navigation-buttons">
+                <button type="button" class="btn-nav prev" id="backBtn" disabled>
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+                <button type="button" class="btn-nav next" id="nextBtn">
+                    Next <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+
+            <button type="submit" class="btn-submit" id="takeTradeBtn" style="display:none;">
+                <i class="fas fa-check-circle"></i> Review & Take Trade
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- ===== TRADE PREVIEW MODAL ===== -->
+{% if show_confirm and trade_preview %}
+<div class="modal-bg" id="tradePreviewModal" style="display:flex;">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3><i class="fas fa-clipboard-check"></i> Review Your Trade</h3>
+        </div>
+        <div class="modal-body">
+            <table class="preview-table">
+                {% for key, value in trade_preview.items %}
+                <tr>
+                    <td>{{ key }}</td>
+                    <td>
+                        {% if value == 'None' or value == '' %}
+                            <span style="color:var(--warning);"><i class="fas fa-minus-circle"></i> Not specified</span>
+                        {% else %}
+                            {{ value }}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+        <div class="modal-footer">
+            <!-- Confirm Trade -->
+            <form method="post" action="{% url 'trade' %}" style="display:inline;flex:1;">
+                {% csrf_token %}
+                {% for field in form %}
+                <input type="hidden" name="{{ field.name }}" value="{{ field.value|default:'' }}">
+                {% endfor %}
+                <button type="submit" name="confirm_save" class="modal-btn btn-confirm" style="width:100%;">
+                    <i class="fas fa-check"></i> Confirm Trade
+                </button>
+            </form>
+            
+            <!-- Save as Draft -->
+            <form method="post" action="{% url 'trade' %}" style="display:inline;flex:1;">
+                {% csrf_token %}
+                {% for field in form %}
+                <input type="hidden" name="{{ field.name }}" value="{{ field.value|default:'' }}">
+                {% endfor %}
+                {% if is_editing_draft %}
+                <input type="hidden" name="draft_id" value="{{ draft_id }}">
+                {% endif %}
+                <button type="submit" name="save_draft" class="modal-btn btn-draft" style="width:100%;">
+                    <i class="fas fa-save"></i> Save as Draft
+                </button>
+            </form>
+            
+            <!-- Cancel -->
+            <a href="{% url 'trade' %}" class="modal-btn btn-cancel">
+                <i class="fas fa-times"></i> Cancel
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let currentStep = 0;
+    const steps = document.querySelectorAll('.step-card');
+    const dots = document.querySelectorAll('.dot');
+    const backBtn = document.getElementById('backBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const submitBtn = document.getElementById('takeTradeBtn');
+    const stepCounter = document.getElementById('stepCounter');
+    const stepName = document.getElementById('stepName');
+    const progressBar = document.getElementById('progressBar');
+    
+    const totalSteps = steps.length;
+
+    // Initialize form data object from hidden inputs
+    let formData = {};
+    document.querySelectorAll('.hidden-field').forEach(field => {
+        formData[field.id] = field.value;
+    });
+
+    // Load existing values from hidden inputs and highlight corresponding options
+    document.querySelectorAll('.hidden-field').forEach(field => {
+        if (field.value) {
+            formData[field.id] = field.value;
+            if (field.id === 'risk_reward') {
+                const rrInput = document.getElementById('input_risk_reward');
+                if (rrInput) rrInput.value = field.value;
+            } else {
+                const option = document.querySelector(`.option[data-field="${field.id}"][data-value="${field.value}"]`);
+                if (option) {
+                    option.classList.add('selected');
+                }
+            }
+        }
+    });
+
+    const riskRewardInput = document.getElementById('input_risk_reward');
+    const riskRewardHidden = document.getElementById('risk_reward');
+    if (riskRewardHidden?.value) {
+        riskRewardInput.value = riskRewardHidden.value;
+    }
+
+    function updateProgress(step) {
+        const progress = ((step + 1) / totalSteps) * 100;
+        progressBar.style.width = progress + '%';
+        stepCounter.textContent = `Step ${step + 1}/${totalSteps}`;
+        
+        const stepIcon = getStepIcon(step);
+        stepName.innerHTML = `<i class="fas ${stepIcon}"></i> ${steps[step].dataset.name}`;
+        
+        dots.forEach((dot, index) => {
+            dot.classList.remove('active', 'completed');
+            if (index === step) {
+                dot.classList.add('active');
+            } else if (index < step) {
+                dot.classList.add('completed');
+            }
+        });
+    }
+
+    function getStepIcon(step) {
+        const icons = [
+            'fa-exchange-alt', 'fa-chart-bar', 'fa-chart-bar', 'fa-chart-line',
+            'fa-chart-line', 'fa-chart-line', 'fa-map-marker-alt', 'fa-arrow-trend-up',
+            'fa-star', 'fa-tag', 'fa-check-double', 'fa-smile', 'fa-bullseye',
+            'fa-comment', 'fa-scale-balanced'
+        ];
+        return icons[step] || 'fa-circle';
+    }
+
+    function showStep(step) {
+        steps.forEach((s, i) => {
+            s.classList.toggle('active', i === step);
+        });
+        
+        backBtn.disabled = step === 0;
+        nextBtn.style.display = step === totalSteps - 1 ? 'none' : 'flex';
+        submitBtn.style.display = step === totalSteps - 1 ? 'flex' : 'none';
+        
+        updateProgress(step);
+    }
+
+    function isStepValid(step) {
+        const stepCard = steps[step];
+        const isRequired = stepCard.dataset.required === 'true';
+        
+        if (!isRequired) return true;
+        
+        if (step === totalSteps - 1) {
+            const rrValue = riskRewardInput?.value;
+            return rrValue && parseFloat(rrValue) > 0;
+        }
+        
+        const selectedOption = stepCard.querySelector('.option.selected');
+        const fieldName = selectedOption?.dataset.field;
+        const hiddenInput = document.getElementById(fieldName);
+        
+        return selectedOption && fieldName && hiddenInput && hiddenInput.value !== '';
+    }
+
+    function updateNextButtonState() {
+        if (currentStep === totalSteps - 1) return;
+        
+        const isRequired = steps[currentStep].dataset.required === 'true';
+        nextBtn.disabled = isRequired ? !isStepValid(currentStep) : false;
+    }
+
+    function updateHiddenInput(field, value) {
+        const hiddenInput = document.getElementById(field);
+        if (hiddenInput) {
+            hiddenInput.value = value;
+            formData[field] = value;
+        }
+    }
+
+    // Option selection
+    document.querySelectorAll('.option').forEach(opt => {
+        opt.addEventListener('click', function() {
+            const field = this.dataset.field;
+            const value = this.dataset.value;
+            
+            updateHiddenInput(field, value);
+            
+            document.querySelectorAll(`.option[data-field="${field}"]`).forEach(o => {
+                o.classList.remove('selected');
+            });
+            this.classList.add('selected');
+            
+            this.style.transform = 'scale(0.97)';
+            setTimeout(() => { this.style.transform = ''; }, 150);
+
+            const currentStepCard = steps[currentStep];
+            const errorBox = currentStepCard.querySelector('.error-box');
+            if (errorBox) errorBox.remove();
+
+            updateNextButtonState();
+
+            if (currentStep < totalSteps - 1) {
+                const isRequired = steps[currentStep].dataset.required === 'true';
+                if (!isRequired || (isRequired && isStepValid(currentStep))) {
+                    setTimeout(() => {
+                        currentStep++;
+                        showStep(currentStep);
+                        updateNextButtonState();
+                    }, 250);
+                }
+            }
+        });
+    });
+
+    // Risk reward input
+    riskRewardInput?.addEventListener('input', function() {
+        const value = this.value;
+        
+        if (riskRewardHidden) {
+            riskRewardHidden.value = value;
+            formData['risk_reward'] = value;
+        }
+        
+        const wrapper = this.closest('.input-wrapper');
+        if (value && parseFloat(value) > 0) {
+            wrapper.style.borderColor = 'var(--success)';
+            wrapper.style.boxShadow = 'var(--neu-shadow-inset), 0 0 0 3px rgba(52,211,153,0.08)';
+            
+            const currentStepCard = steps[currentStep];
+            const errorBox = currentStepCard.querySelector('.error-box');
+            if (errorBox) errorBox.remove();
+        } else {
+            wrapper.style.borderColor = 'var(--danger)';
+            wrapper.style.boxShadow = 'var(--neu-shadow-inset), 0 0 0 3px rgba(248,113,113,0.08)';
+        }
+        
+        updateNextButtonState();
+    });
+
+    // Back button
+    backBtn.addEventListener('click', function() {
+        if (currentStep > 0) {
+            steps[currentStep].style.animation = 'fadeOut 0.15s ease';
+            setTimeout(() => {
+                currentStep--;
+                showStep(currentStep);
+                updateNextButtonState();
+                steps[currentStep].style.animation = 'fadeIn 0.25s ease';
+            }, 100);
+        }
+    });
+
+    // Next button
+    nextBtn.addEventListener('click', function() {
+        if (!isStepValid(currentStep)) {
+            const currentStepCard = steps[currentStep];
+            const existingError = currentStepCard.querySelector('.error-box');
+            if (existingError) existingError.remove();
+            
+            const errorMsg = document.createElement('div');
+            errorMsg.className = 'error-box';
+            errorMsg.innerHTML = `
+                <span class="error-icon">!</span>
+                <span>This field is required. Please make a selection.</span>
+            `;
+            currentStepCard.insertBefore(errorMsg, currentStepCard.firstChild);
+            
+            currentStepCard.style.animation = 'shake 0.4s ease';
+            setTimeout(() => {
+                currentStepCard.style.animation = '';
+            }, 400);
+            
+            return;
+        }
+        
+        const errorBox = steps[currentStep].querySelector('.error-box');
+        if (errorBox) errorBox.remove();
+        
+        if (currentStep < totalSteps - 1) {
+            steps[currentStep].style.animation = 'fadeOut 0.15s ease';
+            setTimeout(() => {
+                currentStep++;
+                showStep(currentStep);
+                updateNextButtonState();
+                steps[currentStep].style.animation = 'fadeIn 0.25s ease';
+            }, 120);
+        }
+    });
+
+    // Submit button
+    submitBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        let invalidSteps = [];
+        steps.forEach((step, index) => {
+            if (step.dataset.required === 'true' && !isStepValid(index)) {
+                invalidSteps.push(index);
+            }
+        });
+        
+        if (invalidSteps.length > 0) {
+            const firstInvalidStep = Math.min(...invalidSteps);
+            const missingSteps = invalidSteps.map(step => steps[step].dataset.name).join(', ');
+            alert(`⚠️ Please complete: ${missingSteps}`);
+            
+            invalidSteps.forEach(step => {
+                dots[step].style.backgroundColor = 'var(--danger)';
+                dots[step].style.boxShadow = '0 0 10px rgba(248,113,113,0.4)';
+                setTimeout(() => {
+                    dots[step].style.backgroundColor = '';
+                    dots[step].style.boxShadow = '';
+                }, 2000);
+            });
+            
+            currentStep = firstInvalidStep;
+            showStep(currentStep);
+            updateNextButtonState();
+            return;
+        }
+        
+        document.getElementById('show_confirm').value = '1';
+        document.getElementById('tradeForm').submit();
+    });
+
+    // Initialize
+    showStep(currentStep);
+    updateNextButtonState();
+
+    // Add animations
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-4px); }
+            40%, 80% { transform: translateX(4px); }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-8px); }
+        }
+        .dot.completed {
+            background: var(--success);
+        }
+        .btn-nav:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+    `;
+    document.head.appendChild(style);
+
+    // Keyboard navigation
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowRight' && !nextBtn.disabled && nextBtn.style.display !== 'none') {
+            nextBtn.click();
+        } else if (e.key === 'ArrowLeft' && !backBtn.disabled) {
+            backBtn.click();
+        }
+    });
+});
+
+// Modal close on escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('tradePreviewModal');
+        if (modal && modal.style.display === 'flex') {
+            modal.style.display = 'none';
+        }
+    }
+});
+
+// Click outside modal to close
+window.addEventListener('click', function(e) {
+    const modal = document.getElementById('tradePreviewModal');
+    if (modal && e.target === modal) {
+        modal.style.display = 'none';
+    }
+});
+</script>
+{% endblock %}

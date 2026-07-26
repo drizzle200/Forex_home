@@ -1,0 +1,20 @@
+{% extends 'trade/base/base.html' %}
+
+{% block body %}
+<div style="padding: 20px; color: white;">
+    <h1>Debug Test</h1>
+    
+    {% if success %}
+        <h2 style="color: green;">✅ Success!</h2>
+        <p><strong>Session Name:</strong> {{ session_data.name }}</p>
+        <p><strong>Is Weekend:</strong> {{ session_data.is_weekend }}</p>
+        <p><strong>Active Pairs:</strong> {{ session_data.active_pairs|length }}</p>
+        <p><strong>Market Open:</strong> {{ market_info.is_open }}</p>
+        <p><strong>Market Status:</strong> {{ market_info.market_status }}</p>
+    {% else %}
+        <h2 style="color: red;">❌ Error!</h2>
+        <pre style="background: #1e293b; padding: 15px; border-radius: 8px; overflow: auto; font-size: 12px;">{{ error }}</pre>
+        <pre style="background: #1e293b; padding: 15px; border-radius: 8px; overflow: auto; font-size: 12px;">{{ traceback }}</pre>
+    {% endif %}
+</div>
+{% endblock %}

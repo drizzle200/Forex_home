@@ -1,0 +1,37 @@
+app = 'fxhome'
+primary_region = 'ams'
+
+# Console command updated to reflect new code location
+console_command = '/app/manage.py shell'
+
+[build]
+
+# Mount the volume to /data, not /code
+[mounts]
+source = "fxhome_data"
+destination = "/data"
+
+[deploy]
+  release_command = 'python manage.py migrate --noinput'
+
+[env]
+  PORT = '8000'
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 1024
+
+# Statics path updated to where collectstatic places files in the volume
+[[statics]]
+  guest_path = '/data/staticfiles'
+  url_prefix = '/static/'

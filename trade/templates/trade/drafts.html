@@ -1,0 +1,583 @@
+{% extends 'trade/base/base.html' %}
+{% load static %}
+
+{% block title %}Trade Drafts{% endblock %}
+
+{% block page_icon %}file-pen{% endblock %}
+{% block page_title %}Trade Drafts{% endblock %}
+{% block breadcrumb %}Drafts{% endblock %}
+
+{% block body %}
+<style>
+:root {
+    --bg-primary: #0a0f1c;
+    --bg-secondary: #111827;
+    --bg-tertiary: #1a2332;
+    --text-primary: #f3f4f6;
+    --text-secondary: #9ca3af;
+    --text-muted: #6b7280;
+    --border: #2d3748;
+    --primary: #10b981;
+    --primary-soft: rgba(16, 185, 129, 0.08);
+    --success: #34d399;
+    --success-soft: rgba(52, 211, 153, 0.10);
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.10);
+    --info: #60a5fa;
+    --info-soft: rgba(96, 165, 250, 0.10);
+    --warning: #fbbf24;
+    --warning-soft: rgba(251, 191, 36, 0.10);
+    --purple: #c084fc;
+    --purple-soft: rgba(192, 132, 252, 0.10);
+    
+    /* Neumorphism shadows - SOFT */
+    --neu-shadow: 6px 6px 14px rgba(0,0,0,0.5), -6px -6px 14px rgba(30, 40, 60, 0.10);
+    --neu-shadow-inset: inset 3px 3px 6px rgba(0,0,0,0.5), inset -3px -3px 6px rgba(30, 40, 60, 0.08);
+    --neu-shadow-sm: 3px 3px 8px rgba(0,0,0,0.4), -3px -3px 8px rgba(30, 40, 60, 0.08);
+    --neu-shadow-hover: 8px 8px 18px rgba(0,0,0,0.6), -8px -8px 18px rgba(30, 40, 60, 0.15);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Inter', system-ui, sans-serif;
+    min-height: 100vh;
+}
+
+/* ===== OVERRIDE BASE CARD HOVER ===== */
+.card:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: var(--neu-shadow-hover) !important;
+    border-color: transparent !important;
+}
+
+.card::before {
+    display: none !important;
+}
+
+/* ===== LAYOUT ===== */
+.drafts-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 16px;
+}
+
+/* ===== HEADER ===== */
+.drafts-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.drafts-header h1 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.drafts-header h1 i {
+    color: var(--warning);
+}
+
+.header-stats {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.stat-pill {
+    background: var(--bg-tertiary);
+    border-radius: 30px;
+    padding: 5px 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    box-shadow: var(--neu-shadow-sm);
+    border: 1px solid transparent;
+}
+
+.stat-pill i {
+    color: var(--warning);
+    font-size: 12px;
+}
+
+.stat-pill .stat-label {
+    color: var(--text-muted);
+}
+
+.stat-pill .stat-value {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* ===== DRAFT CARDS ===== */
+.drafts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.draft-card {
+    background: var(--bg-tertiary);
+    border-radius: 14px;
+    box-shadow: var(--neu-shadow-sm);
+    border: 1px solid transparent;
+    transition: all 0.25s ease;
+    padding: 12px 16px;
+}
+
+.draft-card:hover {
+    box-shadow: var(--neu-shadow-hover);
+    border-color: transparent;
+    transform: translateY(-2px);
+}
+
+/* ===== DRAFT HEADER ===== */
+.draft-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.draft-card-header .draft-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.draft-card-header .draft-id {
+    background: var(--bg-secondary);
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--warning);
+    border: 1px solid rgba(255,255,255,0.04);
+    font-family: monospace;
+}
+
+.draft-card-header .draft-pair {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.draft-card-header .draft-badges {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.badge-sm {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 500;
+}
+
+.badge-draft {
+    background: var(--warning-soft);
+    color: var(--warning);
+}
+
+.badge-age {
+    background: var(--bg-secondary);
+    color: var(--text-muted);
+}
+
+/* ===== DRAFT DETAILS ===== */
+.draft-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 6px;
+    margin-bottom: 10px;
+    padding: 8px 12px;
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    box-shadow: var(--neu-shadow-inset);
+}
+
+.draft-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.draft-detail .label {
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--text-muted);
+}
+
+.draft-detail .value {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.draft-detail .value.success { color: var(--success); }
+.draft-detail .value.danger { color: var(--danger); }
+
+.draft-detail .value .rvs-grade {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.rvs-grade.A-plus { background: var(--success-soft); color: var(--success); }
+.rvs-grade.A { background: var(--success-soft); color: var(--success); }
+.rvs-grade.B { background: var(--warning-soft); color: var(--warning); }
+.rvs-grade.C { background: #f9731620; color: #f97316; }
+.rvs-grade.F { background: var(--danger-soft); color: var(--danger); }
+
+/* ===== DRAFT ACTIONS ===== */
+.draft-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+
+.action-btn {
+    padding: 5px 14px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    border: none;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: var(--neu-shadow-sm);
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--neu-shadow-hover);
+}
+
+.action-btn-edit {
+    background: var(--warning-soft);
+    color: var(--warning);
+}
+
+.action-btn-edit:hover {
+    background: var(--warning);
+    color: var(--bg-primary);
+}
+
+.action-btn-complete {
+    background: var(--success-soft);
+    color: var(--success);
+}
+
+.action-btn-complete:hover {
+    background: var(--success);
+    color: var(--bg-primary);
+}
+
+.action-btn-delete {
+    background: var(--danger-soft);
+    color: var(--danger);
+}
+
+.action-btn-delete:hover {
+    background: var(--danger);
+    color: white;
+}
+
+.action-btn i {
+    font-size: 12px;
+}
+
+/* ===== EMPTY STATE ===== */
+.empty-state {
+    text-align: center;
+    padding: 50px 20px;
+    background: var(--bg-tertiary);
+    border-radius: 14px;
+    box-shadow: var(--neu-shadow);
+    border: 1px solid transparent;
+}
+
+.empty-icon {
+    font-size: 48px;
+    opacity: 0.4;
+    margin-bottom: 12px;
+    display: block;
+}
+
+.empty-state h3 {
+    color: var(--text-primary);
+    font-size: 18px;
+    margin-bottom: 6px;
+}
+
+.empty-state p {
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.empty-state .action-btn {
+    margin-top: 16px;
+    padding: 8px 24px;
+    font-size: 12px;
+    background: var(--primary);
+    color: white;
+}
+
+.empty-state .action-btn:hover {
+    background: var(--primary);
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* ===== NOTIFICATION ===== */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--success);
+    color: var(--success);
+    padding: 12px 20px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 1100;
+    animation: slideIn 0.3s ease;
+    box-shadow: var(--neu-shadow);
+}
+
+.notification i {
+    font-size: 18px;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(50px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .drafts-container { padding: 0 10px; }
+    
+    .drafts-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .drafts-header h1 { font-size: 17px; }
+    
+    .header-stats { gap: 6px; }
+    .stat-pill { font-size: 10px; padding: 4px 10px; }
+    
+    .draft-card { padding: 10px 12px; }
+    
+    .draft-card-header .draft-pair { font-size: 13px; }
+    
+    .draft-details {
+        grid-template-columns: 1fr 1fr;
+        gap: 4px;
+        padding: 6px 10px;
+    }
+    
+    .draft-detail .value { font-size: 11px; }
+    
+    .draft-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .draft-actions .action-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 8px 14px;
+    }
+    
+    .draft-actions form {
+        width: 100%;
+    }
+    
+    .draft-actions form .action-btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .draft-details {
+        grid-template-columns: 1fr;
+    }
+    
+    .draft-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .draft-card-header .draft-badges {
+        width: 100%;
+    }
+}
+</style>
+
+<!-- ===== DRAFTS CONTAINER ===== -->
+<div class="drafts-container">
+
+    <!-- ===== HEADER ===== -->
+    <div class="drafts-header">
+        <h1><i class="fas fa-file-pen"></i> Trade Drafts</h1>
+        <div class="header-stats">
+            <div class="stat-pill">
+                <i class="fas fa-save"></i>
+                <span class="stat-label">Drafts</span>
+                <span class="stat-value">{{ draft_count }}</span>
+            </div>
+        </div>
+    </div>
+
+    {% if drafts %}
+    <!-- ===== DRAFTS LIST ===== -->
+    <div class="drafts-list">
+        {% for draft in drafts %}
+        <div class="draft-card card">
+            <!-- Header -->
+            <div class="draft-card-header">
+                <div class="draft-title">
+                    <span class="draft-id">#{{ draft.trade_id }}</span>
+                    <span class="draft-pair">{{ draft.pair.name }}</span>
+                </div>
+                <div class="draft-badges">
+                    <span class="badge-sm badge-draft"><i class="fas fa-pen-fancy"></i> Draft</span>
+                    <span class="badge-sm badge-age"><i class="fas fa-clock"></i> {{ draft.age_display }}</span>
+                </div>
+            </div>
+
+            <!-- Details -->
+            <div class="draft-details">
+                <div class="draft-detail">
+                    <span class="label">Direction</span>
+                    <span class="value {% if draft.buy_or_sell == 'BUY' %}success{% elif draft.buy_or_sell == 'SELL' %}danger{% endif %}">
+                        {{ draft.buy_or_sell|default:"—" }}
+                    </span>
+                </div>
+                <div class="draft-detail">
+                    <span class="label">Trade Type</span>
+                    <span class="value">{{ draft.trade_type|default:"—" }}</span>
+                </div>
+                <div class="draft-detail">
+                    <span class="label">Setup Quality</span>
+                    <span class="value">
+                        {% if draft.setup_quality %}
+                            {% for i in "12345"|make_list %}
+                                {% if forloop.counter <= draft.setup_quality %}⭐{% else %}☆{% endif %}
+                            {% endfor %}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="draft-detail">
+                    <span class="label">RVS Grade</span>
+                    <span class="value">
+                        {% if draft.rvs_grade %}
+                            <span class="rvs-grade {{ draft.rvs_grade|lower|cut:'+'|add:'-plus' }}">{{ draft.rvs_grade }}</span>
+                        {% else %}
+                            —
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="draft-detail">
+                    <span class="label">Risk Reward</span>
+                    <span class="value">{{ draft.risk_reward|default:"—" }}</span>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="draft-actions">
+                <a href="{% url 'trade' %}?draft_id={{ draft.id }}" class="action-btn action-btn-edit">
+                    <i class="fas fa-pen"></i> Edit Draft
+                </a>
+
+                <form method="post" action="{% url 'complete_draft' draft.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="action-btn action-btn-complete" 
+                            onclick="return confirm('Confirm this trade? It will be saved to your journal.');">
+                        <i class="fas fa-check"></i> Confirm Trade
+                    </button>
+                </form>
+
+                <a href="{% url 'delete_draft_confirm' draft.id %}" class="action-btn action-btn-delete">
+                    <i class="fas fa-trash-alt"></i> Delete
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <!-- ===== EMPTY STATE ===== -->
+    <div class="empty-state">
+        <span class="empty-icon">📝</span>
+        <h3>No Drafts Yet</h3>
+        <p>Start a new trade and save it as a draft if you need to complete it later.</p>
+        <a href="{% url 'trade' %}" class="action-btn">
+            <i class="fas fa-plus"></i> New Trade
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+// Show notification if draft was confirmed
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('confirmed') === 'true') {
+        showNotification('Trade confirmed successfully! 🎉');
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+    }
+});
+
+function showNotification(message) {
+    const existing = document.querySelector('.notification');
+    if (existing) existing.remove();
+    
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    notification.innerHTML = `
+        <i class="fas fa-check-circle"></i>
+        <span>${message}</span>
+    `;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(50px)';
+        setTimeout(() => notification.remove(), 300);
+    }, 5000);
+}
+</script>
+{% endblock %}

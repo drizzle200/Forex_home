@@ -1,0 +1,612 @@
+{% extends 'trade/base/base.html' %}
+{% load static %}
+
+{% block title %}Profile | Trade Entry{% endblock %}
+
+{% block page_icon %}user{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+{% block breadcrumb %}Profile{% endblock %}
+
+{% block body %}
+<style>
+:root {
+    --bg-primary: #0a0f1c;
+    --bg-secondary: #111827;
+    --bg-tertiary: #1a2332;
+    --text-primary: #f3f4f6;
+    --text-secondary: #9ca3af;
+    --text-muted: #6b7280;
+    --border: #2d3748;
+    --primary: #10b981;
+    --primary-soft: rgba(16, 185, 129, 0.08);
+    --success: #34d399;
+    --success-soft: rgba(52, 211, 153, 0.10);
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.10);
+    --info: #60a5fa;
+    --info-soft: rgba(96, 165, 250, 0.10);
+    --warning: #fbbf24;
+    --warning-soft: rgba(251, 191, 36, 0.10);
+    --purple: #c084fc;
+    --purple-soft: rgba(192, 132, 252, 0.10);
+    
+    /* Neumorphism shadows - SOFT */
+    --neu-shadow: 6px 6px 14px rgba(0,0,0,0.5), -6px -6px 14px rgba(30, 40, 60, 0.10);
+    --neu-shadow-inset: inset 3px 3px 6px rgba(0,0,0,0.5), inset -3px -3px 6px rgba(30, 40, 60, 0.08);
+    --neu-shadow-sm: 3px 3px 8px rgba(0,0,0,0.4), -3px -3px 8px rgba(30, 40, 60, 0.08);
+    --neu-shadow-hover: 8px 8px 18px rgba(0,0,0,0.6), -8px -8px 18px rgba(30, 40, 60, 0.15);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Inter', system-ui, sans-serif;
+    min-height: 100vh;
+}
+
+/* ===== OVERRIDE BASE CARD HOVER ===== */
+.card:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: var(--neu-shadow-hover) !important;
+    border-color: transparent !important;
+}
+
+.card::before {
+    display: none !important;
+}
+
+/* ===== LAYOUT ===== */
+.profile-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 16px;
+}
+
+/* ===== PROFILE CARD ===== */
+.profile-card {
+    background: var(--bg-tertiary);
+    border-radius: 14px;
+    box-shadow: var(--neu-shadow);
+    border: 1px solid transparent;
+    overflow: hidden;
+    transition: all 0.25s ease;
+}
+
+.profile-card:hover {
+    box-shadow: var(--neu-shadow-hover);
+    border-color: transparent;
+}
+
+/* ===== PROFILE HEADER ===== */
+.profile-header {
+    padding: 24px 24px 20px;
+    text-align: center;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(16, 185, 129, 0.02));
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.profile-avatar {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 12px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    font-weight: 700;
+    color: white;
+    box-shadow: var(--neu-shadow-sm);
+    border: 3px solid rgba(16, 185, 129, 0.2);
+}
+
+.profile-header h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.profile-header p {
+    font-size: 13px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.profile-header p i {
+    color: var(--primary);
+    font-size: 12px;
+}
+
+/* ===== PROFILE BODY ===== */
+.profile-body {
+    padding: 20px 24px 24px;
+}
+
+/* ===== TABS ===== */
+.tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 20px;
+    background: var(--bg-secondary);
+    padding: 4px;
+    border-radius: 12px;
+    box-shadow: var(--neu-shadow-inset);
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.tab-btn:hover {
+    color: var(--text-primary);
+}
+
+.tab-btn.active {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+}
+
+.tab-btn i {
+    margin-right: 6px;
+    font-size: 13px;
+}
+
+/* ===== TAB CONTENT ===== */
+.tab-content {
+    display: none;
+    animation: fadeIn 0.25s ease;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== FORM ===== */
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
+.form-group label i {
+    color: var(--primary);
+    margin-right: 4px;
+}
+
+.form-group .input-wrapper {
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    padding: 4px;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+    box-shadow: var(--neu-shadow-inset);
+}
+
+.form-group .input-wrapper:focus-within {
+    border-color: var(--primary);
+    box-shadow: var(--neu-shadow-inset), 0 0 0 3px rgba(16, 185, 129, 0.08);
+}
+
+.form-group .input-wrapper input {
+    width: 100%;
+    padding: 10px 14px;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 400;
+    outline: none;
+}
+
+.form-group .input-wrapper input:disabled {
+    color: var(--text-muted);
+    cursor: not-allowed;
+}
+
+.form-group .input-wrapper input::placeholder {
+    color: var(--text-muted);
+}
+
+.form-group .input-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.form-group .input-hint i {
+    color: var(--primary);
+    font-size: 11px;
+}
+
+/* ===== BUTTONS ===== */
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: var(--neu-shadow-sm);
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--neu-shadow-hover);
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+}
+
+.btn-block {
+    width: 100%;
+    justify-content: center;
+}
+
+/* ===== PASSWORD MATCH ===== */
+.pass-match {
+    font-size: 12px;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.pass-match.success {
+    color: var(--success);
+}
+
+.pass-match.error {
+    color: var(--danger);
+}
+
+/* ===== MESSAGES ===== */
+.messages-container {
+    margin-bottom: 16px;
+}
+
+.message {
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    animation: fadeIn 0.3s ease;
+    box-shadow: var(--neu-shadow-sm);
+}
+
+.message.success {
+    background: var(--success-soft);
+    color: var(--success);
+    border: 1px solid rgba(52, 211, 153, 0.15);
+}
+
+.message.error {
+    background: var(--danger-soft);
+    color: var(--danger);
+    border: 1px solid rgba(248, 113, 113, 0.15);
+}
+
+.message.info {
+    background: var(--info-soft);
+    color: var(--info);
+    border: 1px solid rgba(96, 165, 250, 0.15);
+}
+
+.message i {
+    font-size: 16px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 640px) {
+    .profile-container { padding: 0 10px; }
+    
+    .profile-header { padding: 20px 16px; }
+    .profile-avatar { width: 64px; height: 64px; font-size: 26px; }
+    .profile-header h2 { font-size: 18px; }
+    
+    .profile-body { padding: 16px; }
+    
+    .tabs { 
+        flex-direction: column;
+        gap: 4px;
+        padding: 6px;
+    }
+    
+    .tab-btn {
+        padding: 10px 14px;
+        text-align: center;
+    }
+    
+    .btn { padding: 12px 16px; font-size: 13px; }
+}
+
+@media (max-width: 480px) {
+    .profile-avatar { width: 56px; height: 56px; font-size: 22px; }
+}
+</style>
+
+<div class="profile-container">
+    <div class="profile-card card">
+        
+        <!-- ===== PROFILE HEADER ===== -->
+        <div class="profile-header">
+            <div class="profile-avatar">
+                {% if user.first_name %}
+                    {{ user.first_name|first }}{{ user.last_name|first }}
+                {% else %}
+                    {{ user.username|first|upper }}
+                {% endif %}
+            </div>
+            <h2>{{ user.username }}</h2>
+            <p><i class="fas fa-calendar-alt"></i> Member since {{ user.date_joined|date:"F Y" }}</p>
+        </div>
+
+        <!-- ===== PROFILE BODY ===== -->
+        <div class="profile-body">
+
+            <!-- ===== MESSAGES ===== -->
+            {% if messages %}
+            <div class="messages-container">
+                {% for message in messages %}
+                <div class="message {{ message.tags }}">
+                    <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-circle{% else %}info-circle{% endif %}"></i>
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- ===== TABS ===== -->
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="info">
+                    <i class="fas fa-user"></i> Profile
+                </button>
+                <button class="tab-btn" data-tab="security">
+                    <i class="fas fa-lock"></i> Security
+                </button>
+            </div>
+
+            <!-- ===== TAB: PROFILE INFO ===== -->
+            <div class="tab-content active" id="tab-info">
+                <form method="post" action="{% url 'profile' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_profile">
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-user"></i> Username</label>
+                        <div class="input-wrapper">
+                            <input type="text" value="{{ user.username }}" disabled>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-envelope"></i> Email</label>
+                        <div class="input-wrapper">
+                            <input type="email" name="email" value="{{ user.email }}" placeholder="your@email.com">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-user-tag"></i> First Name</label>
+                        <div class="input-wrapper">
+                            <input type="text" name="first_name" value="{{ user.first_name }}" placeholder="First name">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-user-tag"></i> Last Name</label>
+                        <div class="input-wrapper">
+                            <input type="text" name="last_name" value="{{ user.last_name }}" placeholder="Last name">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="fas fa-save"></i> Update Profile
+                    </button>
+                </form>
+            </div>
+
+            <!-- ===== TAB: SECURITY ===== -->
+            <div class="tab-content" id="tab-security">
+                <form method="post" action="{% url 'profile' %}" onsubmit="return validatePassword()">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="change_password">
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-key"></i> Current Password</label>
+                        <div class="input-wrapper">
+                            <input type="password" name="current_password" id="currentPass" placeholder="Enter current password" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-lock"></i> New Password</label>
+                        <div class="input-wrapper">
+                            <input type="password" name="new_password1" id="newPass1" placeholder="Enter new password" onkeyup="checkNewPassword()" required>
+                        </div>
+                        <div class="input-hint">
+                            <i class="fas fa-info-circle"></i>
+                            Password must be at least 6 characters
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-lock"></i> Confirm New Password</label>
+                        <div class="input-wrapper">
+                            <input type="password" name="new_password2" id="newPass2" placeholder="Confirm new password" onkeyup="checkNewPasswordMatch()" required>
+                        </div>
+                        <div class="pass-match" id="passMatchMsg"></div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="fas fa-key"></i> Change Password
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+// ===== TAB SWITCHING =====
+document.addEventListener('DOMContentLoaded', function() {
+    const tabs = document.querySelectorAll('.tab-btn');
+    const contents = {
+        'info': document.getElementById('tab-info'),
+        'security': document.getElementById('tab-security')
+    };
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            tabs.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+
+            Object.values(contents).forEach(content => {
+                if (content) content.classList.remove('active');
+            });
+
+            const tabId = this.dataset.tab;
+            if (contents[tabId]) {
+                contents[tabId].classList.add('active');
+            }
+        });
+    });
+
+    // ===== PASSWORD VALIDATION =====
+    window.checkNewPassword = function() {
+        const pass = document.getElementById('newPass1').value;
+        const msg = document.getElementById('passMatchMsg');
+        
+        if (pass.length === 0) {
+            msg.textContent = '';
+            msg.className = 'pass-match';
+            return;
+        }
+        
+        if (pass.length < 6) {
+            msg.textContent = '⚠️ Password must be at least 6 characters';
+            msg.className = 'pass-match error';
+        } else {
+            msg.textContent = '✓ Password length is good';
+            msg.className = 'pass-match success';
+        }
+    };
+
+    window.checkNewPasswordMatch = function() {
+        const pass1 = document.getElementById('newPass1').value;
+        const pass2 = document.getElementById('newPass2').value;
+        const msg = document.getElementById('passMatchMsg');
+        
+        if (pass2.length === 0) {
+            return;
+        }
+        
+        if (pass1 === pass2) {
+            msg.textContent = '✓ Passwords match';
+            msg.className = 'pass-match success';
+        } else {
+            msg.textContent = '✗ Passwords do not match';
+            msg.className = 'pass-match error';
+        }
+    };
+
+    window.validatePassword = function() {
+        const current = document.getElementById('currentPass').value;
+        const pass1 = document.getElementById('newPass1').value;
+        const pass2 = document.getElementById('newPass2').value;
+        
+        if (!current) {
+            alert('Please enter your current password');
+            document.getElementById('currentPass').focus();
+            return false;
+        }
+        
+        if (pass1.length < 6) {
+            alert('New password must be at least 6 characters');
+            document.getElementById('newPass1').focus();
+            return false;
+        }
+        
+        if (pass1 !== pass2) {
+            alert('New passwords do not match');
+            document.getElementById('newPass2').focus();
+            return false;
+        }
+        
+        return true;
+    };
+
+    // ===== URL PARAMETER HANDLING =====
+    const urlParams = new URLSearchParams(window.location.search);
+    const tab = urlParams.get('tab');
+    if (tab && contents[tab]) {
+        tabs.forEach(t => t.classList.remove('active'));
+        document.querySelector(`.tab-btn[data-tab="${tab}"]`)?.classList.add('active');
+        Object.values(contents).forEach(c => c.classList.remove('active'));
+        contents[tab].classList.add('active');
+    }
+
+    // ===== KEYBOARD SHORTCUTS =====
+    document.addEventListener('keydown', function(e) {
+        if (e.key === '1') {
+            document.querySelector('.tab-btn[data-tab="info"]')?.click();
+        } else if (e.key === '2') {
+            document.querySelector('.tab-btn[data-tab="security"]')?.click();
+        }
+    });
+
+    // ===== AUTO-CLOSE MESSAGES =====
+    const messages = document.querySelectorAll('.message');
+    messages.forEach(msg => {
+        setTimeout(() => {
+            msg.style.opacity = '0';
+            msg.style.transform = 'translateY(-10px)';
+            msg.style.transition = 'all 0.3s ease';
+            setTimeout(() => msg.remove(), 300);
+        }, 5000);
+    });
+});
+</script>
+{% endblock %}

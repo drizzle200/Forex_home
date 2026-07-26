@@ -1,0 +1,874 @@
+{% extends 'trade/base/base.html' %}
+{% load static %}
+
+{% block title %}Update Trade Journal{% endblock %}
+
+{% block page_icon %}edit{% endblock %}
+{% block page_title %}Update Trade Journal{% endblock %}
+{% block breadcrumb %}Update Trade{% endblock %}
+
+{% block body %}
+<style>
+:root {
+    --bg-primary: #1a1d23;
+    --bg-secondary: #242831;
+    --bg-tertiary: #2a2f3a;
+    --bg-elevated: #323846;
+    --shadow-dark: #0d0f14;
+    --shadow-light: #2d3340;
+    --card-bg: #1a1d23;
+    --border: #2a2f3a;
+    --border-light: #323846;
+    --text-primary: #e8edf5;
+    --text-secondary: #9aa8c4;
+    --text-muted: #6b7a94;
+    --primary: #7c6cf0;
+    --primary-dark: #6a5ad6;
+    --primary-soft: rgba(124, 108, 240, 0.15);
+    --primary-glow: rgba(124, 108, 240, 0.3);
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.15);
+    --success: #4ade80;
+    --success-soft: rgba(74, 222, 128, 0.15);
+    --warning: #fbbf24;
+    --warning-soft: rgba(251, 191, 36, 0.15);
+    --info: #60a5fa;
+    --info-soft: rgba(96, 165, 250, 0.15);
+}
+
+/* Container */
+.update-container {
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 10px 0;
+}
+
+/* Trade Card */
+.trade-card {
+    background: var(--card-bg);
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    box-shadow: 8px 8px 16px var(--shadow-dark), -8px -8px 16px var(--shadow-light);
+    overflow: hidden;
+    position: relative;
+}
+
+.trade-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+}
+
+.trade-header {
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-secondary);
+}
+
+.trade-header h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.trade-header h2 i {
+    color: var(--primary);
+    font-size: 18px;
+}
+
+.trade-id {
+    font-size: 12px;
+    color: var(--text-muted);
+    background: var(--bg-primary);
+    padding: 4px 12px;
+    border-radius: 100px;
+    box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
+}
+
+/* Quick Actions - Compact Choice */
+.quick-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 16px 20px;
+}
+
+.quick-btn {
+    padding: 16px;
+    background: var(--bg-primary);
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    color: var(--text-secondary);
+    box-shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
+    position: relative;
+    overflow: hidden;
+}
+
+.quick-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), rgba(255,255,255,0.05), transparent 100px);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.quick-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 8px 8px 16px var(--shadow-dark), -8px -8px 16px var(--shadow-light);
+}
+
+.quick-btn:hover::before {
+    opacity: 1;
+}
+
+.quick-btn:active {
+    transform: translateY(0);
+    box-shadow: inset 6px 6px 12px var(--shadow-dark), inset -6px -6px 12px var(--shadow-light);
+}
+
+.quick-btn.selected {
+    border-color: var(--primary);
+    background: var(--primary-soft);
+    box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light), 0 0 20px var(--primary-glow);
+}
+
+.quick-btn .icon {
+    font-size: 24px;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.quick-btn .label {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.quick-btn .sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    display: block;
+}
+
+.quick-btn.win .icon { color: var(--success); }
+.quick-btn.win.selected { border-color: var(--success); }
+.quick-btn.loss .icon { color: var(--danger); }
+.quick-btn.loss.selected { border-color: var(--danger); }
+
+/* Reason Chip - Compact */
+.reason-section {
+    padding: 0 20px 16px;
+    display: none;
+}
+
+.reason-section.visible {
+    display: block;
+    animation: fadeIn 0.2s ease;
+}
+
+.reason-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.reason-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.reason-chip {
+    padding: 6px 14px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
+    font-family: inherit;
+}
+
+.reason-chip:hover {
+    transform: translateY(-1px);
+    box-shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
+    border-color: var(--primary);
+}
+
+.reason-chip:active {
+    transform: translateY(0);
+    box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
+}
+
+.reason-chip.selected {
+    border-color: var(--primary);
+    background: var(--primary-soft);
+    color: var(--primary);
+    box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
+}
+
+/* Narration - Compact */
+.narration-section {
+    padding: 0 20px 16px;
+    display: none;
+}
+
+.narration-section.visible {
+    display: block;
+    animation: fadeIn 0.2s ease;
+}
+
+.narration-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.narration-input {
+    width: 100%;
+    padding: 10px 14px;
+    background: var(--bg-primary);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-size: 14px;
+    transition: all 0.2s ease;
+    resize: vertical;
+    min-height: 70px;
+    font-family: inherit;
+    box-shadow: inset 6px 6px 12px var(--shadow-dark), inset -6px -6px 12px var(--shadow-light);
+}
+
+.narration-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light), 0 0 20px var(--primary-glow);
+}
+
+.narration-input::placeholder {
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.char-count {
+    text-align: right;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+/* Summary Bar */
+.summary-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+}
+
+.summary-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.summary-item .value {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.summary-item .value.win { color: var(--success); }
+.summary-item .value.loss { color: var(--danger); }
+
+.summary-divider {
+    color: var(--text-muted);
+    font-size: 18px;
+}
+
+/* Action Buttons - Compact */
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    padding: 16px 20px;
+    background: var(--bg-secondary);
+}
+
+.btn {
+    flex: 1;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: inherit;
+    box-shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
+}
+
+.btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 8px 8px 16px var(--shadow-dark), -8px -8px 16px var(--shadow-light);
+}
+
+.btn:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: inset 6px 6px 12px var(--shadow-dark), inset -6px -6px 12px var(--shadow-light);
+}
+
+.btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    box-shadow: 8px 8px 16px var(--shadow-dark), -8px -8px 16px var(--shadow-light), 0 0 30px var(--primary-glow);
+}
+
+.btn-secondary {
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+}
+
+.btn-secondary:hover:not(:disabled) {
+    color: var(--text-primary);
+    border-color: var(--primary);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, var(--success), #22c55e);
+    color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+    box-shadow: 8px 8px 16px var(--shadow-dark), -8px -8px 16px var(--shadow-light), 0 0 30px rgba(74, 222, 128, 0.3);
+}
+
+/* Auto-save indicator */
+.auto-save {
+    font-size: 11px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    background: var(--bg-primary);
+    border-radius: 100px;
+    box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
+}
+
+.auto-save.saved {
+    color: var(--success);
+}
+
+.auto-save.saving {
+    color: var(--warning);
+    animation: pulse 1s ease infinite;
+}
+
+/* Notification Toast */
+.toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 12px 24px;
+    box-shadow: 12px 12px 24px var(--shadow-dark), -12px -12px 24px var(--shadow-light);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 1100;
+    animation: slideUp 0.3s ease;
+    max-width: 90%;
+}
+
+.toast-icon {
+    font-size: 20px;
+}
+
+.toast-icon.success { color: var(--success); }
+.toast-icon.error { color: var(--danger); }
+.toast-icon.warning { color: var(--warning); }
+.toast-icon.info { color: var(--info); }
+
+.toast-message {
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+    .update-container {
+        padding: 0;
+    }
+    
+    .trade-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+        padding: 14px 16px;
+    }
+    
+    .trade-header h2 {
+        font-size: 16px;
+    }
+    
+    .quick-actions {
+        padding: 12px 16px;
+        gap: 8px;
+    }
+    
+    .quick-btn {
+        padding: 12px;
+    }
+    
+    .quick-btn .icon {
+        font-size: 20px;
+    }
+    
+    .quick-btn .label {
+        font-size: 12px;
+    }
+    
+    .reason-section,
+    .narration-section {
+        padding: 0 16px 12px;
+    }
+    
+    .reason-chips {
+        gap: 4px;
+    }
+    
+    .reason-chip {
+        font-size: 11px;
+        padding: 4px 10px;
+    }
+    
+    .summary-bar {
+        flex-wrap: wrap;
+        padding: 10px 16px;
+        gap: 8px;
+    }
+    
+    .summary-item {
+        font-size: 12px;
+    }
+    
+    .action-buttons {
+        padding: 12px 16px;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .btn {
+        padding: 10px 14px;
+        font-size: 13px;
+    }
+    
+    .toast {
+        bottom: 16px;
+        padding: 10px 16px;
+        font-size: 13px;
+        width: 90%;
+    }
+}
+</style>
+
+<div class="update-container">
+    <div class="trade-card">
+        <form method="post" action="{% url 'update_trade' trade.trade_id %}" id="journalForm">
+            {% csrf_token %}
+            
+            <!-- Hidden Fields -->
+            <input type="hidden" name="target" id="target" value="{{ trade.target|default:'' }}">
+            <input type="hidden" name="reason" id="reason" value="{{ trade.reason|default:'' }}">
+            <input type="hidden" name="narration" id="narration" value="{{ trade.narration|default:'' }}">
+
+            <!-- Header -->
+            <div class="trade-header">
+                <h2>
+                    <i class="fas fa-edit"></i>
+                    Update Trade
+                </h2>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span class="trade-id">#{{ trade.trade_id }}</span>
+                    <span class="auto-save" id="autoSave">
+                        <i class="fas fa-check-circle"></i> Saved
+                    </span>
+                </div>
+            </div>
+
+            <!-- Quick Actions: Win/Loss -->
+            <div class="quick-actions">
+                <button type="button" class="quick-btn win {% if trade.target == '1' %}selected{% endif %}" data-value="1">
+                    <span class="icon">🏆</span>
+                    <span class="label">Win</span>
+                    <span class="sub">Profitable</span>
+                </button>
+                <button type="button" class="quick-btn loss {% if trade.target == '0' %}selected{% endif %}" data-value="0">
+                    <span class="icon">📉</span>
+                    <span class="label">Loss</span>
+                    <span class="sub">Unprofitable</span>
+                </button>
+            </div>
+
+            <!-- Reason Section (Loss only) -->
+            <div class="reason-section {% if trade.target == '0' %}visible{% endif %}" id="reasonSection">
+                <div class="reason-label">
+                    <i class="fas fa-question-circle"></i>
+                    Why did you lose this trade?
+                </div>
+                <div class="reason-chips" id="reasonChips">
+                    {% for value, label in form.fields.reason.choices %}
+                    <button type="button" class="reason-chip {% if trade.reason == value %}selected{% endif %}" data-value="{{ value }}">
+                        {{ label }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Narration Section -->
+            <div class="narration-section visible" id="narrationSection">
+                <div class="narration-label">
+                    <i class="fas fa-pen"></i>
+                    Trade Narration
+                </div>
+                <textarea class="narration-input" id="note" placeholder="What happened? What did you learn?">{{ trade.narration|default:'' }}</textarea>
+                <div class="char-count">
+                    <span id="charCount">{{ trade.narration|default:''|length }}</span> / 500 characters
+                </div>
+            </div>
+
+            <!-- Summary Bar -->
+            <div class="summary-bar">
+                <div class="summary-item">
+                    <i class="fas fa-bullseye"></i>
+                    Outcome: 
+                    <span class="value {% if trade.target == '1' %}win{% elif trade.target == '0' %}loss{% else %}text-muted{% endif %}" id="summaryOutcome">
+                        {% if trade.target == '1' %}Win{% elif trade.target == '0' %}Loss{% else %}Not set{% endif %}
+                    </span>
+                </div>
+                <span class="summary-divider">|</span>
+                <div class="summary-item" id="summaryReasonContainer" {% if trade.target != '0' %}style="display:none;"{% endif %}>
+                    <i class="fas fa-lightbulb"></i>
+                    Reason: 
+                    <span class="value" id="summaryReason">
+                        {% if trade.reason %}{{ trade.get_reason_display }}{% else %}-{% endif %}
+                    </span>
+                </div>
+                <span class="summary-divider" id="summaryDivider" {% if trade.target != '0' %}style="display:none;"{% endif %}>|</span>
+                <div class="summary-item" style="margin-left: auto;">
+                    <i class="fas fa-pen"></i>
+                    <span id="summaryLength">{{ trade.narration|default:''|length }}</span> chars
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button type="button" class="btn btn-secondary" onclick="window.history.back()">
+                    <i class="fas fa-arrow-left"></i> Cancel
+                </button>
+                <button type="submit" class="btn btn-primary" id="submitBtn">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // DOM Elements
+    const form = document.getElementById('journalForm');
+    const targetInput = document.getElementById('target');
+    const reasonInput = document.getElementById('reason');
+    const narrationInput = document.getElementById('narration');
+    const noteTextarea = document.getElementById('note');
+    const charCount = document.getElementById('charCount');
+    const summaryOutcome = document.getElementById('summaryOutcome');
+    const summaryReason = document.getElementById('summaryReason');
+    const summaryReasonContainer = document.getElementById('summaryReasonContainer');
+    const summaryDivider = document.getElementById('summaryDivider');
+    const summaryLength = document.getElementById('summaryLength');
+    const autoSave = document.getElementById('autoSave');
+    const submitBtn = document.getElementById('submitBtn');
+
+    // Win/Loss buttons
+    const winLossBtns = document.querySelectorAll('.quick-btn');
+    const reasonChips = document.querySelectorAll('.reason-chip');
+    const reasonSection = document.getElementById('reasonSection');
+
+    // Character limit
+    const MAX_CHARS = 500;
+
+    // --- Win/Loss Selection ---
+    winLossBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Remove selected from all
+            winLossBtns.forEach(b => b.classList.remove('selected'));
+            this.classList.add('selected');
+
+            const value = this.dataset.value;
+            targetInput.value = value;
+
+            // Update summary
+            if (value === '1') {
+                summaryOutcome.textContent = 'Win';
+                summaryOutcome.className = 'value win';
+                reasonSection.classList.remove('visible');
+                summaryReasonContainer.style.display = 'none';
+                summaryDivider.style.display = 'none';
+                reasonInput.value = '';
+                reasonChips.forEach(c => c.classList.remove('selected'));
+                summaryReason.textContent = '-';
+            } else {
+                summaryOutcome.textContent = 'Loss';
+                summaryOutcome.className = 'value loss';
+                reasonSection.classList.add('visible');
+                summaryReasonContainer.style.display = 'flex';
+                summaryDivider.style.display = 'inline';
+                // Auto select first reason if none selected
+                if (!reasonInput.value && reasonChips.length > 0) {
+                    reasonChips[0].click();
+                }
+            }
+
+            updateSummary();
+            autoSaveToggle('saving');
+            setTimeout(() => autoSaveToggle('saved'), 500);
+        });
+    });
+
+    // --- Reason Selection ---
+    reasonChips.forEach(chip => {
+        chip.addEventListener('click', function() {
+            reasonChips.forEach(c => c.classList.remove('selected'));
+            this.classList.add('selected');
+            reasonInput.value = this.dataset.value;
+            summaryReason.textContent = this.textContent.trim();
+            updateSummary();
+            autoSaveToggle('saving');
+            setTimeout(() => autoSaveToggle('saved'), 500);
+        });
+    });
+
+    // --- Narration Input ---
+    noteTextarea.addEventListener('input', function() {
+        const text = this.value;
+        const length = text.length;
+
+        // Character count
+        charCount.textContent = length;
+        summaryLength.textContent = length;
+
+        // Limit characters
+        if (length > MAX_CHARS) {
+            this.value = text.substring(0, MAX_CHARS);
+            charCount.textContent = MAX_CHARS;
+            summaryLength.textContent = MAX_CHARS;
+            showToast('Character limit reached (500)', 'warning');
+        }
+
+        narrationInput.value = this.value;
+        updateSummary();
+        autoSaveToggle('saving');
+        clearTimeout(this._saveTimeout);
+        this._saveTimeout = setTimeout(() => autoSaveToggle('saved'), 800);
+    });
+
+    // --- Auto-save toggle ---
+    function autoSaveToggle(state) {
+        if (state === 'saved') {
+            autoSave.innerHTML = '<i class="fas fa-check-circle"></i> Saved';
+            autoSave.className = 'auto-save saved';
+        } else if (state === 'saving') {
+            autoSave.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            autoSave.className = 'auto-save saving';
+        }
+    }
+
+    // --- Update Summary ---
+    function updateSummary() {
+        const target = targetInput.value;
+        const reason = reasonInput.value;
+        const narration = noteTextarea.value;
+
+        // Outcome
+        if (target === '1') {
+            summaryOutcome.textContent = 'Win';
+            summaryOutcome.className = 'value win';
+        } else if (target === '0') {
+            summaryOutcome.textContent = 'Loss';
+            summaryOutcome.className = 'value loss';
+        } else {
+            summaryOutcome.textContent = 'Not set';
+            summaryOutcome.className = 'value text-muted';
+        }
+
+        // Reason
+        if (reason) {
+            const chip = document.querySelector(`.reason-chip[data-value="${reason}"]`);
+            if (chip) {
+                summaryReason.textContent = chip.textContent.trim();
+            }
+        }
+
+        // Length
+        summaryLength.textContent = narration.length;
+    }
+
+    // --- Form Submit ---
+    form.addEventListener('submit', function(e) {
+        // Validate
+        if (!targetInput.value) {
+            e.preventDefault();
+            showToast('Please select Win or Loss', 'error');
+            return;
+        }
+
+        if (targetInput.value === '0' && !reasonInput.value) {
+            e.preventDefault();
+            showToast('Please select a reason for the loss', 'error');
+            return;
+        }
+
+        if (!noteTextarea.value.trim()) {
+            e.preventDefault();
+            showToast('Please add a trade narration', 'error');
+            noteTextarea.focus();
+            return;
+        }
+
+        // Update hidden inputs
+        narrationInput.value = noteTextarea.value;
+
+        // Disable button to prevent double submit
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    });
+
+    // --- Toast Notification ---
+    function showToast(message, type = 'info') {
+        const existing = document.querySelector('.toast');
+        if (existing) existing.remove();
+
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        
+        const icons = {
+            success: 'fa-check-circle',
+            error: 'fa-times-circle',
+            warning: 'fa-exclamation-triangle',
+            info: 'fa-info-circle'
+        };
+
+        toast.innerHTML = `
+            <span class="toast-icon ${type}">
+                <i class="fas ${icons[type] || icons.info}"></i>
+            </span>
+            <span class="toast-message">${message}</span>
+        `;
+
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.animation = 'slideUp 0.3s ease reverse';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    // --- Initialize ---
+    updateSummary();
+
+    // If loss and no reason, auto-select first
+    if (targetInput.value === '0' && !reasonInput.value && reasonChips.length > 0) {
+        reasonChips[0].click();
+    }
+
+    // --- Keyboard shortcuts ---
+    document.addEventListener('keydown', function(e) {
+        // Ctrl+Enter to submit
+        if (e.ctrlKey && e.key === 'Enter') {
+            e.preventDefault();
+            form.dispatchEvent(new Event('submit'));
+        }
+
+        // Escape to cancel
+        if (e.key === 'Escape') {
+            window.history.back();
+        }
+
+        // 1 for Win, 2 for Loss
+        if (e.key === '1') {
+            const winBtn = document.querySelector('.quick-btn.win');
+            if (winBtn) winBtn.click();
+        }
+        if (e.key === '2') {
+            const lossBtn = document.querySelector('.quick-btn.loss');
+            if (lossBtn) lossBtn.click();
+        }
+    });
+
+    // --- Tooltip for shortcuts ---
+    console.log('⌨️ Shortcuts: 1=Win, 2=Loss, Ctrl+Enter=Submit, Escape=Cancel');
+});
+</script>
+{% endblock %}

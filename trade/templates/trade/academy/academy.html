@@ -1,0 +1,796 @@
+{% extends 'trade/base/base.html' %}
+{% load static %}
+
+{% block title %}Academy | Learn Trading{% endblock %}
+
+{% block page_icon %}graduation-cap{% endblock %}
+{% block page_title %}Trading Academy{% endblock %}
+{% block breadcrumb %}Academy{% endblock %}
+
+{% block body %}
+<style>
+:root {
+    --bg-primary: #0a0f1c;
+    --bg-secondary: #111827;
+    --bg-tertiary: #1a2332;
+    --text-primary: #f3f4f6;
+    --text-secondary: #9ca3af;
+    --text-muted: #6b7280;
+    --border: #2d3748;
+    --primary: #10b981;
+    --primary-soft: rgba(16, 185, 129, 0.08);
+    --success: #34d399;
+    --success-soft: rgba(52, 211, 153, 0.10);
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.10);
+    --info: #60a5fa;
+    --info-soft: rgba(96, 165, 250, 0.10);
+    --warning: #fbbf24;
+    --warning-soft: rgba(251, 191, 36, 0.10);
+    --purple: #c084fc;
+    --purple-soft: rgba(192, 132, 252, 0.10);
+    
+    /* Neumorphism shadows - SOFT */
+    --neu-shadow: 6px 6px 14px rgba(0,0,0,0.5), -6px -6px 14px rgba(30, 40, 60, 0.10);
+    --neu-shadow-inset: inset 3px 3px 6px rgba(0,0,0,0.5), inset -3px -3px 6px rgba(30, 40, 60, 0.08);
+    --neu-shadow-sm: 3px 3px 8px rgba(0,0,0,0.4), -3px -3px 8px rgba(30, 40, 60, 0.08);
+    --neu-shadow-hover: 8px 8px 18px rgba(0,0,0,0.6), -8px -8px 18px rgba(30, 40, 60, 0.15);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Inter', system-ui, sans-serif;
+    min-height: 100vh;
+}
+
+/* ===== OVERRIDE BASE CARD HOVER ===== */
+.card:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: var(--neu-shadow-hover) !important;
+    border-color: transparent !important;
+}
+
+.card::before {
+    display: none !important;
+}
+
+/* ===== LAYOUT ===== */
+.academy-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 16px;
+}
+
+/* ===== HEADER ===== */
+.academy-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.academy-header h1 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.academy-header h1 i {
+    color: var(--primary);
+}
+
+.academy-header .subtitle {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+/* ===== SECTION TABS ===== */
+.tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 20px;
+    background: var(--bg-tertiary);
+    padding: 4px;
+    border-radius: 14px;
+    box-shadow: var(--neu-shadow-sm);
+    border: 1px solid transparent;
+    overflow-x: auto;
+}
+
+.tab-btn {
+    padding: 8px 18px;
+    border: none;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    white-space: nowrap;
+}
+
+.tab-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255,255,255,0.03);
+}
+
+.tab-btn.active {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+}
+
+/* ===== CONTENT SECTIONS ===== */
+.tab-content {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== LESSONS GRID ===== */
+.lessons-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+}
+
+.lesson-card {
+    background: var(--bg-tertiary);
+    border-radius: 14px;
+    box-shadow: var(--neu-shadow-sm);
+    border: 1px solid transparent;
+    transition: all 0.25s ease;
+    padding: 16px 18px;
+    cursor: pointer;
+}
+
+.lesson-card:hover {
+    box-shadow: var(--neu-shadow-hover);
+    border-color: transparent;
+    transform: translateY(-3px);
+}
+
+.lesson-card .lesson-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.lesson-card .lesson-icon.blue { background: var(--info-soft); color: var(--info); }
+.lesson-card .lesson-icon.green { background: var(--success-soft); color: var(--success); }
+.lesson-card .lesson-icon.purple { background: var(--purple-soft); color: var(--purple); }
+.lesson-card .lesson-icon.yellow { background: var(--warning-soft); color: var(--warning); }
+.lesson-card .lesson-icon.red { background: var(--danger-soft); color: var(--danger); }
+.lesson-card .lesson-icon.primary { background: var(--primary-soft); color: var(--primary); }
+
+.lesson-card .lesson-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.lesson-card .lesson-description {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-bottom: 10px;
+}
+
+.lesson-card .lesson-meta {
+    display: flex;
+    gap: 12px;
+    font-size: 10px;
+    color: var(--text-muted);
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+
+.lesson-card .lesson-meta span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.lesson-card .lesson-meta i {
+    color: var(--primary);
+}
+
+/* ===== FEATURED SECTION ===== */
+.featured-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.featured-card {
+    background: var(--bg-tertiary);
+    border-radius: 14px;
+    box-shadow: var(--neu-shadow);
+    border: 1px solid transparent;
+    transition: all 0.25s ease;
+    padding: 20px 24px;
+}
+
+.featured-card:hover {
+    box-shadow: var(--neu-shadow-hover);
+    border-color: transparent;
+    transform: translateY(-2px);
+}
+
+.featured-card .featured-badge {
+    display: inline-block;
+    background: var(--primary-soft);
+    color: var(--primary);
+    padding: 2px 12px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.featured-card h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+}
+
+.featured-card p {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin-bottom: 14px;
+}
+
+.featured-card .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 20px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    text-decoration: none;
+    box-shadow: var(--neu-shadow-sm);
+}
+
+.featured-card .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--neu-shadow-hover);
+}
+
+.featured-card .btn i {
+    font-size: 13px;
+}
+
+/* ===== TIPS LIST ===== */
+.tips-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tip-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    border-left: 3px solid var(--primary);
+    transition: all 0.2s ease;
+}
+
+.tip-item:hover {
+    background: rgba(255,255,255,0.02);
+}
+
+.tip-item .tip-icon {
+    font-size: 16px;
+    color: var(--primary);
+    flex-shrink: 0;
+}
+
+.tip-item .tip-text {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.tip-item .tip-text strong {
+    color: var(--text-primary);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 992px) {
+    .featured-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .lessons-grid {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .academy-container { padding: 0 10px; }
+    
+    .academy-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .academy-header h1 { font-size: 17px; }
+    
+    .tabs {
+        gap: 4px;
+        padding: 3px;
+    }
+    
+    .tab-btn {
+        padding: 6px 12px;
+        font-size: 11px;
+    }
+    
+    .lessons-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+    
+    .lesson-card { padding: 12px 14px; }
+    .lesson-card .lesson-title { font-size: 13px; }
+    
+    .featured-card { padding: 16px 18px; }
+    .featured-card h3 { font-size: 16px; }
+}
+
+@media (max-width: 480px) {
+    .lessons-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .tab-btn {
+        flex-shrink: 0;
+    }
+}
+</style>
+
+<!-- ===== ACADEMY CONTAINER ===== -->
+<div class="academy-container">
+
+    <!-- ===== HEADER ===== -->
+    <div class="academy-header">
+        <h1><i class="fas fa-graduation-cap"></i> Trading Academy</h1>
+        <span class="subtitle">Learn, practice, and master trading</span>
+    </div>
+
+    <!-- ===== TABS ===== -->
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="basics">📚 Basics</button>
+        <button class="tab-btn" data-tab="strategies">📊 Strategies</button>
+        <button class="tab-btn" data-tab="psychology">🧠 Psychology</button>
+        <button class="tab-btn" data-tab="risk">⚠️ Risk Management</button>
+        <button class="tab-btn" data-tab="advanced">🚀 Advanced</button>
+    </div>
+
+    <!-- ===== TAB: BASICS ===== -->
+    <div class="tab-content active" id="tab-basics">
+        <!-- Featured Section -->
+        <div class="featured-grid">
+            <div class="featured-card card">
+                <span class="featured-badge">📖 Getting Started</span>
+                <h3>Welcome to Forex Trading</h3>
+                <p>Learn the fundamentals of forex trading, including how currency pairs work, what drives price movements, and how to start your trading journey with confidence.</p>
+                <a href="#" class="btn"><i class="fas fa-play"></i> Start Learning</a>
+            </div>
+            <div class="featured-card card">
+                <span class="featured-badge">💡 Quick Tips</span>
+                <div class="tips-list">
+                    <div class="tip-item">
+                        <span class="tip-icon">🎯</span>
+                        <span class="tip-text"><strong>Start Small:</strong> Begin with a demo account to practice without risk.</span>
+                    </div>
+                    <div class="tip-item">
+                        <span class="tip-icon">📚</span>
+                        <span class="tip-text"><strong>Learn Daily:</strong> Dedicate 30 minutes each day to learning.</span>
+                    </div>
+                    <div class="tip-item">
+                        <span class="tip-icon">📊</span>
+                        <span class="tip-text"><strong>Journal Trades:</strong> Track every trade to identify patterns.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lessons Grid -->
+        <div class="lessons-grid">
+            <div class="lesson-card card">
+                <div class="lesson-icon blue"><i class="fas fa-chart-line"></i></div>
+                <div class="lesson-title">What is Forex?</div>
+                <div class="lesson-description">Understanding the foreign exchange market and how it works.</div>
+                <div class="lesson-meta">
+                    <span><i class="fas fa-clock"></i> 10 min</span>
+                    <span><i class="fas fa-signal"></i> Beginner</span>
+                </div>
+            </div>
+            <div class="lesson-card card">
+                <div class="lesson-icon green"><i class="fas fa-exchange-alt"></i></div>
+                <div class="lesson-title">Currency Pairs Explained</div>
+                <div class="lesson-description">Learn about major, minor, and exotic currency pairs.</div>
+                <div class="lesson-meta">
+                    <span><i class="fas fa-clock"></i> 15 min</span>
+                    <span><i class="fas fa-signal"></i> Beginner</span>
+                </div>
+            </div>
+            <div class="lesson-card card">
+                <div class="lesson-icon purple"><i class="fas fa-calculator"></i></div>
+                <div class="lesson-title">Pips and Lots</div>
+                <div class="lesson-description">Understanding pip values, lot sizes, and position sizing.</div>
+                <div class="lesson-meta">
+                    <span><i class="fas fa-clock"></i> 12 min</span>
+                    <span><i class="fas fa-signal"></i> Beginner</span>
+                </div>
+            </div>
+            <div class="lesson-card card">
+                <div class="lesson-icon yellow"><i class="fas fa-chart-bar"></i></div>
+                <div class="lesson-title">Technical Analysis Basics</div>
+                <div class="lesson-description">Introduction to charts, trends, and support/resistance.</div>
+                <div class="lesson-meta">
+                    <span><i class="fas fa-clock"></i> 20 min</span>
+                    <span><i class="fas fa-signal"></i> Intermediate</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TAB: STRATEGIES ===== -->
+    <div class="tab-content" id="tab-strategies">
+        <div class="lessons-grid">
+            <div class="lesson-card card">
+                <div class="lesson-icon green"><i class="fas fa-arrow-trend-up"></i></div>
+                <div class="lesson-title">Trend Following Strategy</div>
+                <div class="lesson-description">Learn how to identify and trade with market trends effectively.</div>
+                <div class="lesson-meta">
+                    <span><i class="fas fa-clock"></i> 25 min</span>
+                    <span><i class="fas fa-signal"></i> Intermediate</span>
+                </div>
+            </div>
+            <div class="lesson-card card">
+                <div class="lesson-icon blue"><i class="fas fa-arrows-left-right"></i></div>
+                <div class="lesson-title">Range Trading Strategy</div>
+                <div class="lesson-description">Trading within defined support and resistance zones.</div>
+                <div class="lesson-meta">
+                    <span><i class="fas fa-clock"></i> 20 min</span>
+                    <span><i class="fas fa-signal"></i> Intermediate</span>
+                </div>
+            </div>
+            <div class="lesson-card card">
+                <div class="lesson-icon purple"><i class="fas fa-bolt"></i></div>
+                <div class="lesson-title">Breakout Strategy</div>
+                <div class="lesson-description">Identifying and trading breakouts from consolidation patterns.</div>
+                <div class="lesson-meta">
+                    <span><i class="fas fa-clock"></i> 20 min</span>
+                    <span><i class="fas fa-signal"></i> Intermediate</span>
+                </div>
+            </div>
+            <div class="lesson-card card">
+                <div class="lesson-icon yellow"><i class="fas fa-hand-holding-heart"></i></div>
+                <div class="lesson-title">Scalping Fundamentals</div>
+                <div class="lesson-description">Fast-paced trading strategies for quick profits.</div>
+                <div class="lesson-meta">
+                    <span><i class="fas fa-clock"></i> 30 min</span>
+                    <span><i class="fas fa-signal"></i> Advanced</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TAB: PSYCHOLOGY ===== -->
+    <div class="tab-content" id="tab-psychology">
+        <div class="featured-grid">
+            <div class="featured-card card">
+                <span class="featured-badge">🧠 Mindset</span>
+                <h3>Trading Psychology</h3>
+                <p>Master your emotions and develop the mental discipline required for consistent trading success. Learn to overcome fear, greed, and other psychological barriers.</p>
+                <a href="#" class="btn"><i class="fas fa-play"></i> Start Learning</a>
+            </div>
+            <div class="featured-card card">
+                <span class="featured-badge">💡 Key Principles</span>
+                <div class="tips-list">
+                    <div class="tip-item">
+                        <span class="tip-icon">🧘</span>
+                        <span class="tip-text"><strong>Stay Calm:</strong> Emotional decisions lead to poor trades.</span>
+                    </div>
+                    <div class="tip-item">
+                        <span class="tip-icon">📋</span>
+                        <span class="tip-text"><strong>Stick to Plan:</strong> Follow your trading rules consistently.</span>
+                    </div>
+                    <div class="tip-item">
+                        <span class="tip-icon">🔄</span>
+                        <span class="tip-text"><strong>Accept Losses:</strong> Losses are part of trading. Learn from them.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="lessons-grid">
+            <div class="lesson-card card">
+                <div class="lesson-icon red"><i class="fas fa-brain"></i></div>
+                <div class="lesson-title">Overcoming FOMO</div>
+                <div class="lesson-description">How to avoid the fear of missing out on trades.</div>
+                <div class="lesson-meta">
+                    <span><i class="fas fa-clock"></i> 15 min</span>
+                    <span><i class="fas fa-signal"></i> All Levels</span>
+                </div>
+            </div>
+            <div class="lesson-card card">
+                <div class="lesson-icon blue"><i class="fas fa-heart"></i></div>
+                <div class="lesson-title">Managing Greed</div>
+                <div class="lesson-description">Techniques to keep greed in check and take profits.</div>
+                <div class="lesson-meta">
+                    <span><i class="fas fa-clock"></i> 15 min</span>
+                    <span><i class="fas fa-signal"></i> All Levels</span>
+                </div>
+            </div>
+            <div class="lesson-card card">
+                <div class="lesson-icon purple"><i class="fas fa-meditation"></i></div>
+                <div class="lesson-title">Discipline & Routine</div>
+                <div class="lesson-description">Building daily habits for consistent trading success.</div>
+                <div class="lesson-meta">
+                    <span><i class="fas fa-clock"></i> 12 min</span>
+                    <span><i class="fas fa-signal"></i> All Levels</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TAB: RISK MANAGEMENT ===== -->
+    <div class="tab-content" id="tab-risk">
+        <div class="lessons-grid">
+            <div class="lesson-card card">
+                <div class="lesson-icon red"><i class="fas fa-shield-alt"></i></div>
+                <div class="lesson-title">Position Sizing</div>
+                <div class="lesson-description">Calculate the optimal position size for your account.</div>
+                <div class="lesson-meta">
+                    <span><i class="fas fa-clock"></i> 18 min</span>
+                    <span><i class="fas fa-signal"></i> Intermediate</span>
+                </div>
+            </div>
+            <div class="lesson-card card">
+                <div class="lesson-icon yellow"><i class="fas fa-stop-circle"></i></div>
+                <div class="lesson-title">Stop Loss Placement</div>
+                <div class="lesson-description">Where and how to set effective stop losses.</div>
+                <div class="lesson-meta">
+                    <span><i class="fas fa-clock"></i> 20 min</span>
+                    <span><i class="fas fa-signal"></i> Intermediate</span>
+                </div>
+            </div>
+            <div class="lesson-card card">
+                <div class="lesson-icon green"><i class="fas fa-chart-pie"></i></div>
+                <div class="lesson-title">Portfolio Diversification</div>
+                <div class="lesson-description">How to diversify your trades across different pairs.</div>
+                <div class="lesson-meta">
+                    <span><i class="fas fa-clock"></i> 15 min</span>
+                    <span><i class="fas fa-signal"></i> Intermediate</span>
+                </div>
+            </div>
+            <div class="lesson-card card">
+                <div class="lesson-icon blue"><i class="fas fa-calculator"></i></div>
+                <div class="lesson-title">Risk-Reward Ratio</div>
+                <div class="lesson-description">Understanding and optimizing risk-reward ratios.</div>
+                <div class="lesson-meta">
+                    <span><i class="fas fa-clock"></i> 12 min</span>
+                    <span><i class="fas fa-signal"></i> Beginner</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TAB: ADVANCED ===== -->
+    <div class="tab-content" id="tab-advanced">
+        <div class="featured-grid">
+            <div class="featured-card card">
+                <span class="featured-badge">🚀 Level Up</span>
+                <h3>Advanced Trading Strategies</h3>
+                <p>Take your trading to the next level with advanced techniques including algorithmic trading, market profiling, and professional-grade analysis tools.</p>
+                <a href="#" class="btn"><i class="fas fa-play"></i> Start Learning</a>
+            </div>
+            <div class="featured-card card">
+                <span class="featured-badge">📈 Advanced Topics</span>
+                <div class="tips-list">
+                    <div class="tip-item">
+                        <span class="tip-icon">🤖</span>
+                        <span class="tip-text"><strong>Algorithmic Trading:</strong> Automate your trading strategies.</span>
+                    </div>
+                    <div class="tip-item">
+                        <span class="tip-icon">📊</span>
+                        <span class="tip-text"><strong>Market Profiling:</strong> Advanced market analysis techniques.</span>
+                    </div>
+                    <div class="tip-item">
+                        <span class="tip-icon">📉</span>
+                        <span class="tip-text"><strong>Options Trading:</strong> Advanced instrument strategies.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="lessons-grid">
+            <div class="lesson-card card">
+                <div class="lesson-icon purple"><i class="fas fa-code"></i></div>
+                <div class="lesson-title">Algorithmic Trading</div>
+                <div class="lesson-description">Introduction to automated trading systems and scripting.</div>
+                <div class="lesson-meta">
+                    <span><i class="fas fa-clock"></i> 45 min</span>
+                    <span><i class="fas fa-signal"></i> Advanced</span>
+                </div>
+            </div>
+            <div class="lesson-card card">
+                <div class="lesson-icon blue"><i class="fas fa-robot"></i></div>
+                <div class="lesson-title">Trading Bots</div>
+                <div class="lesson-description">How to use trading bots effectively and safely.</div>
+                <div class="lesson-meta">
+                    <span><i class="fas fa-clock"></i> 30 min</span>
+                    <span><i class="fas fa-signal"></i> Advanced</span>
+                </div>
+            </div>
+            <div class="lesson-card card">
+                <div class="lesson-icon yellow"><i class="fas fa-chart-simple"></i></div>
+                <div class="lesson-title">Volume Profile Analysis</div>
+                <div class="lesson-description">Advanced volume-based market analysis techniques.</div>
+                <div class="lesson-meta">
+                    <span><i class="fas fa-clock"></i> 30 min</span>
+                    <span><i class="fas fa-signal"></i> Advanced</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // ===== TAB SWITCHING =====
+    const tabs = document.querySelectorAll('.tab-btn');
+    const contents = {
+        'basics': document.getElementById('tab-basics'),
+        'strategies': document.getElementById('tab-strategies'),
+        'psychology': document.getElementById('tab-psychology'),
+        'risk': document.getElementById('tab-risk'),
+        'advanced': document.getElementById('tab-advanced')
+    };
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            // Remove active from all tabs
+            tabs.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+
+            // Hide all content
+            Object.values(contents).forEach(content => {
+                if (content) content.classList.remove('active');
+            });
+
+            // Show selected content
+            const tabId = this.dataset.tab;
+            if (contents[tabId]) {
+                contents[tabId].classList.add('active');
+            }
+        });
+    });
+
+    // ===== LESSON CARD CLICK =====
+    document.querySelectorAll('.lesson-card').forEach(card => {
+        card.addEventListener('click', function() {
+            // You can add lesson detail modal or redirect here
+            // For now, just a visual feedback
+            this.style.transform = 'scale(0.98)';
+            setTimeout(() => {
+                this.style.transform = '';
+            }, 200);
+        });
+    });
+
+    // ===== FEATURED CARD BUTTONS =====
+    document.querySelectorAll('.featured-card .btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            // Find the corresponding tab and activate it
+            const card = this.closest('.featured-card');
+            const tabId = card.querySelector('.featured-badge')?.textContent?.trim() || '';
+            
+            // Show notification
+            showNotification('📚 Lesson coming soon!');
+        });
+    });
+
+    // ===== NOTIFICATION =====
+    function showNotification(message) {
+        const existing = document.querySelector('.notification');
+        if (existing) existing.remove();
+        
+        const notification = document.createElement('div');
+        notification.className = 'notification';
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--primary);
+            color: var(--text-primary);
+            padding: 12px 20px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 1100;
+            animation: slideIn 0.3s ease;
+            box-shadow: var(--neu-shadow);
+        `;
+        notification.innerHTML = `
+            <i class="fas fa-info-circle" style="color:var(--primary);"></i>
+            <span>${message}</span>
+        `;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            notification.style.transform = 'translateX(50px)';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+
+    // ===== KEYBOARD NAVIGATION =====
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+            const currentTab = document.querySelector('.tab-btn.active');
+            const tabsList = Array.from(tabs);
+            const currentIndex = tabsList.indexOf(currentTab);
+            
+            let newIndex;
+            if (e.key === 'ArrowRight') {
+                newIndex = Math.min(currentIndex + 1, tabsList.length - 1);
+            } else {
+                newIndex = Math.max(currentIndex - 1, 0);
+            }
+            
+            if (newIndex !== currentIndex) {
+                tabsList[newIndex].click();
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

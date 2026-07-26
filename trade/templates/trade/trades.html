@@ -1,0 +1,892 @@
+{% extends 'trade/base/base.html' %}
+{% load static %}
+
+{% block title %}Trade History{% endblock %}
+
+{% block page_title %}Trade History{% endblock %}
+{% block breadcrumb %}Trade History{% endblock %}
+
+{% block body %}
+<style>
+:root {
+    --bg-primary: #0a0f1c;
+    --bg-secondary: #111827;
+    --bg-tertiary: #1a2332;
+    --text-primary: #f3f4f6;
+    --text-secondary: #9ca3af;
+    --text-muted: #6b7280;
+    --border: #2d3748;
+    --primary: #10b981;
+    --primary-soft: rgba(16, 185, 129, 0.12);
+    --success: #34d399;
+    --success-soft: rgba(52, 211, 153, 0.12);
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.12);
+    --info: #60a5fa;
+    --info-soft: rgba(96, 165, 250, 0.12);
+    --warning: #fbbf24;
+    --warning-soft: rgba(251, 191, 36, 0.12);
+    --purple: #c084fc;
+    --purple-soft: rgba(192, 132, 252, 0.12);
+    
+    /* Neumorphism shadows */
+    --neu-shadow: 8px 8px 16px rgba(0,0,0,0.6), -8px -8px 16px rgba(30, 40, 60, 0.15);
+    --neu-shadow-inset: inset 4px 4px 8px rgba(0,0,0,0.6), inset -4px -4px 8px rgba(30, 40, 60, 0.15);
+    --neu-shadow-sm: 4px 4px 8px rgba(0,0,0,0.5), -4px -4px 8px rgba(30, 40, 60, 0.1);
+    --neu-shadow-hover: 6px 6px 14px rgba(0,0,0,0.7), -6px -6px 14px rgba(30, 40, 60, 0.2);
+}
+
+/* ===== COMPACT LAYOUT ===== */
+.history-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 16px;
+}
+
+/* ===== HEADER ===== */
+.history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.header-left h1 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.header-left h1 i {
+    color: var(--primary);
+}
+
+.header-stats {
+    display: flex;
+    gap: 10px;
+}
+
+.stat-pill {
+    background: var(--bg-tertiary);
+    border-radius: 30px;
+    padding: 6px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    box-shadow: var(--neu-shadow-sm);
+    border: 1px solid rgba(255,255,255,0.03);
+}
+
+.stat-pill i {
+    color: var(--primary);
+    font-size: 13px;
+}
+
+.stat-pill .stat-label {
+    color: var(--text-muted);
+}
+
+.stat-pill .stat-value {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* ===== FILTER BAR ===== */
+.filter-bar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    background: var(--bg-tertiary);
+    padding: 4px 6px;
+    border-radius: 30px;
+    box-shadow: var(--neu-shadow-sm);
+    border: 1px solid rgba(255,255,255,0.03);
+}
+
+.filter-group .filter-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 0 8px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.filter-btn {
+    background: transparent;
+    border: none;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filter-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255,255,255,0.05);
+}
+
+.filter-btn.active {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.filter-search {
+    background: var(--bg-tertiary);
+    border: none;
+    padding: 6px 14px;
+    border-radius: 20px;
+    color: var(--text-primary);
+    font-size: 12px;
+    width: 180px;
+    outline: none;
+    box-shadow: var(--neu-shadow-sm);
+    border: 1px solid rgba(255,255,255,0.03);
+    transition: all 0.2s ease;
+}
+
+.filter-search:focus {
+    border-color: var(--primary);
+    box-shadow: var(--neu-shadow-sm), 0 0 0 2px rgba(16, 185, 129, 0.15);
+}
+
+.filter-search::placeholder {
+    color: var(--text-muted);
+}
+
+/* ===== TABLE - NEUMORPHISM STYLE ===== */
+.table-wrapper {
+    background: var(--bg-tertiary);
+    border-radius: 16px;
+    padding: 4px;
+    box-shadow: var(--neu-shadow);
+    border: 1px solid rgba(255,255,255,0.03);
+    overflow: hidden;
+}
+
+.table-scroll {
+    overflow-x: auto;
+    padding: 2px;
+}
+
+.compact-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    min-width: 1100px;
+}
+
+.compact-table thead th {
+    background: var(--bg-secondary);
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+}
+
+.compact-table tbody tr {
+    transition: all 0.15s ease;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+.compact-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.compact-table tbody tr:hover {
+    background: rgba(255,255,255,0.03);
+}
+
+.compact-table tbody td {
+    padding: 8px 12px;
+    vertical-align: middle;
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+/* ===== COMPACT BADGES ===== */
+.badge-sm {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.badge-id {
+    background: var(--bg-secondary);
+    color: var(--text-muted);
+    font-family: monospace;
+    font-size: 11px;
+    padding: 2px 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.badge-pair {
+    background: var(--primary-soft);
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.badge-buy {
+    background: var(--success-soft);
+    color: var(--success);
+}
+
+.badge-sell {
+    background: var(--danger-soft);
+    color: var(--danger);
+}
+
+.badge-win {
+    background: var(--success-soft);
+    color: var(--success);
+}
+
+.badge-loss {
+    background: var(--danger-soft);
+    color: var(--danger);
+}
+
+.badge-type {
+    background: var(--info-soft);
+    color: var(--info);
+}
+
+.badge-reason {
+    background: var(--warning-soft);
+    color: var(--warning);
+    font-size: 10px;
+    padding: 1px 8px;
+}
+
+.badge-account {
+    background: var(--purple-soft);
+    color: var(--purple);
+    font-size: 10px;
+    padding: 1px 8px;
+}
+
+/* ===== COMPACT CELLS ===== */
+.time-cell {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.3;
+}
+
+.time-cell .date {
+    color: var(--text-primary);
+    font-size: 11px;
+}
+
+.time-cell .time {
+    color: var(--text-muted);
+    font-size: 10px;
+}
+
+.rr-value {
+    font-weight: 600;
+}
+
+.rr-value.positive {
+    color: var(--success);
+}
+
+.rr-value.negative {
+    color: var(--danger);
+}
+
+.rr-value.zero {
+    color: var(--text-muted);
+}
+
+/* ===== ACTIONS ===== */
+.action-group {
+    display: flex;
+    gap: 4px;
+}
+
+.action-btn {
+    background: var(--bg-secondary);
+    border: none;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: var(--neu-shadow-sm);
+}
+
+.action-btn:hover {
+    color: var(--text-primary);
+    transform: translateY(-1px);
+    box-shadow: var(--neu-shadow-hover);
+}
+
+.action-btn.edit:hover {
+    color: var(--primary);
+}
+
+.action-btn.delete:hover {
+    color: var(--danger);
+}
+
+/* ===== EMPTY STATE ===== */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    background: var(--bg-tertiary);
+    border-radius: 16px;
+    box-shadow: var(--neu-shadow);
+    border: 1px solid rgba(255,255,255,0.03);
+}
+
+.empty-icon {
+    font-size: 48px;
+    opacity: 0.5;
+    margin-bottom: 12px;
+    display: block;
+}
+
+.empty-state h3 {
+    color: var(--text-primary);
+    font-size: 18px;
+    margin-bottom: 6px;
+}
+
+.empty-state p {
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .history-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .header-left h1 {
+        font-size: 17px;
+    }
+
+    .header-stats {
+        flex-wrap: wrap;
+    }
+
+    .stat-pill {
+        font-size: 11px;
+        padding: 4px 12px;
+    }
+
+    .filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-group {
+        flex-wrap: wrap;
+        padding: 6px 8px;
+        border-radius: 16px;
+        justify-content: center;
+    }
+
+    .filter-search {
+        width: 100%;
+    }
+
+    /* Mobile card view */
+    .compact-table {
+        display: none;
+    }
+
+    .mobile-cards {
+        display: flex !important;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .mobile-trade-card {
+        background: var(--bg-tertiary);
+        border-radius: 14px;
+        padding: 12px 14px;
+        box-shadow: var(--neu-shadow-sm);
+        border: 1px solid rgba(255,255,255,0.03);
+        transition: all 0.2s ease;
+    }
+
+    .mobile-trade-card:hover {
+        box-shadow: var(--neu-shadow-hover);
+    }
+
+    .mobile-trade-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 3px 0;
+        font-size: 12px;
+    }
+
+    .mobile-trade-row .label {
+        color: var(--text-muted);
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .mobile-trade-row .value {
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+
+    .mobile-trade-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .mobile-trade-header .pair {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .mobile-actions {
+        display: flex;
+        gap: 6px;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .mobile-actions .action-btn {
+        flex: 1;
+        justify-content: center;
+        padding: 6px 12px;
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 480px) {
+    .history-container {
+        padding: 0 10px;
+    }
+
+    .header-stats {
+        gap: 6px;
+    }
+
+    .stat-pill {
+        font-size: 10px;
+        padding: 3px 10px;
+    }
+
+    .stat-pill .stat-label {
+        display: none;
+    }
+}
+
+/* ===== SCROLLBAR ===== */
+.table-scroll::-webkit-scrollbar {
+    height: 4px;
+}
+
+.table-scroll::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 4px;
+}
+
+.table-scroll::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+}
+
+.table-scroll::-webkit-scrollbar-thumb:hover {
+    background: var(--primary);
+}
+
+/* ===== TOOLTIP ===== */
+.hover-tip {
+    position: relative;
+    cursor: help;
+}
+
+.hover-tip:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    white-space: nowrap;
+    box-shadow: var(--neu-shadow);
+    z-index: 10;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+</style>
+
+<!-- ===== HISTORY CONTAINER ===== -->
+<div class="history-container">
+
+    <!-- ===== HEADER ===== -->
+    <div class="history-header">
+        <div class="header-left">
+            <h1><i class="fas fa-history"></i> History</h1>
+        </div>
+        <div class="header-stats">
+            <div class="stat-pill">
+                <i class="fas fa-chart-line"></i>
+                <span class="stat-label">Total</span>
+                <span class="stat-value">{{ trades|length }}</span>
+            </div>
+            {% if win_rate %}
+            <div class="stat-pill">
+                <i class="fas fa-trophy"></i>
+                <span class="stat-label">Win Rate</span>
+                <span class="stat-value" style="color:var(--success);">{{ win_rate }}%</span>
+            </div>
+            {% endif %}
+            <div class="stat-pill">
+                <i class="fas fa-clock"></i>
+                <span class="stat-label">Avg Hold</span>
+                <span class="stat-value">{{ avg_holding_time|default:"0m" }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== FILTER BAR ===== -->
+    <div class="filter-bar">
+        <div class="filter-group">
+            <span class="filter-label"><i class="fas fa-filter"></i></span>
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="win">🏆 Wins</button>
+            <button class="filter-btn" data-filter="loss">💔 Losses</button>
+            <button class="filter-btn" data-filter="buy">🟢 Buy</button>
+            <button class="filter-btn" data-filter="sell">🔴 Sell</button>
+        </div>
+        <input type="text" class="filter-search" id="searchInput" placeholder="🔍 Search pair or ID...">
+    </div>
+
+    {% if trades %}
+    <!-- ===== TABLE ===== -->
+    <div class="table-wrapper">
+        <div class="table-scroll">
+            <table class="compact-table" id="tradesTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Pair</th>
+                        <th>Dir</th>
+                        <th>Type</th>
+                        <th>Result</th>
+                        <th>RR</th>
+                        <th>Executed</th>
+                        <th>Held</th>
+                        <th>Reason</th>
+                        <th style="text-align:right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for trade in trades %}
+                    <tr data-direction="{{ trade.buy_or_sell|lower }}" data-result="{% if trade.target == 1 %}win{% elif trade.target == 0 %}loss{% endif %}">
+                        <td><span class="badge-id">#{{ trade.trade_id }}</span></td>
+                        <td><span class="badge-sm badge-pair">{{ trade.pair }}</span></td>
+                        <td><span class="badge-sm {% if trade.buy_or_sell == 'Buy' or trade.buy_or_sell == 'BUY' %}badge-buy{% else %}badge-sell{% endif %}">{{ trade.buy_or_sell }}</span></td>
+                        <td><span class="badge-sm badge-type">{{ trade.trade_type|truncatechars:12 }}</span></td>
+                        <td>
+                            {% if trade.target == 1 %}
+                            <span class="badge-sm badge-win">🏆 Win</span>
+                            {% elif trade.target == 0 %}
+                            <span class="badge-sm badge-loss">💔 Loss</span>
+                            {% else %}
+                            <span class="badge-sm" style="background:var(--bg-secondary);color:var(--text-muted);">⏳ Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if trade.risk_reward %}
+                                {% if trade.target == 1 %}
+                                <span class="rr-value positive">+{{ trade.risk_reward|floatformat:1 }}R</span>
+                                {% elif trade.target == 0 %}
+                                <span class="rr-value negative">-1R</span>
+                                {% else %}
+                                <span class="rr-value zero">{{ trade.risk_reward|floatformat:1 }}R</span>
+                                {% endif %}
+                            {% else %}
+                            <span class="rr-value zero">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="time-cell">
+                                <span class="date">{{ trade.timestamp|date:"m/d/Y" }}</span>
+                                <span class="time">{{ trade.timestamp|date:"H:i" }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="time-cell">
+                                <span class="date">{{ trade.holding_time_display|default:"—" }}</span>
+                                <span class="time">{{ trade.timestamp|timesince|truncatechars:12 }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            {% if trade.reason %}
+                            <span class="badge-sm badge-reason">{{ trade.reason|truncatechars:15 }}</span>
+                            {% else %}
+                            <span class="badge-sm" style="background:var(--bg-secondary);color:var(--text-muted);">—</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align:right;">
+                            <div class="action-group" style="justify-content:flex-end;">
+                                <a href="{% url 'update_trade' trade.trade_id %}" class="action-btn edit" title="Journal">
+                                    <i class="fas fa-pen"></i>
+                                </a>
+                                <a href="{% url 'delete_trade_confirm' trade.trade_id %}" class="action-btn delete" title="Delete">
+                                    <i class="fas fa-trash-alt"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ===== MOBILE CARDS ===== -->
+    <div class="mobile-cards" style="display:none;">
+        {% for trade in trades %}
+        <div class="mobile-trade-card" data-direction="{{ trade.buy_or_sell|lower }}" data-result="{% if trade.target == 1 %}win{% elif trade.target == 0 %}loss{% endif %}">
+            <div class="mobile-trade-header">
+                <span class="pair">{{ trade.pair }}</span>
+                <div style="display:flex;gap:6px;align-items:center;">
+                    <span class="badge-sm {% if trade.buy_or_sell == 'Buy' or trade.buy_or_sell == 'BUY' %}badge-buy{% else %}badge-sell{% endif %}">{{ trade.buy_or_sell }}</span>
+                    {% if trade.target == 1 %}
+                    <span class="badge-sm badge-win">🏆</span>
+                    {% elif trade.target == 0 %}
+                    <span class="badge-sm badge-loss">💔</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="mobile-trade-row">
+                <span class="label">ID</span>
+                <span class="value">#{{ trade.trade_id }}</span>
+            </div>
+            <div class="mobile-trade-row">
+                <span class="label">Type</span>
+                <span class="value">{{ trade.trade_type|default:"—" }}</span>
+            </div>
+            <div class="mobile-trade-row">
+                <span class="label">RR</span>
+                <span class="value">
+                    {% if trade.risk_reward %}
+                        {% if trade.target == 1 %}
+                        <span style="color:var(--success);">+{{ trade.risk_reward|floatformat:1 }}R</span>
+                        {% elif trade.target == 0 %}
+                        <span style="color:var(--danger);">-1R</span>
+                        {% else %}
+                        {{ trade.risk_reward|floatformat:1 }}R
+                        {% endif %}
+                    {% else %}
+                    —
+                    {% endif %}
+                </span>
+            </div>
+            <div class="mobile-trade-row">
+                <span class="label">Executed</span>
+                <span class="value">{{ trade.timestamp|date:"m/d/Y H:i" }}</span>
+            </div>
+            <div class="mobile-trade-row">
+                <span class="label">Held</span>
+                <span class="value">{{ trade.holding_time_display|default:"—" }}</span>
+            </div>
+            {% if trade.reason %}
+            <div class="mobile-trade-row">
+                <span class="label">Reason</span>
+                <span class="value"><span class="badge-sm badge-reason">{{ trade.reason }}</span></span>
+            </div>
+            {% endif %}
+            <div class="mobile-actions">
+                <a href="{% url 'update_trade' trade.trade_id %}" class="action-btn edit"><i class="fas fa-pen"></i> Journal</a>
+                <a href="{% url 'delete_trade_confirm' trade.trade_id %}" class="action-btn delete"><i class="fas fa-trash-alt"></i> Delete</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <!-- ===== EMPTY STATE ===== -->
+    <div class="empty-state">
+        <span class="empty-icon">📊</span>
+        <h3>No Trades Yet</h3>
+        <p>Start your trading journey by adding your first trade.</p>
+        <a href="{% url 'trade' %}" style="display:inline-block;margin-top:16px;padding:10px 28px;background:var(--primary);color:white;border-radius:30px;text-decoration:none;font-weight:600;box-shadow:0 4px 16px rgba(16,185,129,0.3);">
+            <i class="fas fa-plus"></i> New Trade
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // ===== FILTER FUNCTIONALITY =====
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const searchInput = document.getElementById('searchInput');
+    const rows = document.querySelectorAll('#tradesTable tbody tr');
+    const mobileCards = document.querySelectorAll('.mobile-trade-card');
+
+    function filterTable() {
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        const activeFilter = document.querySelector('.filter-btn.active');
+        const filter = activeFilter ? activeFilter.dataset.filter : 'all';
+
+        rows.forEach(row => {
+            let show = true;
+
+            // Filter by type
+            if (filter !== 'all') {
+                const result = row.dataset.result;
+                const direction = row.dataset.direction;
+                
+                if (filter === 'win' && result !== 'win') show = false;
+                else if (filter === 'loss' && result !== 'loss') show = false;
+                else if (filter === 'buy' && direction !== 'buy') show = false;
+                else if (filter === 'sell' && direction !== 'sell') show = false;
+            }
+
+            // Search filter
+            if (show && searchTerm) {
+                const text = row.textContent.toLowerCase();
+                if (!text.includes(searchTerm)) show = false;
+            }
+
+            row.style.display = show ? '' : 'none';
+        });
+
+        // Filter mobile cards
+        mobileCards.forEach(card => {
+            let show = true;
+
+            if (filter !== 'all') {
+                const result = card.dataset.result;
+                const direction = card.dataset.direction;
+                
+                if (filter === 'win' && result !== 'win') show = false;
+                else if (filter === 'loss' && result !== 'loss') show = false;
+                else if (filter === 'buy' && direction !== 'buy') show = false;
+                else if (filter === 'sell' && direction !== 'sell') show = false;
+            }
+
+            if (show && searchTerm) {
+                const text = card.textContent.toLowerCase();
+                if (!text.includes(searchTerm)) show = false;
+            }
+
+            card.style.display = show ? '' : 'none';
+        });
+    }
+
+    // Filter button clicks
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            filterBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            filterTable();
+        });
+    });
+
+    // Search input
+    searchInput.addEventListener('input', filterTable);
+
+    // ===== MOBILE DETECTION =====
+    function handleMobileView() {
+        const isMobile = window.innerWidth <= 768;
+        const table = document.querySelector('.compact-table');
+        const mobileCards = document.querySelector('.mobile-cards');
+
+        if (table && mobileCards) {
+            if (isMobile) {
+                table.style.display = 'none';
+                mobileCards.style.display = 'flex';
+            } else {
+                table.style.display = '';
+                mobileCards.style.display = 'none';
+            }
+        }
+    }
+
+    handleMobileView();
+    window.addEventListener('resize', handleMobileView);
+
+    // ===== EXPORT CSV =====
+    document.querySelector('.action-btn.export')?.addEventListener('click', function() {
+        const rows = document.querySelectorAll('#tradesTable tbody tr');
+        let csv = 'ID,Pair,Direction,Type,Result,RR,Date,Time,Reason\n';
+        
+        rows.forEach(row => {
+            if (row.style.display !== 'none') {
+                const cells = row.querySelectorAll('td');
+                const data = [];
+                cells.forEach(cell => {
+                    let text = cell.textContent.trim().replace(/,/g, '');
+                    data.push(`"${text}"`);
+                });
+                csv += data.join(',') + '\n';
+            }
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'trade_history.csv';
+        a.click();
+    });
+});
+</script>
+{% endblock %}

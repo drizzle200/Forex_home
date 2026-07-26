@@ -1,0 +1,1313 @@
+{% extends 'trade/base/base.html' %}
+{% load static %}
+
+{% block title %}Home | Trading Dashboard{% endblock %}
+
+{% block page_title %}Trading Dashboard{% endblock %}
+{% block breadcrumb %}Home{% endblock %}
+
+{% block body %}
+<style>
+:root {
+    --bg-primary: #0a0f1c;
+    --bg-secondary: #111827;
+    --bg-tertiary: #1a2332;
+    --text-primary: #f3f4f6;
+    --text-secondary: #9ca3af;
+    --text-muted: #6b7280;
+    --border: #2d3748;
+    --primary: #10b981;
+    --primary-soft: rgba(16, 185, 129, 0.08);
+    --success: #34d399;
+    --success-soft: rgba(52, 211, 153, 0.10);
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.10);
+    --info: #60a5fa;
+    --info-soft: rgba(96, 165, 250, 0.10);
+    --warning: #fbbf24;
+    --warning-soft: rgba(251, 191, 36, 0.10);
+    --purple: #c084fc;
+    --purple-soft: rgba(192, 132, 252, 0.10);
+    
+    /* Neumorphism shadows - SOFT */
+    --neu-shadow: 6px 6px 14px rgba(0,0,0,0.5), -6px -6px 14px rgba(30, 40, 60, 0.10);
+    --neu-shadow-inset: inset 3px 3px 6px rgba(0,0,0,0.5), inset -3px -3px 6px rgba(30, 40, 60, 0.08);
+    --neu-shadow-sm: 3px 3px 8px rgba(0,0,0,0.4), -3px -3px 8px rgba(30, 40, 60, 0.08);
+    --neu-shadow-hover: 8px 8px 18px rgba(0,0,0,0.6), -8px -8px 18px rgba(30, 40, 60, 0.15);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Inter', system-ui, sans-serif;
+    min-height: 100vh;
+}
+
+/* ===== OVERRIDE BASE CARD HOVER ===== */
+.card:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: var(--neu-shadow-hover) !important;
+    border-color: transparent !important;
+}
+
+.card::before {
+    display: none !important;
+}
+
+/* ===== LAYOUT ===== */
+.dashboard-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 16px;
+}
+
+/* ===== WELCOME SECTION ===== */
+.welcome-section {
+    background: var(--bg-tertiary);
+    border-radius: 14px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    box-shadow: var(--neu-shadow);
+    border: 1px solid transparent;
+    transition: all 0.25s ease;
+}
+
+.welcome-section:hover {
+    box-shadow: var(--neu-shadow-hover);
+    border-color: transparent;
+}
+
+.welcome-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.welcome-text h1 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.welcome-text h1 span {
+    background: linear-gradient(135deg, var(--primary), var(--purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.welcome-text p {
+    color: var(--text-muted);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.quote-card {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 12px 18px;
+    max-width: 420px;
+    min-width: 240px;
+    box-shadow: var(--neu-shadow-inset);
+}
+
+.quote-text {
+    font-size: 14px;
+    font-style: italic;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.quote-author {
+    color: var(--primary);
+    font-weight: 600;
+    text-align: right;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.severity-container {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255,255,255,0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.severity-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.severity-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--bg-tertiary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: var(--neu-shadow-sm);
+}
+
+.severity-badge:hover {
+    transform: scale(1.02);
+    box-shadow: var(--neu-shadow-hover);
+}
+
+.severity-badge.critical { background: rgba(239,68,68,0.15); color: #ef4444; }
+.severity-badge.serious { background: rgba(245,158,11,0.15); color: #f59e0b; }
+.severity-badge.poor { background: rgba(245,158,11,0.15); color: #f59e0b; }
+.severity-badge.below_average { background: rgba(59,130,246,0.15); color: #3b82f6; }
+.severity-badge.good { background: rgba(34,197,94,0.15); color: #22c55e; }
+.severity-badge.excellent { background: rgba(168,85,247,0.15); color: #a855f7; }
+.severity-badge.new_user { background: rgba(59,130,246,0.15); color: #3b82f6; }
+.severity-badge.insufficient_data { background: rgba(251,191,36,0.15); color: #fbbf24; }
+
+/* ===== BLINKING LIGHT ===== */
+.blinking-light {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: blink 1.5s infinite;
+    box-shadow: 0 0 6px currentColor;
+}
+.red-light { background: #ef4444; color: #ef4444; }
+.orange-light { background: #f59e0b; color: #f59e0b; }
+.yellow-light { background: #fbbf24; color: #fbbf24; }
+.blue-light { background: #3b82f6; color: #3b82f6; }
+.green-light { background: #22c55e; color: #22c55e; }
+.purple-light { background: #a855f7; color: #a855f7; }
+.gray-light { background: #94a3b8; color: #94a3b8; }
+
+@keyframes blink {
+    0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 6px currentColor; }
+    50% { opacity: 0.4; transform: scale(0.9); box-shadow: 0 0 3px currentColor; }
+}
+
+/* ===== STATS GRID ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.stat-card {
+    background: var(--bg-tertiary);
+    border-radius: 14px;
+    padding: 14px 16px;
+    box-shadow: var(--neu-shadow-sm);
+    border: 1px solid transparent;
+    transition: all 0.25s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--neu-shadow-hover);
+    border-color: transparent;
+}
+
+.stat-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.stat-icon {
+    width: 34px;
+    height: 34px;
+    background: var(--primary-soft);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: var(--primary);
+    flex-shrink: 0;
+}
+
+.stat-title {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.stat-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 2px 0;
+}
+.stat-value.positive { color: var(--success); }
+.stat-value.negative { color: var(--danger); }
+.stat-value.text-blue { color: var(--info); }
+
+.stat-trend {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    color: var(--text-muted);
+}
+.trend-up { color: var(--success); }
+.trend-down { color: var(--danger); }
+.trend-neutral { color: var(--text-muted); }
+
+/* ===== SESSION CARD ===== */
+.session-card {
+    background: var(--bg-tertiary);
+    border-radius: 14px;
+    padding: 14px 18px;
+    box-shadow: var(--neu-shadow-sm);
+    border: 1px solid transparent;
+    transition: all 0.25s ease;
+    margin-bottom: 14px;
+}
+
+.session-card:hover {
+    box-shadow: var(--neu-shadow-hover);
+    border-color: transparent;
+    transform: translateY(-2px);
+}
+
+.session-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.session-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--primary-soft);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: var(--primary);
+    flex-shrink: 0;
+}
+
+.session-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.session-mini-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 8px;
+}
+
+.session-mini-item {
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: var(--neu-shadow-inset);
+}
+
+.session-mini-item .mini-icon {
+    width: 28px;
+    height: 28px;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: var(--primary);
+    flex-shrink: 0;
+}
+
+.session-mini-item .mini-label {
+    font-size: 8px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.session-mini-item .mini-value {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* ===== MOOD SECTION ===== */
+.mood-section {
+    background: var(--bg-tertiary);
+    border-radius: 14px;
+    padding: 14px 18px;
+    box-shadow: var(--neu-shadow-sm);
+    border: 1px solid transparent;
+    transition: all 0.25s ease;
+    margin-bottom: 14px;
+}
+
+.mood-section:hover {
+    box-shadow: var(--neu-shadow-hover);
+    border-color: transparent;
+}
+
+.mood-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.mood-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--warning-soft);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: var(--warning);
+}
+
+.mood-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.mood-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+}
+
+.mood-option {
+    background: var(--bg-secondary);
+    border: 1px solid transparent;
+    border-radius: 10px;
+    padding: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: var(--neu-shadow-inset);
+}
+
+.mood-option:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+}
+
+.mood-option.selected {
+    background: var(--primary-soft);
+    border-color: var(--primary);
+}
+
+.mood-emoji {
+    font-size: 22px;
+    margin-bottom: 2px;
+}
+
+.mood-label {
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+.mood-option.selected .mood-label {
+    color: var(--primary);
+}
+
+/* ===== MOOD RESPONSE ===== */
+.mood-response {
+    margin-top: 12px;
+    margin-bottom: 12px;
+}
+
+.mood-selected-card {
+    background: var(--bg-tertiary);
+    border-radius: 14px;
+    padding: 14px 18px;
+    border: 1px solid var(--primary);
+    box-shadow: var(--neu-shadow);
+    animation: fadeIn 0.3s ease;
+}
+
+.selected-mood-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.selected-mood-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-secondary);
+    padding: 6px 16px;
+    border-radius: 30px;
+    border: 2px solid var(--primary);
+    box-shadow: var(--neu-shadow-inset);
+}
+
+.large-emoji { font-size: 28px; }
+.selected-mood-name { font-size: 16px; font-weight: 700; color: var(--text-primary); text-transform: capitalize; }
+
+.mood-message-card {
+    background: rgba(16,185,129,0.05);
+    border-left: 3px solid var(--primary);
+    border-radius: 10px;
+    padding: 10px 14px;
+    width: 100%;
+    text-align: center;
+}
+
+.mood-message-card p {
+    color: var(--text-secondary);
+    font-size: 13px;
+    margin-bottom: 4px;
+}
+
+.mood-message-card span {
+    display: inline-block;
+    background: rgba(16,185,129,0.10);
+    color: var(--primary);
+    padding: 2px 14px;
+    border-radius: 20px;
+    font-weight: 500;
+    font-size: 11px;
+}
+
+.streak-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-secondary);
+    padding: 6px 16px;
+    border-radius: 30px;
+    box-shadow: var(--neu-shadow-inset);
+}
+
+.streak-icon { font-size: 20px; }
+.streak-value { font-size: 20px; font-weight: 700; color: var(--warning); line-height: 1; }
+.streak-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; }
+
+.comeback-message {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-muted);
+    font-size: 11px;
+    padding-top: 8px;
+    border-top: 1px dashed rgba(255,255,255,0.04);
+    width: 100%;
+    justify-content: center;
+}
+
+/* ===== NEWS SECTION ===== */
+.news-section {
+    background: var(--bg-tertiary);
+    border-radius: 14px;
+    padding: 12px 16px;
+    box-shadow: var(--neu-shadow-sm);
+    border: 1px solid transparent;
+    transition: all 0.25s ease;
+    margin-bottom: 14px;
+}
+
+.news-section:hover {
+    box-shadow: var(--neu-shadow-hover);
+    border-color: transparent;
+}
+
+.news-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.news-icon {
+    width: 28px;
+    height: 28px;
+    background: var(--info-soft);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: var(--info);
+}
+
+.news-header h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.news-container {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    padding: 4px 10px;
+    min-height: 36px;
+    box-shadow: var(--neu-shadow-inset);
+}
+
+.hot-badge {
+    background: linear-gradient(135deg, var(--danger), #dc2626);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(239,68,68,0.3);
+    animation: hotPulse 2s infinite;
+}
+
+@keyframes hotPulse {
+    0% { box-shadow: 0 2px 8px rgba(239,68,68,0.3); }
+    50% { box-shadow: 0 2px 14px rgba(239,68,68,0.5); }
+    100% { box-shadow: 0 2px 8px rgba(239,68,68,0.3); }
+}
+
+.news-ticker-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+}
+
+.news-ticker-wrapper::after {
+    content: '';
+    position: absolute;
+    right: 0; top: 0; height: 100%; width: 30px;
+    background: linear-gradient(90deg, transparent, var(--bg-secondary));
+    pointer-events: none;
+    z-index: 2;
+}
+
+.news-ticker-content {
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 400;
+    white-space: nowrap;
+    animation: tickerSlide 25s linear infinite;
+    padding-right: 16px;
+}
+
+.news-ticker-content:hover { animation-play-state: paused; }
+
+@keyframes tickerSlide {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+
+/* ===== ALERT SECTION ===== */
+.alert-section {
+    background: rgba(248,113,113,0.08);
+    border: 1px solid rgba(248,113,113,0.15);
+    border-radius: 14px;
+    padding: 12px 16px;
+    margin-bottom: 14px;
+}
+
+.alert-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.alert-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--danger-soft);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: var(--danger);
+    flex-shrink: 0;
+}
+
+.alert-text { flex: 1; }
+.alert-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 1px; }
+.alert-description { color: var(--text-muted); font-size: 12px; }
+.alert-badge {
+    background: var(--danger-soft);
+    color: var(--danger);
+    padding: 2px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* ===== QUICK ACTIONS ===== */
+.quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.quick-action-btn {
+    background: var(--bg-tertiary);
+    border: 1px solid transparent;
+    border-radius: 14px;
+    padding: 12px 14px;
+    text-decoration: none;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.25s ease;
+    box-shadow: var(--neu-shadow-sm);
+}
+
+.quick-action-btn:hover {
+    border-color: transparent;
+    transform: translateY(-3px);
+    box-shadow: var(--neu-shadow-hover);
+}
+
+.quick-action-icon {
+    width: 34px;
+    height: 34px;
+    background: var(--primary-soft);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: var(--primary);
+    flex-shrink: 0;
+}
+
+.quick-action-text { flex: 1; }
+.quick-action-title { font-size: 13px; font-weight: 600; margin-bottom: 1px; }
+.quick-action-subtitle { font-size: 10px; color: var(--text-muted); }
+
+.quick-action-btn i.fa-chevron-right {
+    color: var(--primary);
+    font-size: 12px;
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+}
+
+.quick-action-btn:hover i.fa-chevron-right {
+    opacity: 1;
+}
+
+/* ===== MODAL ===== */
+#performanceModal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+}
+
+#performanceModal > div {
+    background: var(--bg-tertiary);
+    border-radius: 16px;
+    max-width: 700px;
+    width: 90%;
+    max-height: 85vh;
+    overflow-y: auto;
+    border: 1px solid transparent;
+    box-shadow: var(--neu-shadow-hover);
+}
+
+#performanceModal > div > div:first-child {
+    padding: 14px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#performanceModal > div > div:first-child h3 {
+    color: var(--text-primary);
+    margin: 0;
+    font-size: 16px;
+}
+
+#performanceModal > div > div:first-child button {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 22px;
+    cursor: pointer;
+    padding: 0 8px;
+    transition: color 0.2s ease;
+}
+
+#performanceModal > div > div:first-child button:hover {
+    color: var(--text-primary);
+}
+
+#modalIssuesList {
+    padding: 16px 20px;
+}
+
+#performanceModal > div > div:last-child {
+    padding: 10px 20px;
+    border-top: 1px solid rgba(255,255,255,0.04);
+    text-align: right;
+}
+
+#performanceModal > div > div:last-child button {
+    background: var(--primary);
+    border: none;
+    color: white;
+    padding: 6px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    transition: all 0.2s ease;
+}
+
+#performanceModal > div > div:last-child button:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--neu-shadow-hover);
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes confetti {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .quick-actions-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+    .dashboard-container { padding: 0 10px; }
+    
+    .welcome-section { padding: 14px 16px; }
+    .welcome-text h1 { font-size: 17px; }
+    .quote-card { max-width: 100%; min-width: auto; padding: 10px 14px; }
+    .quote-text { font-size: 13px; }
+    
+    .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .stat-card { padding: 10px 12px; }
+    .stat-value { font-size: 18px; }
+    
+    .mood-grid { grid-template-columns: repeat(2, 1fr); }
+    .quick-actions-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .quick-action-btn { padding: 10px 12px; }
+    
+    .session-mini-grid { grid-template-columns: 1fr 1fr; }
+    .news-container { flex-direction: column; align-items: flex-start; padding: 8px 12px; }
+    .hot-badge { width: fit-content; }
+    .news-ticker-wrapper { width: 100%; padding: 4px 0; }
+    .alert-content { flex-direction: column; text-align: center; }
+    
+    .selected-mood-badge { padding: 6px 12px; }
+    .large-emoji { font-size: 24px; }
+    .selected-mood-name { font-size: 15px; }
+}
+
+@media (max-width: 480px) {
+    .stats-grid { grid-template-columns: 1fr; }
+    .quick-actions-grid { grid-template-columns: 1fr; }
+    .session-mini-grid { grid-template-columns: 1fr; }
+    .mood-grid { grid-template-columns: repeat(2, 1fr); }
+    .stat-card { padding: 8px 10px; }
+    .stat-value { font-size: 16px; }
+}
+</style>
+
+<!-- ===== DASHBOARD CONTAINER ===== -->
+<div class="dashboard-container">
+
+    <!-- ===== WELCOME SECTION ===== -->
+    <div class="welcome-section card">
+        <div class="welcome-content">
+            <div class="welcome-text">
+                <h1>Hi, <span>{{ user.first_name|default:user.username }}</span> 👋</h1>
+                <p><i class="fas fa-calendar"></i> {{ current_date|default:"today" }}</p>
+            </div>
+            <div class="quote-card">
+                <div class="quote-text">"{{ advice.quote }}"</div>
+                {% if advice.author %}<div class="quote-author">— {{ advice.author }}</div>{% endif %}
+                <div class="severity-container">
+                    <span class="severity-label">Performance Status:</span>
+                    <div class="severity-badge {{ severity|default:'good' }}" onclick="showPerformanceIssues()">
+                        <span class="blinking-light {{ severity_light|default:'green-light' }}"></span>
+                        {{ severity_display|default:severity|capfirst }}
+                        <i class="fas fa-info-circle" style="font-size:10px; opacity:0.6;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MOOD SECTION ===== -->
+    <div class="mood-section" id="moodSection" {% if mood_selected_today %}style="display:none;"{% endif %}>
+        <div class="mood-header">
+            <div class="mood-icon">😊</div>
+            <h3>How are you feeling today?</h3>
+        </div>
+        <div class="mood-grid" id="moodGrid">
+            <div class="mood-option" data-mood="confident" onclick="selectMood('confident')"><div class="mood-emoji">😊</div><div class="mood-label">Confident</div></div>
+            <div class="mood-option" data-mood="cautious" onclick="selectMood('cautious')"><div class="mood-emoji">🤔</div><div class="mood-label">Cautious</div></div>
+            <div class="mood-option" data-mood="neutral" onclick="selectMood('neutral')"><div class="mood-emoji">😐</div><div class="mood-label">Neutral</div></div>
+            <div class="mood-option" data-mood="stressed" onclick="selectMood('stressed')"><div class="mood-emoji">😓</div><div class="mood-label">Stressed</div></div>
+            <div class="mood-option" data-mood="energetic" onclick="selectMood('energetic')"><div class="mood-emoji">⚡</div><div class="mood-label">Energetic</div></div>
+            <div class="mood-option" data-mood="tired" onclick="selectMood('tired')"><div class="mood-emoji">😴</div><div class="mood-label">Tired</div></div>
+            <div class="mood-option" data-mood="focused" onclick="selectMood('focused')"><div class="mood-emoji">🎯</div><div class="mood-label">Focused</div></div>
+            <div class="mood-option" data-mood="anxious" onclick="selectMood('anxious')"><div class="mood-emoji">😰</div><div class="mood-label">Anxious</div></div>
+        </div>
+    </div>
+
+    <!-- ===== MOOD RESPONSE ===== -->
+    <div class="mood-response" id="moodResponse" style="display:none;"></div>
+
+    <!-- ===== STATS GRID ===== -->
+    <div class="stats-grid">
+        <div class="stat-card card">
+            <div class="stat-header"><div class="stat-icon">📊</div><div class="stat-title">Today's P&L</div></div>
+            <div class="stat-value {% if todays_profit > 0 %}positive{% elif todays_profit < 0 %}negative{% endif %}">
+                {% if todays_profit > 0 %}+{% endif %}{{ todays_profit|floatformat:2|default:"0.00" }}
+            </div>
+            <div class="stat-trend">
+                <i class="fas {% if todays_profit > 0 %}fa-arrow-up trend-up{% elif todays_profit < 0 %}fa-arrow-down trend-down{% else %}fa-minus trend-neutral{% endif %}"></i>
+                vs yesterday ({{ yesterday_profit|floatformat:2|default:"0.00" }})
+            </div>
+        </div>
+        <div class="stat-card card">
+            <div class="stat-header"><div class="stat-icon">📈</div><div class="stat-title">Win Rate</div></div>
+            <div class="stat-value {% if overallwinrate >= 50 %}positive{% else %}negative{% endif %}">
+                {{ overallwinrate|floatformat:1|default:"0" }}%
+            </div>
+            <div class="stat-trend"><i class="fas fa-chart-line"></i> {{ total_trades|default:"0" }} total trades</div>
+        </div>
+        <div class="stat-card card">
+            <div class="stat-header"><div class="stat-icon">🎯</div><div class="stat-title">Total Trades</div></div>
+            <div class="stat-value">{{ total_trades|default:"0" }}</div>
+            <div class="stat-trend"><i class="fas fa-clock"></i> All time</div>
+        </div>
+        <div class="stat-card card">
+            <div class="stat-header"><div class="stat-icon">💰</div><div class="stat-title">Accumulated profit</div></div>
+            <div class="stat-value text-blue">{% if overall_profit > 0 %}+{% endif %}{{ overall_profit|floatformat:2|default:"0.00" }}</div>
+            <div class="stat-trend"><i class="fas fa-fire trend-up"></i> Since you started</div>
+        </div>
+    </div>
+
+    <!-- ===== TRADING SESSION ===== -->
+    <div class="session-card card">
+        <div class="session-header">
+            <div class="session-icon">{% if market_info.is_weekend %}🔒{% else %}{{ session_icon }}{% endif %}</div>
+            <h3>{% if market_info.is_weekend %}Market Status{% else %}Trading Session{% endif %}</h3>
+        </div>
+        <div class="session-mini-grid">
+            <div class="session-mini-item">
+                <div class="mini-icon"><i class="fas fa-clock"></i></div>
+                <div>
+                    <div class="mini-label">Session</div>
+                    <div class="mini-value">{{ trading_session|default:"Unknown" }}</div>
+                </div>
+            </div>
+            <div class="session-mini-item">
+                <div class="mini-icon"><i class="fas fa-map-pin"></i></div>
+                <div>
+                    <div class="mini-label">Your Time (EAT)</div>
+                    <div class="mini-value">{{ current_time_local|default:"--:--" }}</div>
+                </div>
+            </div>
+            <div class="session-mini-item">
+                <div class="mini-icon"><i class="fas fa-chart-line"></i></div>
+                <div>
+                    <div class="mini-label">Market Status</div>
+                    <div class="mini-value" style="color:{% if market_open %}var(--success){% else %}var(--danger){% endif %};">
+                        {{ market_info.market_status|default:"Unknown" }}
+                    </div>
+                </div>
+            </div>
+            {% if session_volatility and session_volatility != 'N/A' %}
+            <div class="session-mini-item">
+                <div class="mini-icon"><i class="fas fa-wave-square"></i></div>
+                <div>
+                    <div class="mini-label">Volatility</div>
+                    <div class="mini-value">{{ session_volatility }}</div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ===== NEWS SECTION ===== -->
+    <div class="news-section card">
+        <div class="news-header">
+            <div class="news-icon">📰</div>
+            <h3>Market News</h3>
+        </div>
+        <div class="news-container">
+            <span class="hot-badge">🔥 HOT</span>
+            <div class="news-ticker-wrapper">
+                <div class="news-ticker-content">{{ news_headline|default:"Fed maintains interest rates • EURUSD volatility expected • Oil prices surge • Bitcoin above $50k • Gold steady ahead of NFP" }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== ALERT SECTION ===== -->
+    {% if most_common_reason %}
+    <div class="alert-section">
+        <div class="alert-content">
+            <div class="alert-icon">⚠️</div>
+            <div class="alert-text">
+                <div class="alert-title">Watch Out!</div>
+                <div class="alert-description">Your most common loss reason is <strong>"{{ most_common_reason }}"</strong>. {{ reason_message }}</div>
+            </div>
+            <div class="alert-badge">{{ most_common_count }} times</div>
+        </div>
+    </div>
+    {% else %}
+    <div class="session-card card">
+        <div class="session-header">
+            <div class="session-icon" style="background:var(--success-soft);color:var(--success);">💪</div>
+            <h3>Discipline Reminder</h3>
+        </div>
+        <div style="font-size:13px;color:var(--text-secondary);padding:2px 0;">
+            <i class="fas fa-check-circle" style="color:var(--success);margin-right:6px;"></i> 
+            Discipline is key to profitability
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ===== QUICK ACTIONS ===== -->
+    <div class="quick-actions-grid">
+        <a href="{% url 'trade' %}" class="quick-action-btn card">
+            <div class="quick-action-icon">📝</div>
+            <div class="quick-action-text"><div class="quick-action-title">New Trade</div><div class="quick-action-subtitle">Record a trade</div></div>
+            <i class="fas fa-chevron-right"></i>
+        </a>
+        <a href="{% url 'journal' %}" class="quick-action-btn card">
+            <div class="quick-action-icon">📓</div>
+            <div class="quick-action-text"><div class="quick-action-title">Journal</div><div class="quick-action-subtitle">Pending trades</div></div>
+            <i class="fas fa-chevron-right"></i>
+        </a>
+        <a href="{% url 'performance' %}" class="quick-action-btn card">
+            <div class="quick-action-icon">📊</div>
+            <div class="quick-action-text"><div class="quick-action-title">Analytics</div><div class="quick-action-subtitle">View analytics</div></div>
+            <i class="fas fa-chevron-right"></i>
+        </a>
+        <a href="{% url 'academy' %}" class="quick-action-btn card">
+            <div class="quick-action-icon">🎓</div>
+            <div class="quick-action-text"><div class="quick-action-title">Academy</div><div class="quick-action-subtitle">Learn & improve</div></div>
+            <i class="fas fa-chevron-right"></i>
+        </a>
+    </div>
+
+</div><!-- end dashboard-container -->
+
+<!-- ===== PERFORMANCE MODAL ===== -->
+<div id="performanceModal">
+    <div>
+        <div>
+            <h3><i class="fas fa-exclamation-triangle" style="color:var(--warning);margin-right:8px;"></i>Issues Detected</h3>
+            <button onclick="closeModal()">&times;</button>
+        </div>
+        <div id="modalIssuesList"></div>
+        <div>
+            <button onclick="closeModal()">Got it</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== JAVASCRIPT ===== -->
+<script>
+// ===== CSRF TOKEN =====
+function getCsrfToken() {
+    const cookie = document.cookie.split('; ').find(row => row.startsWith('csrftoken='));
+    if (cookie) return cookie.split('=')[1];
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    if (meta) return meta.getAttribute('content');
+    return null;
+}
+
+// ===== MOOD FUNCTIONS =====
+function selectMood(mood) {
+    const element = document.querySelector(`[data-mood="${mood}"]`);
+    if (!element) return;
+    
+    document.querySelectorAll('.mood-option').forEach(opt => opt.classList.remove('selected'));
+    element.classList.add('selected');
+    
+    const csrfToken = getCsrfToken();
+    if (!csrfToken) { showNotification('Security token missing. Please refresh.', 'error'); return; }
+    
+    fetch('/save-mood/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+        body: JSON.stringify({ mood: mood, notes: '' })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('moodSection').style.display = 'none';
+            showPersistentMoodResponse(data);
+        } else {
+            showNotification(data.error || 'Failed to save mood', 'error');
+        }
+    })
+    .catch(() => {
+        showNotification('Failed to save mood. Please try again.', 'error');
+    });
+}
+
+function showPersistentMoodResponse(data) {
+    const moodNames = { 'confident':'Confident','cautious':'Cautious','neutral':'Neutral','stressed':'Stressed','energetic':'Energetic','tired':'Tired','focused':'Focused','anxious':'Anxious' };
+    const color = data.color || '#6b7280';
+    
+    const html = `
+        <div class="mood-selected-card">
+            <div class="selected-mood-content">
+                <div class="selected-mood-badge" style="border-color:${color};">
+                    <span class="large-emoji">${data.emoji || '😐'}</span>
+                    <span class="selected-mood-name">${moodNames[data.mood] || data.mood}</span>
+                </div>
+                <div class="mood-message-card" style="border-left-color:${color};">
+                    <p>${data.message || 'Thanks for sharing your mood!'}</p>
+                    <span style="background:${color}20;color:${color};">${data.action || 'Keep trading mindfully'}</span>
+                </div>
+                <div class="streak-display">
+                    <span class="streak-icon">🔥</span>
+                    <div>
+                        <span class="streak-value">${data.streak || 0}</span>
+                        <span class="streak-label">Day Streak</span>
+                    </div>
+                </div>
+                <div class="comeback-message">
+                    <i class="fas fa-moon" style="color:var(--primary);"></i>
+                    <p>Come back tomorrow to log your mood again!</p>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    const responseDiv = document.getElementById('moodResponse');
+    responseDiv.innerHTML = html;
+    responseDiv.style.display = 'block';
+    
+    if (data.mood === 'confident' || data.mood === 'energetic' || data.mood === 'focused') {
+        createConfetti();
+    }
+}
+
+function showNotification(message, type) {
+    const colors = { success: '#10b981', error: '#ef4444', warning: '#f59e0b', info: '#3b82f6' };
+    const bg = colors[type] || '#3b82f6';
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    Object.assign(notification.style, {
+        position: 'fixed', bottom: '20px', right: '20px', padding: '10px 18px',
+        borderRadius: '12px', color: 'white', fontWeight: '500', zIndex: '9999',
+        background: bg, boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+        fontSize: '13px',
+        transition: 'all 0.3s ease'
+    });
+    document.body.appendChild(notification);
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateY(20px)';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+function createConfetti() {
+    const colors = ['#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#a855f7', '#ec4899'];
+    for (let i = 0; i < 20; i++) {
+        setTimeout(() => {
+            const el = document.createElement('div');
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            Object.assign(el.style, {
+                position: 'fixed',
+                left: Math.random() * 100 + '%',
+                background: color,
+                width: '6px',
+                height: '6px',
+                borderRadius: Math.random() > 0.5 ? '50%' : '0',
+                top: '-10px',
+                zIndex: '9999',
+                animation: `confetti ${Math.random() * 2 + 2}s linear forwards`
+            });
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 5000);
+        }, i * 30);
+    }
+}
+
+// ===== PERFORMANCE MODAL =====
+function showPerformanceIssues() {
+    const modal = document.getElementById('performanceModal');
+    const issuesList = document.getElementById('modalIssuesList');
+    const totalTrades = parseInt('{{ total_trades|default:0 }}');
+    const winrate = parseFloat('{{ overallwinrate|default:0 }}');
+    const avgRvs = parseFloat('{{ avg_rvs|default:0 }}');
+    const stdDev = parseFloat('{{ std_dev_rr|default:0 }}');
+    
+    if (totalTrades === 0) {
+        issuesList.innerHTML = `
+            <div style="text-align:center;color:var(--text-muted);padding:16px;">
+                <div style="font-size:40px;margin-bottom:12px;">📝</div>
+                <p style="font-size:14px;">No trades yet.</p>
+                <p style="font-size:12px;margin-top:4px;">Start logging trades to get performance analysis!</p>
+            </div>
+        `;
+    } else if (totalTrades < 5) {
+        issuesList.innerHTML = `
+            <div style="text-align:center;color:var(--text-muted);padding:16px;">
+                <div style="font-size:40px;margin-bottom:12px;">📊</div>
+                <p style="font-size:14px;">Building your performance profile.</p>
+                <p style="font-size:12px;margin-top:4px;">Log ${5 - totalTrades} more trade${5 - totalTrades > 1 ? 's' : ''} to see detailed analysis!</p>
+            </div>
+        `;
+    } else {
+        const issues = [];
+        if (avgRvs >= 4) issues.push({ metric: 'rvs', value: avgRvs.toFixed(2), threshold: 4, issue: 'High Rule Violation Score' });
+        if (stdDev > 1) issues.push({ metric: 'consistency', value: stdDev.toFixed(2), threshold: 1, issue: 'Inconsistent Risk-Reward Execution' });
+        if (winrate < 40 && winrate > 0) issues.push({ metric: 'winrate', value: winrate.toFixed(2), threshold: 40, issue: 'Very Low Win Rate' });
+        
+        if (issues.length === 0) {
+            issuesList.innerHTML = `
+                <div style="text-align:center;color:var(--text-muted);padding:16px;">
+                    <div style="font-size:40px;margin-bottom:12px;">✅</div>
+                    <p style="font-size:14px;">Great job! No major issues detected.</p>
+                    <p style="font-size:12px;margin-top:4px;">Keep following your trading plan!</p>
+                </div>
+            `;
+        } else {
+            const adviceMap = {
+                'rvs': 'Stop breaking your rules! Use a trading checklist before every entry.',
+                'consistency': 'Stick to a consistent risk-reward ratio. Don\'t chase random targets.',
+                'winrate': 'Be more selective. Wait for high-probability setups with confirmation.'
+            };
+            let html = '<div style="display:flex;flex-direction:column;gap:10px;">';
+            for (const issue of issues) {
+                html += `
+                    <div style="background:var(--bg-secondary);border-radius:12px;padding:12px 14px;border-left:3px solid #ef4444;">
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                            <span style="font-size:18px;">⚠️</span>
+                            <strong style="color:#ef4444;font-size:13px;">${issue.issue}</strong>
+                        </div>
+                        <div style="color:var(--text-muted);font-size:12px;margin-bottom:6px;">
+                            Value: ${issue.value} (Threshold: ${issue.threshold})
+                        </div>
+                        <div style="background:rgba(239,68,68,0.08);border-radius:8px;padding:6px 10px;font-size:12px;color:#f87171;">
+                            💡 ${adviceMap[issue.metric] || 'Review your trading plan and stick to your rules.'}
+                        </div>
+                    </div>
+                `;
+            }
+            html += '</div>';
+            issuesList.innerHTML = html;
+        }
+    }
+    modal.style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('performanceModal').style.display = 'none';
+}
+
+document.addEventListener('click', function(e) {
+    const modal = document.getElementById('performanceModal');
+    if (modal && modal.style.display === 'flex') {
+        const content = modal.querySelector('div');
+        if (content && !content.contains(e.target) && !e.target.closest('.severity-badge')) {
+            closeModal();
+        }
+    }
+});
+
+// ===== CHECK DAILY MOOD =====
+function checkDailyMood() {
+    const today = new Date().toDateString();
+    const lastDate = localStorage.getItem('lastMoodDate');
+    
+    if (lastDate === today) {
+        const cached = localStorage.getItem('lastMoodData');
+        if (cached) {
+            try {
+                const data = JSON.parse(cached);
+                document.getElementById('moodSection').style.display = 'none';
+                showPersistentMoodResponse(data);
+            } catch(e) {}
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    checkDailyMood();
+    
+    const today = new Date().toDateString();
+    if (localStorage.getItem('lastMoodDate') !== today) {
+        fetch('/get-mood-stats/')
+            .then(r => r.json())
+            .then(data => {
+                if (data.success && data.today_mood) {
+                    const moodData = {
+                        success: true,
+                        mood: data.today_mood.mood,
+                        emoji: data.today_mood.emoji || '😐',
+                        streak: data.streak || 0,
+                        message: 'Thanks for sharing your mood!',
+                        action: 'Keep trading mindfully',
+                        color: '#10b981'
+                    };
+                    localStorage.setItem('lastMoodDate', today);
+                    localStorage.setItem('lastMoodData', JSON.stringify(moodData));
+                    document.getElementById('moodSection').style.display = 'none';
+                    showPersistentMoodResponse(moodData);
+                }
+            })
+            .catch(() => {});
+    }
+});
+
+// Keyboard shortcut: Escape to close modal
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeModal();
+    }
+});
+</script>
+{% endblock %}
