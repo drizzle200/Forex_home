@@ -6,12 +6,11 @@ console_command = '/app/manage.py shell'
 
 [build]
 
-# Mount the volume to /data, not /code
-[mounts]
+# Mounts - use array table syntax for multiple volumes
+[[mounts]]
   source = "fxhome_data"
   destination = "/data"
 
-# Media volume for persistent image uploads
 [[mounts]]
   source = "media_volume"
   destination = "/media"
