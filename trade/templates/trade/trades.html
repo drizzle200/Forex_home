@@ -178,7 +178,7 @@
     color: var(--text-muted);
 }
 
-/* ===== TABLE - NEUMORPHISM STYLE ===== */
+/* ===== TABLE ===== */
 .table-wrapper {
     background: var(--bg-tertiary);
     border-radius: 16px;
@@ -235,7 +235,7 @@
     font-size: 12px;
 }
 
-/* ===== COMPACT BADGES ===== */
+/* ===== BADGES ===== */
 .badge-sm {
     display: inline-flex;
     align-items: center;
@@ -294,14 +294,10 @@
     padding: 1px 8px;
 }
 
-.badge-account {
-    background: var(--purple-soft);
-    color: var(--purple);
-    font-size: 10px;
-    padding: 1px 8px;
-}
+.rr-value.positive { color: var(--success); font-weight: 600; }
+.rr-value.negative { color: var(--danger); font-weight: 600; }
+.rr-value.zero { color: var(--text-muted); }
 
-/* ===== COMPACT CELLS ===== */
 .time-cell {
     display: flex;
     flex-direction: column;
@@ -318,23 +314,6 @@
     font-size: 10px;
 }
 
-.rr-value {
-    font-weight: 600;
-}
-
-.rr-value.positive {
-    color: var(--success);
-}
-
-.rr-value.negative {
-    color: var(--danger);
-}
-
-.rr-value.zero {
-    color: var(--text-muted);
-}
-
-/* ===== ACTIONS ===== */
 .action-group {
     display: flex;
     gap: 4px;
@@ -362,12 +341,77 @@
     box-shadow: var(--neu-shadow-hover);
 }
 
-.action-btn.edit:hover {
-    color: var(--primary);
+.action-btn.edit:hover { color: var(--primary); }
+.action-btn.delete:hover { color: var(--danger); }
+
+/* ===== MOBILE CARDS ===== */
+.mobile-cards {
+    display: none;
+    flex-direction: column;
+    gap: 10px;
 }
 
-.action-btn.delete:hover {
-    color: var(--danger);
+.mobile-trade-card {
+    background: var(--bg-tertiary);
+    border-radius: 14px;
+    padding: 12px 14px;
+    box-shadow: var(--neu-shadow-sm);
+    border: 1px solid rgba(255,255,255,0.03);
+    transition: all 0.2s ease;
+}
+
+.mobile-trade-card:hover {
+    box-shadow: var(--neu-shadow-hover);
+}
+
+.mobile-trade-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 3px 0;
+    font-size: 12px;
+}
+
+.mobile-trade-row .label {
+    color: var(--text-muted);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.mobile-trade-row .value {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.mobile-trade-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.mobile-trade-header .pair {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.mobile-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.mobile-actions .action-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 6px 12px;
+    font-size: 11px;
 }
 
 /* ===== EMPTY STATE ===== */
@@ -398,6 +442,502 @@
     font-size: 14px;
 }
 
+/* ===== MODAL STYLES ===== */
+.trade-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.88);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+    animation: modalFade 0.3s ease;
+}
+
+.trade-modal.show {
+    display: flex;
+}
+
+@keyframes modalFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes modalSlide {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.modal-content {
+    background: var(--bg-primary);
+    width: 94%;
+    max-width: 820px;
+    max-height: 92vh;
+    border-radius: 24px;
+    border: 1px solid var(--border);
+    box-shadow: var(--neu-shadow-hover), 0 25px 60px rgba(0,0,0,0.8);
+    overflow: hidden;
+    animation: modalSlide 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-secondary);
+    flex-shrink: 0;
+}
+
+.modal-header .modal-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.modal-header .modal-title .trade-badge {
+    font-size: 12px;
+    padding: 4px 14px;
+    border-radius: 100px;
+    font-weight: 600;
+}
+
+.modal-header .modal-title .trade-badge.win {
+    background: var(--success-soft);
+    color: var(--success);
+    border: 1px solid var(--success);
+}
+
+.modal-header .modal-title .trade-badge.loss {
+    background: var(--danger-soft);
+    color: var(--danger);
+    border: 1px solid var(--danger);
+}
+
+.modal-close {
+    background: var(--bg-primary);
+    border: none;
+    color: var(--text-muted);
+    font-size: 24px;
+    cursor: pointer;
+    padding: 4px 12px;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+    box-shadow: var(--neu-shadow-sm);
+}
+
+.modal-close:hover {
+    color: var(--text-primary);
+    transform: rotate(90deg);
+    box-shadow: var(--neu-shadow-hover);
+}
+
+.modal-body {
+    padding: 20px 24px 24px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.modal-body::-webkit-scrollbar {
+    width: 5px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 3px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+}
+
+/* ===== LOADING ===== */
+.modal-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    gap: 16px;
+}
+
+.modal-loading .spinner {
+    width: 44px;
+    height: 44px;
+    border: 3px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.modal-loading p {
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ===== TRADE DETAIL ===== */
+.trade-detail-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Image Section - Full width, clickable */
+.trade-image-section {
+    background: var(--bg-secondary);
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    min-height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.trade-image-section:hover {
+    border-color: var(--primary);
+    box-shadow: 0 0 30px rgba(16, 185, 129, 0.1);
+}
+
+.trade-image-section img {
+    width: 100%;
+    height: 100%;
+    max-height: 350px;
+    object-fit: contain;
+    display: block;
+    transition: transform 0.3s ease;
+}
+
+.trade-image-section:hover img {
+    transform: scale(1.02);
+}
+
+.trade-image-section .image-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 12px 16px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.7));
+    color: var(--text-secondary);
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.trade-image-section:hover .image-overlay {
+    opacity: 1;
+}
+
+.trade-image-section .image-overlay i {
+    color: var(--primary);
+}
+
+.trade-image-section .no-image {
+    color: var(--text-muted);
+    font-size: 14px;
+    padding: 40px;
+    text-align: center;
+}
+
+.trade-image-section .no-image i {
+    font-size: 44px;
+    display: block;
+    margin-bottom: 12px;
+    opacity: 0.3;
+}
+
+/* Narration - Prominent */
+.narration-block {
+    background: var(--bg-secondary);
+    border-radius: 16px;
+    padding: 16px 20px;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--primary);
+}
+
+.narration-block .narration-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.narration-block .narration-label i {
+    color: var(--primary);
+}
+
+.narration-block .narration-text {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text-secondary);
+}
+
+.narration-block .narration-text .empty {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* Characteristics Grid - Compact */
+.characteristics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+}
+
+.characteristic-card {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    transition: all 0.2s ease;
+}
+
+.characteristic-card:hover {
+    border-color: var(--primary-soft);
+    transform: translateY(-1px);
+}
+
+.characteristic-card .char-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+}
+
+.characteristic-card .char-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.characteristic-card .char-value.win-text { color: var(--success); }
+.characteristic-card .char-value.loss-text { color: var(--danger); }
+.characteristic-card .char-value.highlight { color: var(--primary); }
+
+/* RVS Display */
+.rvs-display-modal {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 2px 0;
+}
+
+.rvs-circle-modal {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 700;
+    background: var(--bg-primary);
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+}
+
+.rvs-circle-modal.good { border-color: var(--success); color: var(--success); }
+.rvs-circle-modal.warning { border-color: var(--warning); color: var(--warning); }
+.rvs-circle-modal.danger { border-color: var(--danger); color: var(--danger); }
+
+.rvs-details-modal .rvs-grade {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.rvs-details-modal .rvs-label {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* Momentum Tags */
+.momentum-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.momentum-tag {
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-size: 10px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+}
+
+.momentum-tag .tf {
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+/* ===== EDUCATIONAL INSIGHTS ===== */
+.insights-section {
+    margin-top: 4px;
+    padding: 16px 18px;
+    background: var(--bg-secondary);
+    border-radius: 16px;
+    border: 1px solid var(--border);
+}
+
+.insights-section .insights-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.insights-section .insights-title i {
+    color: var(--warning);
+}
+
+.insights-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.insight-block {
+    padding: 10px 14px;
+    background: var(--bg-primary);
+    border-radius: 12px;
+    border-left: 3px solid var(--primary);
+}
+
+.insight-block .insight-heading {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.insight-block .insight-item {
+    font-size: 12px;
+    color: var(--text-secondary);
+    padding: 2px 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.insight-block .insight-item i {
+    font-size: 11px;
+    flex-shrink: 0;
+}
+
+.insight-block.win { border-left-color: var(--success); }
+.insight-block.loss { border-left-color: var(--danger); }
+.insight-block.takeaway { border-left-color: var(--info); }
+.insight-block.recommendation { border-left-color: var(--warning); }
+
+.insight-block .recommendation-text {
+    font-size: 13px;
+    color: var(--text-primary);
+    line-height: 1.5;
+}
+
+/* ===== FULLSCREEN IMAGE OVERLAY ===== */
+.fullscreen-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(20px);
+    z-index: 99999;
+    align-items: center;
+    justify-content: center;
+    cursor: zoom-out;
+}
+
+.fullscreen-overlay.show {
+    display: flex;
+}
+
+.fullscreen-overlay img {
+    max-width: 95%;
+    max-height: 92vh;
+    object-fit: contain;
+    animation: modalSlide 0.3s ease;
+    border-radius: 8px;
+    box-shadow: 0 0 60px rgba(0,0,0,0.8);
+}
+
+.fullscreen-close {
+    position: fixed;
+    top: 24px;
+    right: 30px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--text-secondary);
+    font-size: 28px;
+    cursor: pointer;
+    padding: 8px 16px;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.fullscreen-close:hover {
+    background: rgba(255,255,255,0.15);
+    color: var(--text-primary);
+    transform: scale(1.05);
+}
+
+.fullscreen-hint {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--text-muted);
+    font-size: 13px;
+    background: rgba(0,0,0,0.6);
+    padding: 8px 20px;
+    border-radius: 100px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
     .history-header {
@@ -405,18 +945,10 @@
         align-items: stretch;
     }
 
-    .header-left h1 {
-        font-size: 17px;
-    }
+    .header-left h1 { font-size: 17px; }
 
-    .header-stats {
-        flex-wrap: wrap;
-    }
-
-    .stat-pill {
-        font-size: 11px;
-        padding: 4px 12px;
-    }
+    .header-stats { flex-wrap: wrap; }
+    .stat-pill { font-size: 11px; padding: 4px 12px; }
 
     .filter-bar {
         flex-direction: column;
@@ -430,101 +962,124 @@
         justify-content: center;
     }
 
-    .filter-search {
-        width: 100%;
+    .filter-search { width: 100%; }
+
+    .compact-table { display: none; }
+    .mobile-cards { display: flex !important; }
+
+    .modal-content {
+        width: 96%;
+        max-height: 94vh;
     }
 
-    /* Mobile card view */
-    .compact-table {
-        display: none;
+    .modal-header {
+        padding: 12px 16px;
     }
 
-    .mobile-cards {
-        display: flex !important;
-        flex-direction: column;
-        gap: 10px;
+    .modal-header .modal-title {
+        font-size: 14px;
+        flex-wrap: wrap;
     }
 
-    .mobile-trade-card {
-        background: var(--bg-tertiary);
-        border-radius: 14px;
-        padding: 12px 14px;
-        box-shadow: var(--neu-shadow-sm);
-        border: 1px solid rgba(255,255,255,0.03);
-        transition: all 0.2s ease;
+    .modal-body {
+        padding: 14px 16px 16px;
     }
 
-    .mobile-trade-card:hover {
-        box-shadow: var(--neu-shadow-hover);
+    .trade-image-section {
+        min-height: 140px;
     }
 
-    .mobile-trade-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 3px 0;
+    .trade-image-section img {
+        max-height: 250px;
+    }
+
+    .characteristics-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .characteristic-card {
+        padding: 10px 12px;
+    }
+
+    .characteristic-card .char-value {
         font-size: 12px;
     }
 
-    .mobile-trade-row .label {
-        color: var(--text-muted);
-        font-size: 10px;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
+    .insights-grid {
+        grid-template-columns: 1fr;
     }
 
-    .mobile-trade-row .value {
-        color: var(--text-primary);
-        font-weight: 500;
+    .rvs-display-modal {
+        flex-direction: column;
+        text-align: center;
     }
 
-    .mobile-trade-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 8px;
-        padding-bottom: 8px;
-        border-bottom: 1px solid rgba(255,255,255,0.05);
-    }
-
-    .mobile-trade-header .pair {
-        font-size: 15px;
-        font-weight: 600;
-        color: var(--text-primary);
-    }
-
-    .mobile-actions {
-        display: flex;
-        gap: 6px;
-        margin-top: 8px;
-        padding-top: 8px;
-        border-top: 1px solid rgba(255,255,255,0.05);
-    }
-
-    .mobile-actions .action-btn {
-        flex: 1;
+    .momentum-tags {
         justify-content: center;
-        padding: 6px 12px;
+    }
+
+    .fullscreen-overlay img {
+        max-width: 98%;
+        max-height: 85vh;
+    }
+
+    .fullscreen-close {
+        top: 16px;
+        right: 20px;
+        font-size: 22px;
+        padding: 6px 14px;
+    }
+
+    .fullscreen-hint {
+        bottom: 16px;
         font-size: 11px;
+        padding: 6px 14px;
     }
 }
 
 @media (max-width: 480px) {
-    .history-container {
-        padding: 0 10px;
-    }
+    .history-container { padding: 0 10px; }
 
-    .header-stats {
+    .header-stats { gap: 6px; }
+    .stat-pill { font-size: 10px; padding: 3px 10px; }
+    .stat-pill .stat-label { display: none; }
+
+    .characteristics-grid {
+        grid-template-columns: 1fr 1fr;
         gap: 6px;
     }
 
-    .stat-pill {
-        font-size: 10px;
-        padding: 3px 10px;
+    .characteristic-card {
+        padding: 8px 10px;
     }
 
-    .stat-pill .stat-label {
-        display: none;
+    .characteristic-card .char-label {
+        font-size: 8px;
+    }
+
+    .characteristic-card .char-value {
+        font-size: 11px;
+    }
+
+    .narration-block {
+        padding: 12px 14px;
+    }
+
+    .narration-block .narration-text {
+        font-size: 13px;
+    }
+
+    .insights-section {
+        padding: 12px 14px;
+    }
+
+    .insight-block {
+        padding: 8px 12px;
+    }
+
+    .insight-block .insight-item {
+        font-size: 11px;
     }
 }
 
@@ -546,29 +1101,6 @@
 .table-scroll::-webkit-scrollbar-thumb:hover {
     background: var(--primary);
 }
-
-/* ===== TOOLTIP ===== */
-.hover-tip {
-    position: relative;
-    cursor: help;
-}
-
-.hover-tip:hover::after {
-    content: attr(data-tip);
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-    padding: 4px 12px;
-    border-radius: 8px;
-    font-size: 11px;
-    white-space: nowrap;
-    box-shadow: var(--neu-shadow);
-    z-index: 10;
-    border: 1px solid rgba(255,255,255,0.05);
-}
 </style>
 
 <!-- ===== HISTORY CONTAINER ===== -->
@@ -584,18 +1116,6 @@
                 <i class="fas fa-chart-line"></i>
                 <span class="stat-label">Total</span>
                 <span class="stat-value">{{ trades|length }}</span>
-            </div>
-            {% if win_rate %}
-            <div class="stat-pill">
-                <i class="fas fa-trophy"></i>
-                <span class="stat-label">Win Rate</span>
-                <span class="stat-value" style="color:var(--success);">{{ win_rate }}%</span>
-            </div>
-            {% endif %}
-            <div class="stat-pill">
-                <i class="fas fa-clock"></i>
-                <span class="stat-label">Avg Hold</span>
-                <span class="stat-value">{{ avg_holding_time|default:"0m" }}</span>
             </div>
         </div>
     </div>
@@ -634,7 +1154,7 @@
                 </thead>
                 <tbody>
                     {% for trade in trades %}
-                    <tr data-direction="{{ trade.buy_or_sell|lower }}" data-result="{% if trade.target == 1 %}win{% elif trade.target == 0 %}loss{% endif %}">
+                    <tr data-trade-id="{{ trade.trade_id }}" data-direction="{{ trade.buy_or_sell|lower }}" data-result="{% if trade.target == 1 %}win{% elif trade.target == 0 %}loss{% endif %}" style="cursor:pointer;">
                         <td><span class="badge-id">#{{ trade.trade_id }}</span></td>
                         <td><span class="badge-sm badge-pair">{{ trade.pair }}</span></td>
                         <td><span class="badge-sm {% if trade.buy_or_sell == 'Buy' or trade.buy_or_sell == 'BUY' %}badge-buy{% else %}badge-sell{% endif %}">{{ trade.buy_or_sell }}</span></td>
@@ -682,10 +1202,10 @@
                         </td>
                         <td style="text-align:right;">
                             <div class="action-group" style="justify-content:flex-end;">
-                                <a href="{% url 'update_trade' trade.trade_id %}" class="action-btn edit" title="Journal">
+                                <a href="{% url 'update_trade' trade.trade_id %}" class="action-btn edit" title="Journal" onclick="event.stopPropagation();">
                                     <i class="fas fa-pen"></i>
                                 </a>
-                                <a href="{% url 'delete_trade_confirm' trade.trade_id %}" class="action-btn delete" title="Delete">
+                                <a href="{% url 'delete_trade_confirm' trade.trade_id %}" class="action-btn delete" title="Delete" onclick="event.stopPropagation();">
                                     <i class="fas fa-trash-alt"></i>
                                 </a>
                             </div>
@@ -698,9 +1218,9 @@
     </div>
 
     <!-- ===== MOBILE CARDS ===== -->
-    <div class="mobile-cards" style="display:none;">
+    <div class="mobile-cards" id="mobileCards">
         {% for trade in trades %}
-        <div class="mobile-trade-card" data-direction="{{ trade.buy_or_sell|lower }}" data-result="{% if trade.target == 1 %}win{% elif trade.target == 0 %}loss{% endif %}">
+        <div class="mobile-trade-card" data-trade-id="{{ trade.trade_id }}" data-direction="{{ trade.buy_or_sell|lower }}" data-result="{% if trade.target == 1 %}win{% elif trade.target == 0 %}loss{% endif %}" style="cursor:pointer;">
             <div class="mobile-trade-header">
                 <span class="pair">{{ trade.pair }}</span>
                 <div style="display:flex;gap:6px;align-items:center;">
@@ -740,19 +1260,9 @@
                 <span class="label">Executed</span>
                 <span class="value">{{ trade.timestamp|date:"m/d/Y H:i" }}</span>
             </div>
-            <div class="mobile-trade-row">
-                <span class="label">Held</span>
-                <span class="value">{{ trade.holding_time_display|default:"—" }}</span>
-            </div>
-            {% if trade.reason %}
-            <div class="mobile-trade-row">
-                <span class="label">Reason</span>
-                <span class="value"><span class="badge-sm badge-reason">{{ trade.reason }}</span></span>
-            </div>
-            {% endif %}
             <div class="mobile-actions">
-                <a href="{% url 'update_trade' trade.trade_id %}" class="action-btn edit"><i class="fas fa-pen"></i> Journal</a>
-                <a href="{% url 'delete_trade_confirm' trade.trade_id %}" class="action-btn delete"><i class="fas fa-trash-alt"></i> Delete</a>
+                <a href="{% url 'update_trade' trade.trade_id %}" class="action-btn edit" onclick="event.stopPropagation();"><i class="fas fa-pen"></i> Journal</a>
+                <a href="{% url 'delete_trade_confirm' trade.trade_id %}" class="action-btn delete" onclick="event.stopPropagation();"><i class="fas fa-trash-alt"></i> Delete</a>
             </div>
         </div>
         {% endfor %}
@@ -772,6 +1282,36 @@
 
 </div>
 
+<!-- ===== TRADE DETAIL MODAL ===== -->
+<div class="trade-modal" id="tradeModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title">
+                <i class="fas fa-chart-line" style="color:var(--primary);"></i>
+                Trade Details
+                <span class="trade-badge" id="modalOutcomeBadge">Loading...</span>
+            </div>
+            <button class="modal-close" id="modalClose">&times;</button>
+        </div>
+        <div class="modal-body" id="modalBody">
+            <!-- Loading State -->
+            <div class="modal-loading" id="modalLoading">
+                <div class="spinner"></div>
+                <p>Loading trade details...</p>
+            </div>
+            <!-- Content -->
+            <div id="modalContent" style="display:none;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== FULLSCREEN IMAGE OVERLAY ===== -->
+<div class="fullscreen-overlay" id="fullscreenOverlay" onclick="closeFullscreen()">
+    <button class="fullscreen-close" onclick="closeFullscreen()">&times;</button>
+    <img id="fullscreenImage" src="" alt="Trade Setup Fullscreen">
+    <div class="fullscreen-hint">Click anywhere or press ESC to close</div>
+</div>
+
 <script>
 document.addEventListener("DOMContentLoaded", function() {
     // ===== FILTER FUNCTIONALITY =====
@@ -788,7 +1328,6 @@ document.addEventListener("DOMContentLoaded", function() {
         rows.forEach(row => {
             let show = true;
 
-            // Filter by type
             if (filter !== 'all') {
                 const result = row.dataset.result;
                 const direction = row.dataset.direction;
@@ -799,7 +1338,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 else if (filter === 'sell' && direction !== 'sell') show = false;
             }
 
-            // Search filter
             if (show && searchTerm) {
                 const text = row.textContent.toLowerCase();
                 if (!text.includes(searchTerm)) show = false;
@@ -808,7 +1346,6 @@ document.addEventListener("DOMContentLoaded", function() {
             row.style.display = show ? '' : 'none';
         });
 
-        // Filter mobile cards
         mobileCards.forEach(card => {
             let show = true;
 
@@ -831,7 +1368,6 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // Filter button clicks
     filterBtns.forEach(btn => {
         btn.addEventListener('click', function() {
             filterBtns.forEach(b => b.classList.remove('active'));
@@ -840,7 +1376,6 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     });
 
-    // Search input
     searchInput.addEventListener('input', filterTable);
 
     // ===== MOBILE DETECTION =====
@@ -863,30 +1398,310 @@ document.addEventListener("DOMContentLoaded", function() {
     handleMobileView();
     window.addEventListener('resize', handleMobileView);
 
-    // ===== EXPORT CSV =====
-    document.querySelector('.action-btn.export')?.addEventListener('click', function() {
-        const rows = document.querySelectorAll('#tradesTable tbody tr');
-        let csv = 'ID,Pair,Direction,Type,Result,RR,Date,Time,Reason\n';
-        
-        rows.forEach(row => {
-            if (row.style.display !== 'none') {
-                const cells = row.querySelectorAll('td');
-                const data = [];
-                cells.forEach(cell => {
-                    let text = cell.textContent.trim().replace(/,/g, '');
-                    data.push(`"${text}"`);
-                });
-                csv += data.join(',') + '\n';
-            }
-        });
+    // ===== FULLSCREEN IMAGE =====
+    const fullscreenOverlay = document.getElementById('fullscreenOverlay');
+    const fullscreenImage = document.getElementById('fullscreenImage');
 
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'trade_history.csv';
-        a.click();
+    function openFullscreen(imageSrc) {
+        if (!imageSrc) return;
+        fullscreenImage.src = imageSrc;
+        fullscreenOverlay.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeFullscreen() {
+        fullscreenOverlay.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+
+    // Make functions global
+    window.openFullscreen = openFullscreen;
+    window.closeFullscreen = closeFullscreen;
+
+    // Keyboard shortcut for fullscreen
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            if (fullscreenOverlay.classList.contains('show')) {
+                closeFullscreen();
+            }
+            if (modal.classList.contains('show')) {
+                closeModal();
+            }
+        }
     });
+
+    // ===== MODAL FUNCTIONALITY =====
+    const modal = document.getElementById('tradeModal');
+    const modalLoading = document.getElementById('modalLoading');
+    const modalContent = document.getElementById('modalContent');
+    const modalOutcomeBadge = document.getElementById('modalOutcomeBadge');
+    const modalClose = document.getElementById('modalClose');
+
+    function closeModal() {
+        modal.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+
+    modalClose.addEventListener('click', closeModal);
+
+    modal.addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+
+    // ===== OPEN TRADE DETAIL =====
+    function openTradeDetail(tradeId) {
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+        modalLoading.style.display = 'flex';
+        modalContent.style.display = 'none';
+        modalOutcomeBadge.textContent = 'Loading...';
+        modalOutcomeBadge.className = 'trade-badge';
+
+        fetch(`/trade-detail/${tradeId}/`)
+            .then(response => response.json())
+            .then(data => {
+                modalLoading.style.display = 'none';
+                
+                if (data.success) {
+                    renderTradeDetail(data.data);
+                    modalContent.style.display = 'block';
+                } else {
+                    modalContent.innerHTML = `
+                        <div style="text-align:center;padding:40px;color:var(--danger);">
+                            <i class="fas fa-exclamation-circle" style="font-size:40px;display:block;margin-bottom:12px;"></i>
+                            <p>${data.error || 'Failed to load trade details'}</p>
+                            <button onclick="closeModal()" style="margin-top:16px;padding:8px 24px;background:var(--primary);color:white;border:none;border-radius:8px;cursor:pointer;">Close</button>
+                        </div>
+                    `;
+                    modalContent.style.display = 'block';
+                }
+            })
+            .catch(() => {
+                modalLoading.style.display = 'none';
+                modalContent.innerHTML = `
+                    <div style="text-align:center;padding:40px;color:var(--danger);">
+                        <i class="fas fa-exclamation-circle" style="font-size:40px;display:block;margin-bottom:12px;"></i>
+                        <p>Network error. Please try again.</p>
+                        <button onclick="closeModal()" style="margin-top:16px;padding:8px 24px;background:var(--primary);color:white;border:none;border-radius:8px;cursor:pointer;">Close</button>
+                    </div>
+                `;
+                modalContent.style.display = 'block';
+            });
+    }
+
+    function renderTradeDetail(trade) {
+        const isWin = trade.target === 1;
+        const outcomeLabel = isWin ? '🏆 Win' : '💔 Loss';
+        const outcomeClass = isWin ? 'win' : 'loss';
+
+        modalOutcomeBadge.textContent = outcomeLabel;
+        modalOutcomeBadge.className = `trade-badge ${outcomeClass}`;
+
+        // RVS grade class
+        let rvsClass = 'good';
+        if (trade.rvs_grade === 'C' || trade.rvs_grade === 'D') rvsClass = 'warning';
+        else if (trade.rvs_grade === 'F') rvsClass = 'danger';
+        else if (trade.rvs_grade === 'A+' || trade.rvs_grade === 'A') rvsClass = 'good';
+
+        // Insights
+        const insights = trade.educational_insights || {};
+        const rightItems = insights.what_went_right || [];
+        const wrongItems = insights.what_went_wrong || [];
+        const takeaways = insights.key_takeaways || [];
+        const recommendation = insights.recommendation || '';
+
+        // Momentum
+        const momentums = [
+            { tf: 'H4', value: trade.momentum_h4 },
+            { tf: 'H1', value: trade.momentum_h1 },
+            { tf: '15m', value: trade.momentum_15m },
+            { tf: '5m', value: trade.momentum_5m },
+            { tf: '1m', value: trade.momentum_1m },
+        ].filter(m => m.value);
+
+        const hasMomentum = momentums.length > 0;
+        const hasImage = trade.setup_image_url ? true : false;
+        const imageUrl = trade.setup_image_url || '';
+
+        const html = `
+            <div class="trade-detail-grid">
+
+                <!-- 1. TRADE IMAGE (clickable for fullscreen) -->
+                <div class="trade-image-section" ${hasImage ? `onclick="openFullscreen('${imageUrl}')"` : ''}>
+                    ${hasImage ? 
+                        `<img src="${imageUrl}" alt="Trade Setup" loading="lazy">
+                         <div class="image-overlay">
+                             <i class="fas fa-expand"></i> Click to view fullscreen
+                         </div>` :
+                        `<div class="no-image">
+                            <i class="fas fa-image"></i>
+                            No setup image available
+                        </div>`
+                    }
+                </div>
+
+                <!-- 2. NARRATION (prominent) -->
+                <div class="narration-block">
+                    <div class="narration-label">
+                        <i class="fas fa-pen"></i> Trade Narration
+                    </div>
+                    <div class="narration-text">
+                        ${trade.narration ? trade.narration : '<span class="empty">No narration provided</span>'}
+                    </div>
+                </div>
+
+                <!-- 3. CHARACTERISTICS GRID -->
+                <div class="characteristics-grid">
+                    <div class="characteristic-card">
+                        <div class="char-label">Pair</div>
+                        <div class="char-value highlight">${trade.pair}</div>
+                    </div>
+
+                    <div class="characteristic-card">
+                        <div class="char-label">Direction</div>
+                        <div class="char-value ${trade.buy_or_sell === 'BUY' ? 'win-text' : 'loss-text'}">${trade.buy_or_sell}</div>
+                    </div>
+
+                    <div class="characteristic-card">
+                        <div class="char-label">Trade Type</div>
+                        <div class="char-value">${trade.trade_type || '—'}</div>
+                    </div>
+
+                    <div class="characteristic-card">
+                        <div class="char-label">Setup Quality</div>
+                        <div class="char-value">
+                            ${trade.setup_quality ? '⭐'.repeat(trade.setup_quality) + '☆'.repeat(5 - trade.setup_quality) : '—'}
+                        </div>
+                    </div>
+
+                    <div class="characteristic-card">
+                        <div class="char-label">Entry Place</div>
+                        <div class="char-value">${trade.entry_place || '—'}</div>
+                    </div>
+
+                    <div class="characteristic-card">
+                        <div class="char-label">Confirmation</div>
+                        <div class="char-value">${trade.confirmation || '—'}</div>
+                    </div>
+
+                    <div class="characteristic-card">
+                        <div class="char-label">Mood</div>
+                        <div class="char-value">${trade.mood || '—'}</div>
+                    </div>
+
+                    <div class="characteristic-card">
+                        <div class="char-label">Risk / Reward</div>
+                        <div class="char-value ${isWin ? 'win-text' : 'loss-text'}">
+                            ${isWin ? `+${trade.risk_reward}R` : '-1R'}
+                        </div>
+                    </div>
+
+                    <div class="characteristic-card">
+                        <div class="char-label">RVS Score</div>
+                        <div class="char-value">
+                            <div class="rvs-display-modal">
+                                <div class="rvs-circle-modal ${rvsClass}">${trade.rvs || 0}</div>
+                                <div class="rvs-details-modal">
+                                    <div class="rvs-grade" style="color:${trade.rvs_grade === 'A+' || trade.rvs_grade === 'A' ? 'var(--success)' : trade.rvs_grade === 'F' ? 'var(--danger)' : 'var(--warning)'}">
+                                        ${trade.rvs_grade || 'N/A'}
+                                    </div>
+                                    <div class="rvs-label">Rule Violation Score</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="characteristic-card">
+                        <div class="char-label">Holding Time</div>
+                        <div class="char-value">${trade.holding_time_display || '—'}</div>
+                    </div>
+
+                    ${trade.reason ? `
+                    <div class="characteristic-card">
+                        <div class="char-label">Loss Reason</div>
+                        <div class="char-value loss-text">${trade.reason}</div>
+                    </div>
+                    ` : ''}
+                </div>
+
+                ${hasMomentum ? `
+                <div style="background:var(--bg-secondary);border-radius:12px;padding:12px 16px;border:1px solid var(--border);">
+                    <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-muted);margin-bottom:6px;">
+                        <i class="fas fa-chart-bar" style="color:var(--primary);margin-right:4px;"></i> Momentum Analysis
+                    </div>
+                    <div class="momentum-tags">
+                        ${momentums.map(m => `
+                            <span class="momentum-tag">
+                                <span class="tf">${m.tf}</span> ${m.value}
+                            </span>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+
+                <!-- 4. EDUCATIONAL INSIGHTS -->
+                <div class="insights-section">
+                    <div class="insights-title">
+                        <i class="fas fa-graduation-cap"></i>
+                        Learning Insights
+                    </div>
+                    <div class="insights-grid">
+                        ${rightItems.length > 0 ? `
+                        <div class="insight-block win">
+                            <div class="insight-heading"><i class="fas fa-check-circle" style="color:var(--success);"></i> What Went Right</div>
+                            ${rightItems.map(item => `
+                                <div class="insight-item">${item}</div>
+                            `).join('')}
+                        </div>
+                        ` : ''}
+
+                        ${wrongItems.length > 0 ? `
+                        <div class="insight-block loss">
+                            <div class="insight-heading"><i class="fas fa-times-circle" style="color:var(--danger);"></i> What Went Wrong</div>
+                            ${wrongItems.map(item => `
+                                <div class="insight-item">${item}</div>
+                            `).join('')}
+                        </div>
+                        ` : ''}
+
+                        ${takeaways.length > 0 ? `
+                        <div class="insight-block takeaway">
+                            <div class="insight-heading"><i class="fas fa-lightbulb" style="color:var(--info);"></i> Key Takeaways</div>
+                            ${takeaways.map(item => `
+                                <div class="insight-item">${item}</div>
+                            `).join('')}
+                        </div>
+                        ` : ''}
+
+                        ${recommendation ? `
+                        <div class="insight-block recommendation">
+                            <div class="insight-heading"><i class="fas fa-star" style="color:var(--warning);"></i> Recommendation</div>
+                            <div class="recommendation-text">${recommendation}</div>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+
+            </div>
+        `;
+
+        modalContent.innerHTML = html;
+    }
+
+    // ===== CLICK LISTENERS =====
+    document.querySelectorAll('#tradesTable tbody tr, .mobile-trade-card').forEach(element => {
+        element.addEventListener('click', function(e) {
+            if (e.target.closest('.action-btn')) return;
+            const tradeId = this.dataset.tradeId;
+            if (tradeId) openTradeDetail(tradeId);
+        });
+    });
+
+    // Make functions global
+    window.closeModal = closeModal;
+    window.openTradeDetail = openTradeDetail;
+
+    console.log('⌨️ Shortcuts: ESC to close modal/fullscreen, Click image for fullscreen');
 });
 </script>
 {% endblock %}

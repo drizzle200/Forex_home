@@ -12,12 +12,15 @@
     --bg-primary: #0a0f1c;
     --bg-secondary: #111827;
     --bg-tertiary: #1a2332;
+    --bg-elevated: #232e3f;
     --text-primary: #f3f4f6;
     --text-secondary: #9ca3af;
     --text-muted: #6b7280;
     --border: #2d3748;
     --primary: #10b981;
+    --primary-dark: #059669;
     --primary-soft: rgba(16, 185, 129, 0.08);
+    --primary-glow: rgba(16, 185, 129, 0.2);
     --success: #34d399;
     --success-soft: rgba(52, 211, 153, 0.10);
     --danger: #f87171;
@@ -29,11 +32,12 @@
     --purple: #c084fc;
     --purple-soft: rgba(192, 132, 252, 0.10);
     
-    /* Neumorphism shadows - SOFT */
-    --neu-shadow: 6px 6px 14px rgba(0,0,0,0.5), -6px -6px 14px rgba(30, 40, 60, 0.10);
-    --neu-shadow-inset: inset 3px 3px 6px rgba(0,0,0,0.5), inset -3px -3px 6px rgba(30, 40, 60, 0.08);
-    --neu-shadow-sm: 3px 3px 8px rgba(0,0,0,0.4), -3px -3px 8px rgba(30, 40, 60, 0.08);
-    --neu-shadow-hover: 8px 8px 18px rgba(0,0,0,0.6), -8px -8px 18px rgba(30, 40, 60, 0.15);
+    /* Neumorphism shadows - SOFT & REFINED */
+    --neu-shadow: 8px 8px 20px rgba(0,0,0,0.5), -6px -6px 16px rgba(30, 40, 60, 0.12);
+    --neu-shadow-inset: inset 4px 4px 10px rgba(0,0,0,0.5), inset -3px -3px 8px rgba(30, 40, 60, 0.08);
+    --neu-shadow-sm: 4px 4px 12px rgba(0,0,0,0.4), -3px -3px 10px rgba(30, 40, 60, 0.08);
+    --neu-shadow-hover: 10px 10px 24px rgba(0,0,0,0.6), -8px -8px 20px rgba(30, 40, 60, 0.15);
+    --neu-shadow-active: inset 5px 5px 12px rgba(0,0,0,0.6), inset -4px -4px 10px rgba(30, 40, 60, 0.10);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -45,9 +49,17 @@ body {
     min-height: 100vh;
 }
 
-/* ===== OVERRIDE BASE CARD HOVER ===== */
+/* ===== OVERRIDE BASE CARD ===== */
+.card {
+    background: var(--bg-tertiary) !important;
+    border-radius: 16px !important;
+    border: 1px solid transparent !important;
+    box-shadow: var(--neu-shadow) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
 .card:hover {
-    transform: translateY(-2px) !important;
+    transform: translateY(-3px) !important;
     box-shadow: var(--neu-shadow-hover) !important;
     border-color: transparent !important;
 }
@@ -66,17 +78,17 @@ body {
 /* ===== WELCOME SECTION ===== */
 .welcome-section {
     background: var(--bg-tertiary);
-    border-radius: 14px;
-    padding: 20px 24px;
-    margin-bottom: 16px;
+    border-radius: 16px;
+    padding: 22px 28px;
+    margin-bottom: 18px;
     box-shadow: var(--neu-shadow);
     border: 1px solid transparent;
-    transition: all 0.25s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .welcome-section:hover {
     box-shadow: var(--neu-shadow-hover);
-    border-color: transparent;
+    transform: translateY(-2px);
 }
 
 .welcome-content {
@@ -88,15 +100,17 @@ body {
 }
 
 .welcome-text h1 {
-    font-size: 20px;
+    font-size: 22px;
     font-weight: 700;
     color: var(--text-primary);
+    letter-spacing: -0.3px;
 }
 
 .welcome-text h1 span {
-    background: linear-gradient(135deg, var(--primary), var(--purple));
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .welcome-text p {
@@ -104,23 +118,28 @@ body {
     font-size: 13px;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
+}
+
+.welcome-text p i {
+    color: var(--primary);
 }
 
 .quote-card {
     background: var(--bg-secondary);
-    border-radius: 12px;
-    padding: 12px 18px;
+    border-radius: 14px;
+    padding: 14px 20px;
     max-width: 420px;
     min-width: 240px;
     box-shadow: var(--neu-shadow-inset);
+    border: 1px solid rgba(255,255,255,0.03);
 }
 
 .quote-text {
     font-size: 14px;
     font-style: italic;
     color: var(--text-secondary);
-    line-height: 1.4;
+    line-height: 1.5;
 }
 
 .quote-author {
@@ -128,12 +147,12 @@ body {
     font-weight: 600;
     text-align: right;
     font-size: 12px;
-    margin-top: 4px;
+    margin-top: 6px;
 }
 
 .severity-container {
-    margin-top: 8px;
-    padding-top: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
     border-top: 1px solid rgba(255,255,255,0.04);
     display: flex;
     align-items: center;
@@ -144,36 +163,37 @@ body {
     font-size: 10px;
     color: var(--text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.4px;
 }
 
 .severity-badge {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 4px 12px;
-    border-radius: 20px;
+    gap: 8px;
+    padding: 5px 14px;
+    border-radius: 30px;
     font-size: 11px;
     font-weight: 600;
     background: var(--bg-tertiary);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.25s ease;
     box-shadow: var(--neu-shadow-sm);
+    border: 1px solid transparent;
 }
 
 .severity-badge:hover {
-    transform: scale(1.02);
+    transform: scale(1.03);
     box-shadow: var(--neu-shadow-hover);
 }
 
-.severity-badge.critical { background: rgba(239,68,68,0.15); color: #ef4444; }
-.severity-badge.serious { background: rgba(245,158,11,0.15); color: #f59e0b; }
-.severity-badge.poor { background: rgba(245,158,11,0.15); color: #f59e0b; }
-.severity-badge.below_average { background: rgba(59,130,246,0.15); color: #3b82f6; }
-.severity-badge.good { background: rgba(34,197,94,0.15); color: #22c55e; }
-.severity-badge.excellent { background: rgba(168,85,247,0.15); color: #a855f7; }
-.severity-badge.new_user { background: rgba(59,130,246,0.15); color: #3b82f6; }
-.severity-badge.insufficient_data { background: rgba(251,191,36,0.15); color: #fbbf24; }
+.severity-badge.critical { background: rgba(239,68,68,0.15); color: #ef4444; border-color: rgba(239,68,68,0.15); }
+.severity-badge.serious { background: rgba(245,158,11,0.15); color: #f59e0b; border-color: rgba(245,158,11,0.15); }
+.severity-badge.poor { background: rgba(245,158,11,0.15); color: #f59e0b; border-color: rgba(245,158,11,0.15); }
+.severity-badge.below_average { background: rgba(59,130,246,0.15); color: #3b82f6; border-color: rgba(59,130,246,0.15); }
+.severity-badge.good { background: rgba(34,197,94,0.15); color: #22c55e; border-color: rgba(34,197,94,0.15); }
+.severity-badge.excellent { background: rgba(168,85,247,0.15); color: #a855f7; border-color: rgba(168,85,247,0.15); }
+.severity-badge.new_user { background: rgba(59,130,246,0.15); color: #3b82f6; border-color: rgba(59,130,246,0.15); }
+.severity-badge.insufficient_data { background: rgba(251,191,36,0.15); color: #fbbf24; border-color: rgba(251,191,36,0.15); }
 
 /* ===== BLINKING LIGHT ===== */
 .blinking-light {
@@ -181,8 +201,8 @@ body {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    animation: blink 1.5s infinite;
-    box-shadow: 0 0 6px currentColor;
+    animation: blink 1.6s infinite;
+    box-shadow: 0 0 8px currentColor;
 }
 .red-light { background: #ef4444; color: #ef4444; }
 .orange-light { background: #f59e0b; color: #f59e0b; }
@@ -193,72 +213,77 @@ body {
 .gray-light { background: #94a3b8; color: #94a3b8; }
 
 @keyframes blink {
-    0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 6px currentColor; }
-    50% { opacity: 0.4; transform: scale(0.9); box-shadow: 0 0 3px currentColor; }
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.35; transform: scale(0.85); }
 }
 
 /* ===== STATS GRID ===== */
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    margin-bottom: 16px;
+    gap: 14px;
+    margin-bottom: 18px;
 }
 
 .stat-card {
     background: var(--bg-tertiary);
-    border-radius: 14px;
-    padding: 14px 16px;
-    box-shadow: var(--neu-shadow-sm);
+    border-radius: 16px;
+    padding: 16px 18px;
+    box-shadow: var(--neu-shadow);
     border: 1px solid transparent;
-    transition: all 0.25s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .stat-card:hover {
-    transform: translateY(-2px);
+    transform: translateY(-3px);
     box-shadow: var(--neu-shadow-hover);
-    border-color: transparent;
 }
 
 .stat-header {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     margin-bottom: 6px;
 }
 
 .stat-icon {
-    width: 34px;
-    height: 34px;
+    width: 38px;
+    height: 38px;
     background: var(--primary-soft);
-    border-radius: 10px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
+    font-size: 17px;
     color: var(--primary);
     flex-shrink: 0;
+    box-shadow: var(--neu-shadow-inset);
 }
 
 .stat-title {
     font-size: 11px;
     color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    font-weight: 500;
 }
 
 .stat-value {
-    font-size: 22px;
+    font-size: 24px;
     font-weight: 700;
     color: var(--text-primary);
     margin: 2px 0;
+    letter-spacing: -0.3px;
 }
 .stat-value.positive { color: var(--success); }
 .stat-value.negative { color: var(--danger); }
 .stat-value.text-blue { color: var(--info); }
+.stat-value.text-white { color: var(--text-primary); }
 
 .stat-trend {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
     font-size: 10px;
     color: var(--text-muted);
 }
@@ -269,84 +294,86 @@ body {
 /* ===== SESSION CARD ===== */
 .session-card {
     background: var(--bg-tertiary);
-    border-radius: 14px;
-    padding: 14px 18px;
-    box-shadow: var(--neu-shadow-sm);
+    border-radius: 16px;
+    padding: 16px 20px;
+    box-shadow: var(--neu-shadow);
     border: 1px solid transparent;
-    transition: all 0.25s ease;
-    margin-bottom: 14px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-bottom: 16px;
 }
 
 .session-card:hover {
     box-shadow: var(--neu-shadow-hover);
-    border-color: transparent;
     transform: translateY(-2px);
 }
 
 .session-header {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
+    gap: 12px;
+    margin-bottom: 12px;
 }
 
 .session-icon {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     background: var(--primary-soft);
-    border-radius: 10px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
+    font-size: 18px;
     color: var(--primary);
     flex-shrink: 0;
+    box-shadow: var(--neu-shadow-inset);
 }
 
 .session-header h3 {
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 600;
     color: var(--text-primary);
 }
 
 .session-mini-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 8px;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px;
 }
 
 .session-mini-item {
     background: var(--bg-secondary);
-    border-radius: 10px;
-    padding: 8px 12px;
+    border-radius: 12px;
+    padding: 10px 14px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     box-shadow: var(--neu-shadow-inset);
+    border: 1px solid rgba(255,255,255,0.02);
 }
 
 .session-mini-item .mini-icon {
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
     background: var(--bg-tertiary);
-    border-radius: 8px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--primary);
     flex-shrink: 0;
+    box-shadow: var(--neu-shadow-sm);
 }
 
 .session-mini-item .mini-label {
     font-size: 8px;
     color: var(--text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.4px;
 }
 
 .session-mini-item .mini-value {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--text-primary);
 }
@@ -354,40 +381,40 @@ body {
 /* ===== MOOD SECTION ===== */
 .mood-section {
     background: var(--bg-tertiary);
-    border-radius: 14px;
-    padding: 14px 18px;
-    box-shadow: var(--neu-shadow-sm);
+    border-radius: 16px;
+    padding: 16px 20px;
+    box-shadow: var(--neu-shadow);
     border: 1px solid transparent;
-    transition: all 0.25s ease;
-    margin-bottom: 14px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-bottom: 16px;
 }
 
 .mood-section:hover {
     box-shadow: var(--neu-shadow-hover);
-    border-color: transparent;
 }
 
 .mood-header {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
+    gap: 12px;
+    margin-bottom: 12px;
 }
 
 .mood-icon {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     background: var(--warning-soft);
-    border-radius: 10px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
+    font-size: 18px;
     color: var(--warning);
+    box-shadow: var(--neu-shadow-inset);
 }
 
 .mood-header h3 {
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 600;
     color: var(--text-primary);
 }
@@ -395,38 +422,47 @@ body {
 .mood-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 6px;
+    gap: 8px;
 }
 
 .mood-option {
     background: var(--bg-secondary);
-    border: 1px solid transparent;
-    border-radius: 10px;
-    padding: 8px;
+    border: 2px solid transparent;
+    border-radius: 12px;
+    padding: 10px 8px;
     text-align: center;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.25s ease;
     box-shadow: var(--neu-shadow-inset);
 }
 
 .mood-option:hover {
     border-color: var(--primary);
     transform: translateY(-2px);
+    box-shadow: var(--neu-shadow-hover);
+}
+
+.mood-option:active {
+    transform: translateY(0);
+    box-shadow: var(--neu-shadow-active);
 }
 
 .mood-option.selected {
     background: var(--primary-soft);
     border-color: var(--primary);
+    box-shadow: var(--neu-shadow-active), 0 0 20px var(--primary-glow);
 }
 
 .mood-emoji {
-    font-size: 22px;
+    font-size: 24px;
     margin-bottom: 2px;
+    display: block;
 }
 
 .mood-label {
     font-size: 10px;
     color: var(--text-muted);
+    font-weight: 500;
 }
 
 .mood-option.selected .mood-label {
@@ -435,45 +471,50 @@ body {
 
 /* ===== MOOD RESPONSE ===== */
 .mood-response {
-    margin-top: 12px;
-    margin-bottom: 12px;
+    margin-top: 14px;
+    margin-bottom: 14px;
 }
 
 .mood-selected-card {
     background: var(--bg-tertiary);
-    border-radius: 14px;
-    padding: 14px 18px;
+    border-radius: 16px;
+    padding: 16px 20px;
     border: 1px solid var(--primary);
-    box-shadow: var(--neu-shadow);
-    animation: fadeIn 0.3s ease;
+    box-shadow: var(--neu-shadow), 0 0 30px var(--primary-glow);
+    animation: fadeIn 0.4s ease;
 }
 
 .selected-mood-content {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
 }
 
 .selected-mood-badge {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     background: var(--bg-secondary);
-    padding: 6px 16px;
-    border-radius: 30px;
+    padding: 8px 20px;
+    border-radius: 40px;
     border: 2px solid var(--primary);
     box-shadow: var(--neu-shadow-inset);
 }
 
-.large-emoji { font-size: 28px; }
-.selected-mood-name { font-size: 16px; font-weight: 700; color: var(--text-primary); text-transform: capitalize; }
+.large-emoji { font-size: 30px; }
+.selected-mood-name { 
+    font-size: 17px; 
+    font-weight: 700; 
+    color: var(--text-primary);
+    text-transform: capitalize;
+}
 
 .mood-message-card {
-    background: rgba(16,185,129,0.05);
+    background: var(--primary-soft);
     border-left: 3px solid var(--primary);
-    border-radius: 10px;
-    padding: 10px 14px;
+    border-radius: 12px;
+    padding: 12px 16px;
     width: 100%;
     text-align: center;
 }
@@ -486,35 +527,36 @@ body {
 
 .mood-message-card span {
     display: inline-block;
-    background: rgba(16,185,129,0.10);
+    background: var(--primary-soft);
     color: var(--primary);
-    padding: 2px 14px;
+    padding: 3px 16px;
     border-radius: 20px;
     font-weight: 500;
     font-size: 11px;
+    border: 1px solid rgba(16,185,129,0.15);
 }
 
 .streak-display {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     background: var(--bg-secondary);
-    padding: 6px 16px;
-    border-radius: 30px;
+    padding: 6px 18px;
+    border-radius: 40px;
     box-shadow: var(--neu-shadow-inset);
 }
 
-.streak-icon { font-size: 20px; }
-.streak-value { font-size: 20px; font-weight: 700; color: var(--warning); line-height: 1; }
-.streak-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; }
+.streak-icon { font-size: 22px; }
+.streak-value { font-size: 22px; font-weight: 700; color: var(--warning); line-height: 1; }
+.streak-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
 
 .comeback-message {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     color: var(--text-muted);
     font-size: 11px;
-    padding-top: 8px;
+    padding-top: 10px;
     border-top: 1px dashed rgba(255,255,255,0.04);
     width: 100%;
     justify-content: center;
@@ -523,40 +565,40 @@ body {
 /* ===== NEWS SECTION ===== */
 .news-section {
     background: var(--bg-tertiary);
-    border-radius: 14px;
-    padding: 12px 16px;
-    box-shadow: var(--neu-shadow-sm);
+    border-radius: 16px;
+    padding: 14px 18px;
+    box-shadow: var(--neu-shadow);
     border: 1px solid transparent;
-    transition: all 0.25s ease;
-    margin-bottom: 14px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-bottom: 16px;
 }
 
 .news-section:hover {
     box-shadow: var(--neu-shadow-hover);
-    border-color: transparent;
 }
 
 .news-header {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
+    gap: 10px;
+    margin-bottom: 10px;
 }
 
 .news-icon {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     background: var(--info-soft);
-    border-radius: 8px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 14px;
+    font-size: 15px;
     color: var(--info);
+    box-shadow: var(--neu-shadow-inset);
 }
 
 .news-header h3 {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--text-primary);
 }
@@ -564,32 +606,35 @@ body {
 .news-container {
     display: flex;
     align-items: stretch;
-    gap: 8px;
+    gap: 10px;
     background: var(--bg-secondary);
-    border-radius: 10px;
-    padding: 4px 10px;
-    min-height: 36px;
+    border-radius: 12px;
+    padding: 6px 12px;
+    min-height: 40px;
     box-shadow: var(--neu-shadow-inset);
+    border: 1px solid rgba(255,255,255,0.02);
 }
 
 .hot-badge {
-    background: linear-gradient(135deg, var(--danger), #dc2626);
+    background: linear-gradient(135deg, #ef4444, #dc2626);
     color: white;
-    padding: 4px 12px;
-    border-radius: 20px;
+    padding: 4px 14px;
+    border-radius: 30px;
     font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.5px;
     white-space: nowrap;
-    box-shadow: 0 2px 8px rgba(239,68,68,0.3);
-    animation: hotPulse 2s infinite;
+    box-shadow: 0 2px 12px rgba(239,68,68,0.35);
+    animation: hotPulse 2.5s infinite;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 @keyframes hotPulse {
-    0% { box-shadow: 0 2px 8px rgba(239,68,68,0.3); }
-    50% { box-shadow: 0 2px 14px rgba(239,68,68,0.5); }
-    100% { box-shadow: 0 2px 8px rgba(239,68,68,0.3); }
+    0%, 100% { box-shadow: 0 2px 12px rgba(239,68,68,0.3); }
+    50% { box-shadow: 0 2px 20px rgba(239,68,68,0.55); }
 }
 
 .news-ticker-wrapper {
@@ -614,8 +659,8 @@ body {
     font-size: 12px;
     font-weight: 400;
     white-space: nowrap;
-    animation: tickerSlide 25s linear infinite;
-    padding-right: 16px;
+    animation: tickerSlide 28s linear infinite;
+    padding-right: 20px;
 }
 
 .news-ticker-content:hover { animation-play-state: paused; }
@@ -627,31 +672,33 @@ body {
 
 /* ===== ALERT SECTION ===== */
 .alert-section {
-    background: rgba(248,113,113,0.08);
-    border: 1px solid rgba(248,113,113,0.15);
-    border-radius: 14px;
-    padding: 12px 16px;
-    margin-bottom: 14px;
+    background: rgba(248,113,113,0.06);
+    border: 1px solid rgba(248,113,113,0.12);
+    border-radius: 16px;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    box-shadow: var(--neu-shadow-inset);
 }
 
 .alert-content {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
     flex-wrap: wrap;
 }
 
 .alert-icon {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     background: var(--danger-soft);
-    border-radius: 10px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
+    font-size: 17px;
     color: var(--danger);
     flex-shrink: 0;
+    box-shadow: var(--neu-shadow-inset);
 }
 
 .alert-text { flex: 1; }
@@ -660,8 +707,8 @@ body {
 .alert-badge {
     background: var(--danger-soft);
     color: var(--danger);
-    padding: 2px 12px;
-    border-radius: 20px;
+    padding: 3px 14px;
+    border-radius: 30px;
     font-size: 11px;
     font-weight: 600;
 }
@@ -670,56 +717,71 @@ body {
 .quick-actions-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-    margin-top: 16px;
+    gap: 12px;
+    margin-top: 18px;
 }
 
 .quick-action-btn {
     background: var(--bg-tertiary);
     border: 1px solid transparent;
-    border-radius: 14px;
-    padding: 12px 14px;
+    border-radius: 16px;
+    padding: 14px 16px;
     text-decoration: none;
     color: var(--text-primary);
     display: flex;
     align-items: center;
-    gap: 10px;
-    transition: all 0.25s ease;
-    box-shadow: var(--neu-shadow-sm);
+    gap: 12px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--neu-shadow);
 }
 
 .quick-action-btn:hover {
     border-color: transparent;
-    transform: translateY(-3px);
+    transform: translateY(-4px);
     box-shadow: var(--neu-shadow-hover);
 }
 
+.quick-action-btn:active {
+    transform: translateY(0);
+    box-shadow: var(--neu-shadow-active);
+}
+
 .quick-action-icon {
-    width: 34px;
-    height: 34px;
+    width: 38px;
+    height: 38px;
     background: var(--primary-soft);
-    border-radius: 10px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
+    font-size: 17px;
     color: var(--primary);
     flex-shrink: 0;
+    box-shadow: var(--neu-shadow-inset);
 }
 
 .quick-action-text { flex: 1; }
-.quick-action-title { font-size: 13px; font-weight: 600; margin-bottom: 1px; }
-.quick-action-subtitle { font-size: 10px; color: var(--text-muted); }
+.quick-action-title { 
+    font-size: 13px; 
+    font-weight: 600; 
+    margin-bottom: 1px;
+    color: var(--text-primary);
+}
+.quick-action-subtitle { 
+    font-size: 10px; 
+    color: var(--text-muted);
+}
 
 .quick-action-btn i.fa-chevron-right {
     color: var(--primary);
     font-size: 12px;
-    opacity: 0.5;
-    transition: opacity 0.2s ease;
+    opacity: 0.4;
+    transition: all 0.3s ease;
 }
 
 .quick-action-btn:hover i.fa-chevron-right {
     opacity: 1;
+    transform: translateX(3px);
 }
 
 /* ===== MODAL ===== */
@@ -728,7 +790,8 @@ body {
     position: fixed;
     top: 0; left: 0;
     width: 100%; height: 100%;
-    background: rgba(0,0,0,0.8);
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(8px);
     z-index: 10000;
     align-items: center;
     justify-content: center;
@@ -736,49 +799,73 @@ body {
 
 #performanceModal > div {
     background: var(--bg-tertiary);
-    border-radius: 16px;
+    border-radius: 18px;
     max-width: 700px;
     width: 90%;
     max-height: 85vh;
     overflow-y: auto;
     border: 1px solid transparent;
     box-shadow: var(--neu-shadow-hover);
+    animation: modalSlide 0.35s ease;
+}
+
+@keyframes modalSlide {
+    from { opacity: 0; transform: scale(0.95) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 #performanceModal > div > div:first-child {
-    padding: 14px 20px;
+    padding: 16px 24px;
     border-bottom: 1px solid rgba(255,255,255,0.04);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    background: var(--bg-secondary);
+    border-radius: 18px 18px 0 0;
 }
 
 #performanceModal > div > div:first-child h3 {
     color: var(--text-primary);
     margin: 0;
-    font-size: 16px;
+    font-size: 17px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#performanceModal > div > div:first-child h3 i {
+    color: var(--warning);
 }
 
 #performanceModal > div > div:first-child button {
-    background: none;
+    background: var(--bg-tertiary);
     border: none;
     color: var(--text-muted);
-    font-size: 22px;
+    font-size: 24px;
     cursor: pointer;
-    padding: 0 8px;
+    padding: 0 10px;
     transition: color 0.2s ease;
+    border-radius: 10px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--neu-shadow-sm);
 }
 
 #performanceModal > div > div:first-child button:hover {
     color: var(--text-primary);
+    box-shadow: var(--neu-shadow-hover);
 }
 
 #modalIssuesList {
-    padding: 16px 20px;
+    padding: 20px 24px;
 }
 
 #performanceModal > div > div:last-child {
-    padding: 10px 20px;
+    padding: 12px 24px 18px;
     border-top: 1px solid rgba(255,255,255,0.04);
     text-align: right;
 }
@@ -787,12 +874,13 @@ body {
     background: var(--primary);
     border: none;
     color: white;
-    padding: 6px 20px;
-    border-radius: 10px;
+    padding: 8px 28px;
+    border-radius: 12px;
     cursor: pointer;
     font-weight: 600;
     font-size: 13px;
-    transition: all 0.2s ease;
+    transition: all 0.25s ease;
+    box-shadow: var(--neu-shadow-sm);
 }
 
 #performanceModal > div > div:last-child button:hover {
@@ -802,7 +890,7 @@ body {
 
 /* ===== ANIMATIONS ===== */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
+    from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
@@ -820,27 +908,27 @@ body {
 @media (max-width: 768px) {
     .dashboard-container { padding: 0 10px; }
     
-    .welcome-section { padding: 14px 16px; }
-    .welcome-text h1 { font-size: 17px; }
-    .quote-card { max-width: 100%; min-width: auto; padding: 10px 14px; }
+    .welcome-section { padding: 16px 18px; }
+    .welcome-text h1 { font-size: 18px; }
+    .quote-card { max-width: 100%; min-width: auto; padding: 12px 16px; }
     .quote-text { font-size: 13px; }
     
-    .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
-    .stat-card { padding: 10px 12px; }
-    .stat-value { font-size: 18px; }
+    .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-card { padding: 12px 14px; }
+    .stat-value { font-size: 20px; }
     
     .mood-grid { grid-template-columns: repeat(2, 1fr); }
-    .quick-actions-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
-    .quick-action-btn { padding: 10px 12px; }
+    .quick-actions-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .quick-action-btn { padding: 12px 14px; }
     
     .session-mini-grid { grid-template-columns: 1fr 1fr; }
-    .news-container { flex-direction: column; align-items: flex-start; padding: 8px 12px; }
+    .news-container { flex-direction: column; align-items: flex-start; padding: 10px 14px; }
     .hot-badge { width: fit-content; }
     .news-ticker-wrapper { width: 100%; padding: 4px 0; }
     .alert-content { flex-direction: column; text-align: center; }
     
-    .selected-mood-badge { padding: 6px 12px; }
-    .large-emoji { font-size: 24px; }
+    .selected-mood-badge { padding: 6px 16px; }
+    .large-emoji { font-size: 26px; }
     .selected-mood-name { font-size: 15px; }
 }
 
@@ -849,8 +937,10 @@ body {
     .quick-actions-grid { grid-template-columns: 1fr; }
     .session-mini-grid { grid-template-columns: 1fr; }
     .mood-grid { grid-template-columns: repeat(2, 1fr); }
-    .stat-card { padding: 8px 10px; }
-    .stat-value { font-size: 16px; }
+    .stat-card { padding: 10px 12px; }
+    .stat-value { font-size: 18px; }
+    .welcome-section { padding: 14px; }
+    .welcome-text h1 { font-size: 16px; }
 }
 </style>
 
@@ -862,7 +952,7 @@ body {
         <div class="welcome-content">
             <div class="welcome-text">
                 <h1>Hi, <span>{{ user.first_name|default:user.username }}</span> 👋</h1>
-                <p><i class="fas fa-calendar"></i> {{ current_date|default:"today" }}</p>
+                <p><i class="fas fa-calendar-alt"></i> {{ current_date|default:"today" }}</p>
             </div>
             <div class="quote-card">
                 <div class="quote-text">"{{ advice.quote }}"</div>
@@ -886,43 +976,105 @@ body {
             <h3>How are you feeling today?</h3>
         </div>
         <div class="mood-grid" id="moodGrid">
-            <div class="mood-option" data-mood="confident" onclick="selectMood('confident')"><div class="mood-emoji">😊</div><div class="mood-label">Confident</div></div>
-            <div class="mood-option" data-mood="cautious" onclick="selectMood('cautious')"><div class="mood-emoji">🤔</div><div class="mood-label">Cautious</div></div>
-            <div class="mood-option" data-mood="neutral" onclick="selectMood('neutral')"><div class="mood-emoji">😐</div><div class="mood-label">Neutral</div></div>
-            <div class="mood-option" data-mood="stressed" onclick="selectMood('stressed')"><div class="mood-emoji">😓</div><div class="mood-label">Stressed</div></div>
-            <div class="mood-option" data-mood="energetic" onclick="selectMood('energetic')"><div class="mood-emoji">⚡</div><div class="mood-label">Energetic</div></div>
-            <div class="mood-option" data-mood="tired" onclick="selectMood('tired')"><div class="mood-emoji">😴</div><div class="mood-label">Tired</div></div>
-            <div class="mood-option" data-mood="focused" onclick="selectMood('focused')"><div class="mood-emoji">🎯</div><div class="mood-label">Focused</div></div>
-            <div class="mood-option" data-mood="anxious" onclick="selectMood('anxious')"><div class="mood-emoji">😰</div><div class="mood-label">Anxious</div></div>
+            <div class="mood-option" data-mood="confident" onclick="selectMood('confident')">
+                <span class="mood-emoji">😊</span>
+                <span class="mood-label">Confident</span>
+            </div>
+            <div class="mood-option" data-mood="cautious" onclick="selectMood('cautious')">
+                <span class="mood-emoji">🤔</span>
+                <span class="mood-label">Cautious</span>
+            </div>
+            <div class="mood-option" data-mood="neutral" onclick="selectMood('neutral')">
+                <span class="mood-emoji">😐</span>
+                <span class="mood-label">Neutral</span>
+            </div>
+            <div class="mood-option" data-mood="stressed" onclick="selectMood('stressed')">
+                <span class="mood-emoji">😓</span>
+                <span class="mood-label">Stressed</span>
+            </div>
+            <div class="mood-option" data-mood="energetic" onclick="selectMood('energetic')">
+                <span class="mood-emoji">⚡</span>
+                <span class="mood-label">Energetic</span>
+            </div>
+            <div class="mood-option" data-mood="tired" onclick="selectMood('tired')">
+                <span class="mood-emoji">😴</span>
+                <span class="mood-label">Tired</span>
+            </div>
+            <div class="mood-option" data-mood="focused" onclick="selectMood('focused')">
+                <span class="mood-emoji">🎯</span>
+                <span class="mood-label">Focused</span>
+            </div>
+            <div class="mood-option" data-mood="anxious" onclick="selectMood('anxious')">
+                <span class="mood-emoji">😰</span>
+                <span class="mood-label">Anxious</span>
+            </div>
         </div>
     </div>
 
     <!-- ===== MOOD RESPONSE ===== -->
     <div class="mood-response" id="moodResponse" style="display:none;"></div>
 
-    <!-- ===== STATS GRID ===== -->
-    <div class="stats-grid">
-        <div class="stat-card card">
-            <div class="stat-header"><div class="stat-icon">📊</div><div class="stat-title">Today's P&L</div></div>
-            <div class="stat-value {% if todays_profit > 0 %}positive{% elif todays_profit < 0 %}negative{% endif %}">
-                {% if todays_profit > 0 %}+{% endif %}{{ todays_profit|floatformat:2|default:"0.00" }}
-            </div>
-            <div class="stat-trend">
-                <i class="fas {% if todays_profit > 0 %}fa-arrow-up trend-up{% elif todays_profit < 0 %}fa-arrow-down trend-down{% else %}fa-minus trend-neutral{% endif %}"></i>
-                vs yesterday ({{ yesterday_profit|floatformat:2|default:"0.00" }})
-            </div>
+<!-- ===== STATS GRID ===== -->
+<div class="stats-grid">
+    <div class="stat-card card">
+        <div class="stat-header">
+            <div class="stat-icon">📊</div>
+            <div class="stat-title">Today's Closed P&L</div>
         </div>
-<div class="stat-card card">
-    <div class="stat-header">
-        <div class="stat-icon">💰</div>
-        <div class="stat-title">Accumulated profit</div>
+        <div class="stat-value {% if todays_profit > 0 %}positive{% elif todays_profit < 0 %}negative{% endif %}">
+            {% if todays_profit is not None %}
+                {% if todays_profit > 0 %}+{% endif %}{{ todays_profit|floatformat:2 }}
+            {% else %}
+                0.00
+            {% endif %}
+        </div>
+        <div class="stat-trend">
+            <i class="fas {% if todays_profit > 0 %}fa-arrow-up trend-up{% elif todays_profit < 0 %}fa-arrow-down trend-down{% else %}fa-minus trend-neutral{% endif %}"></i>
+            {{ todays_closed_count|default:0 }} trade{% if todays_closed_count != 1 %}s{% endif %} closed today
+        </div>
     </div>
-    <div class="stat-value {% if overall_profit > 0 %}text-blue{% elif overall_profit < 0 %}negative{% else %}text-white{% endif %}">
-        {% if overall_profit > 0 %}+{% endif %}{{ overall_profit|floatformat:2|default:"0.00" }}
+    <div class="stat-card card">
+        <div class="stat-header">
+            <div class="stat-icon">💰</div>
+            <div class="stat-title">Accumulated Profit</div>
+        </div>
+        <div class="stat-value {% if overall_profit > 0 %}text-blue{% elif overall_profit < 0 %}negative{% else %}text-white{% endif %}">
+            {% if overall_profit is not None %}
+                {% if overall_profit > 0 %}+{% endif %}{{ overall_profit|floatformat:2 }}
+            {% else %}
+                0.00
+            {% endif %}
+        </div>
+        <div class="stat-trend">
+            <i class="fas {% if overall_profit > 0 %}fa-arrow-up trend-up{% elif overall_profit < 0 %}fa-arrow-down trend-down{% else %}fa-minus trend-neutral{% endif %}"></i>
+            Since you started
+        </div>
     </div>
-    <div class="stat-trend">
-        <i class="fas {% if overall_profit > 0 %}fa-arrow-up trend-up{% elif overall_profit < 0 %}fa-arrow-down trend-down{% else %}fa-minus trend-neutral{% endif %}"></i>
-        Since you started
+    <div class="stat-card card">
+        <div class="stat-header">
+            <div class="stat-icon">🎯</div>
+            <div class="stat-title">Win Rate</div>
+        </div>
+        <div class="stat-value {% if overallwinrate >= 50 %}positive{% else %}negative{% endif %}">
+            {{ overallwinrate|floatformat:1|default:"0" }}%
+        </div>
+        <div class="stat-trend">
+            <i class="fas fa-trophy" style="color:var(--warning);"></i>
+            {{ total_trades|default:0 }} trades logged
+        </div>
+    </div>
+    <div class="stat-card card">
+        <div class="stat-header">
+            <div class="stat-icon">⚡</div>
+            <div class="stat-title">Expectancy</div>
+        </div>
+        <div class="stat-value {% if expectancy > 0 %}positive{% else %}negative{% endif %}">
+            {{ expectancy|floatformat:2|default:"0.00" }}
+        </div>
+        <div class="stat-trend">
+            <i class="fas fa-chart-line" style="color:var(--info);"></i>
+            Avg per trade
+        </div>
     </div>
 </div>
 
@@ -948,7 +1100,7 @@ body {
                 </div>
             </div>
             <div class="session-mini-item">
-                <div class="mini-icon"><i class="fas fa-chart-line"></i></div>
+                <div class="mini-icon"><i class="fas fa-circle"></i></div>
                 <div>
                     <div class="mini-label">Market Status</div>
                     <div class="mini-value" style="color:{% if market_open %}var(--success){% else %}var(--danger){% endif %};">
@@ -975,7 +1127,7 @@ body {
             <h3>Market News</h3>
         </div>
         <div class="news-container">
-            <span class="hot-badge">🔥 HOT</span>
+            <span class="hot-badge"><i class="fas fa-fire"></i> HOT</span>
             <div class="news-ticker-wrapper">
                 <div class="news-ticker-content">{{ news_headline|default:"Fed maintains interest rates • EURUSD volatility expected • Oil prices surge • Bitcoin above $50k • Gold steady ahead of NFP" }}</div>
             </div>
@@ -1000,9 +1152,9 @@ body {
             <div class="session-icon" style="background:var(--success-soft);color:var(--success);">💪</div>
             <h3>Discipline Reminder</h3>
         </div>
-        <div style="font-size:13px;color:var(--text-secondary);padding:2px 0;">
-            <i class="fas fa-check-circle" style="color:var(--success);margin-right:6px;"></i> 
-            Discipline is key to profitability
+        <div style="font-size:13px;color:var(--text-secondary);padding:4px 0;">
+            <i class="fas fa-check-circle" style="color:var(--success);margin-right:8px;"></i> 
+            Discipline is the bridge between goals and accomplishment.
         </div>
     </div>
     {% endif %}
@@ -1011,22 +1163,34 @@ body {
     <div class="quick-actions-grid">
         <a href="{% url 'trade' %}" class="quick-action-btn card">
             <div class="quick-action-icon">📝</div>
-            <div class="quick-action-text"><div class="quick-action-title">New Trade</div><div class="quick-action-subtitle">Record a trade</div></div>
+            <div class="quick-action-text">
+                <div class="quick-action-title">New Trade</div>
+                <div class="quick-action-subtitle">Record a trade</div>
+            </div>
             <i class="fas fa-chevron-right"></i>
         </a>
         <a href="{% url 'journal' %}" class="quick-action-btn card">
             <div class="quick-action-icon">📓</div>
-            <div class="quick-action-text"><div class="quick-action-title">Journal</div><div class="quick-action-subtitle">Pending trades</div></div>
+            <div class="quick-action-text">
+                <div class="quick-action-title">Journal</div>
+                <div class="quick-action-subtitle">Pending trades</div>
+            </div>
             <i class="fas fa-chevron-right"></i>
         </a>
         <a href="{% url 'performance' %}" class="quick-action-btn card">
             <div class="quick-action-icon">📊</div>
-            <div class="quick-action-text"><div class="quick-action-title">Analytics</div><div class="quick-action-subtitle">View analytics</div></div>
+            <div class="quick-action-text">
+                <div class="quick-action-title">Analytics</div>
+                <div class="quick-action-subtitle">View performance</div>
+            </div>
             <i class="fas fa-chevron-right"></i>
         </a>
         <a href="{% url 'academy' %}" class="quick-action-btn card">
             <div class="quick-action-icon">🎓</div>
-            <div class="quick-action-text"><div class="quick-action-title">Academy</div><div class="quick-action-subtitle">Learn & improve</div></div>
+            <div class="quick-action-text">
+                <div class="quick-action-title">Academy</div>
+                <div class="quick-action-subtitle">Learn &amp; improve</div>
+            </div>
             <i class="fas fa-chevron-right"></i>
         </a>
     </div>
@@ -1089,7 +1253,11 @@ function selectMood(mood) {
 }
 
 function showPersistentMoodResponse(data) {
-    const moodNames = { 'confident':'Confident','cautious':'Cautious','neutral':'Neutral','stressed':'Stressed','energetic':'Energetic','tired':'Tired','focused':'Focused','anxious':'Anxious' };
+    const moodNames = { 
+        'confident':'Confident','cautious':'Cautious','neutral':'Neutral',
+        'stressed':'Stressed','energetic':'Energetic','tired':'Tired',
+        'focused':'Focused','anxious':'Anxious' 
+    };
     const color = data.color || '#6b7280';
     
     const html = `
@@ -1133,9 +1301,9 @@ function showNotification(message, type) {
     const notification = document.createElement('div');
     notification.textContent = message;
     Object.assign(notification.style, {
-        position: 'fixed', bottom: '20px', right: '20px', padding: '10px 18px',
-        borderRadius: '12px', color: 'white', fontWeight: '500', zIndex: '9999',
-        background: bg, boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+        position: 'fixed', bottom: '24px', right: '24px', padding: '12px 20px',
+        borderRadius: '14px', color: 'white', fontWeight: '500', zIndex: '9999',
+        background: bg, boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
         fontSize: '13px',
         transition: 'all 0.3s ease'
     });
@@ -1144,29 +1312,30 @@ function showNotification(message, type) {
         notification.style.opacity = '0';
         notification.style.transform = 'translateY(20px)';
         setTimeout(() => notification.remove(), 300);
-    }, 3000);
+    }, 3500);
 }
 
 function createConfetti() {
     const colors = ['#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#a855f7', '#ec4899'];
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 25; i++) {
         setTimeout(() => {
             const el = document.createElement('div');
             const color = colors[Math.floor(Math.random() * colors.length)];
+            const size = Math.random() * 6 + 4;
             Object.assign(el.style, {
                 position: 'fixed',
                 left: Math.random() * 100 + '%',
                 background: color,
-                width: '6px',
-                height: '6px',
-                borderRadius: Math.random() > 0.5 ? '50%' : '0',
+                width: size + 'px',
+                height: size + 'px',
+                borderRadius: Math.random() > 0.5 ? '50%' : '2px',
                 top: '-10px',
                 zIndex: '9999',
                 animation: `confetti ${Math.random() * 2 + 2}s linear forwards`
             });
             document.body.appendChild(el);
             setTimeout(() => el.remove(), 5000);
-        }, i * 30);
+        }, i * 40);
     }
 }
 
@@ -1181,18 +1350,18 @@ function showPerformanceIssues() {
     
     if (totalTrades === 0) {
         issuesList.innerHTML = `
-            <div style="text-align:center;color:var(--text-muted);padding:16px;">
-                <div style="font-size:40px;margin-bottom:12px;">📝</div>
-                <p style="font-size:14px;">No trades yet.</p>
-                <p style="font-size:12px;margin-top:4px;">Start logging trades to get performance analysis!</p>
+            <div style="text-align:center;color:var(--text-muted);padding:20px;">
+                <div style="font-size:44px;margin-bottom:14px;">📝</div>
+                <p style="font-size:15px;color:var(--text-secondary);">No trades yet.</p>
+                <p style="font-size:12px;margin-top:6px;">Start logging trades to get performance analysis!</p>
             </div>
         `;
     } else if (totalTrades < 5) {
         issuesList.innerHTML = `
-            <div style="text-align:center;color:var(--text-muted);padding:16px;">
-                <div style="font-size:40px;margin-bottom:12px;">📊</div>
-                <p style="font-size:14px;">Building your performance profile.</p>
-                <p style="font-size:12px;margin-top:4px;">Log ${5 - totalTrades} more trade${5 - totalTrades > 1 ? 's' : ''} to see detailed analysis!</p>
+            <div style="text-align:center;color:var(--text-muted);padding:20px;">
+                <div style="font-size:44px;margin-bottom:14px;">📊</div>
+                <p style="font-size:15px;color:var(--text-secondary);">Building your performance profile.</p>
+                <p style="font-size:12px;margin-top:6px;">Log ${5 - totalTrades} more trade${5 - totalTrades > 1 ? 's' : ''} to see detailed analysis!</p>
             </div>
         `;
     } else {
@@ -1203,10 +1372,10 @@ function showPerformanceIssues() {
         
         if (issues.length === 0) {
             issuesList.innerHTML = `
-                <div style="text-align:center;color:var(--text-muted);padding:16px;">
-                    <div style="font-size:40px;margin-bottom:12px;">✅</div>
-                    <p style="font-size:14px;">Great job! No major issues detected.</p>
-                    <p style="font-size:12px;margin-top:4px;">Keep following your trading plan!</p>
+                <div style="text-align:center;color:var(--text-muted);padding:20px;">
+                    <div style="font-size:44px;margin-bottom:14px;">✅</div>
+                    <p style="font-size:15px;color:var(--text-secondary);">Great job! No major issues detected.</p>
+                    <p style="font-size:12px;margin-top:6px;">Keep following your trading plan!</p>
                 </div>
             `;
         } else {
@@ -1215,18 +1384,18 @@ function showPerformanceIssues() {
                 'consistency': 'Stick to a consistent risk-reward ratio. Don\'t chase random targets.',
                 'winrate': 'Be more selective. Wait for high-probability setups with confirmation.'
             };
-            let html = '<div style="display:flex;flex-direction:column;gap:10px;">';
+            let html = '<div style="display:flex;flex-direction:column;gap:12px;">';
             for (const issue of issues) {
                 html += `
-                    <div style="background:var(--bg-secondary);border-radius:12px;padding:12px 14px;border-left:3px solid #ef4444;">
-                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-                            <span style="font-size:18px;">⚠️</span>
-                            <strong style="color:#ef4444;font-size:13px;">${issue.issue}</strong>
+                    <div style="background:var(--bg-secondary);border-radius:14px;padding:14px 16px;border-left:3px solid #ef4444;box-shadow:var(--neu-shadow-inset);">
+                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+                            <span style="font-size:20px;">⚠️</span>
+                            <strong style="color:#ef4444;font-size:14px;">${issue.issue}</strong>
                         </div>
-                        <div style="color:var(--text-muted);font-size:12px;margin-bottom:6px;">
+                        <div style="color:var(--text-muted);font-size:12px;margin-bottom:8px;">
                             Value: ${issue.value} (Threshold: ${issue.threshold})
                         </div>
-                        <div style="background:rgba(239,68,68,0.08);border-radius:8px;padding:6px 10px;font-size:12px;color:#f87171;">
+                        <div style="background:rgba(239,68,68,0.08);border-radius:10px;padding:8px 12px;font-size:12px;color:#f87171;">
                             💡 ${adviceMap[issue.metric] || 'Review your trading plan and stick to your rules.'}
                         </div>
                     </div>

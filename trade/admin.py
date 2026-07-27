@@ -1,22 +1,23 @@
 from django.contrib import admin
+from django.utils.html import format_html
+from django.db import models
 from . import models
 
 
 
 class TradeView(admin.ModelAdmin):
-    list_display = ['trade_id', 'buy_or_sell', 'pair', 'account', 'risk_reward', 'target', 'timestamp']
-    list_filter = ['timestamp', 'pair', 'buy_or_sell', 'target', 'reason', 'account']
+    list_display = ['trade_id', 'buy_or_sell', 'pair', 'account', 'risk_reward', 'target', 'timestamp', 'closed_at', 'setup_image_preview']
+    list_filter = ['timestamp', 'closed_at', 'pair', 'buy_or_sell', 'target', 'reason', 'account']
     search_fields = ['trade_id', 'pair__name', 'reason']
     list_per_page = 25
     date_hierarchy = 'timestamp'
-    raw_id_fields = ['account']  # Better for performance with many accounts
+    raw_id_fields = ['account']
     
-    # Make timestamp read-only since it's non-editable
-    readonly_fields = ['timestamp']
+    readonly_fields = ['timestamp', 'closed_at', 'setup_image_preview']
     
     fieldsets = (
         ('Basic Information', {
-            'fields': ('trade_id', 'pair', 'account', 'buy_or_sell')  # Removed timestamp from here
+            'fields': ('trade_id', 'pair', 'account', 'buy_or_sell')
         }),
         ('Momentum Analysis', {
             'fields': ('momentum_h4', 'momentum_h1', 'momentum_15m', 'momentum_5m', 'momentum_1m'),
@@ -32,15 +33,50 @@ class TradeView(admin.ModelAdmin):
             'fields': ('tp', 'tp_reason'),
             'classes': ('collapse',)
         }),
+        ('Setup Image', {
+            'fields': ('setup_image_preview', 'setup_image'),
+            'description': 'Upload a screenshot of your trade setup',
+        }),
         ('Outcome', {
             'fields': ('risk_reward', 'rvs', 'rvs_grade', 'target', 'reason', 
                       'holding_time', 'narration', 'risk_percent', 'stop_loss_pips', 
                       'calculated_lot_size', 'pip_value_used')
         }),
+        ('Timestamps', {
+            'fields': ('timestamp', 'closed_at'),
+            'classes': ('collapse',)
+        }),
     )
     
     # Add filtering by calculated lot size and risk fields
     list_filter.extend(['risk_percent', 'calculated_lot_size'])
+    
+    def setup_image_preview(self, obj):
+        """Display image preview in admin list and detail view"""
+        if obj.setup_image:
+            return format_html(
+                '<img src="{}" style="max-height:60px; max-width:100px; border-radius:4px; border:1px solid #ddd; object-fit:cover;" />',
+                obj.setup_image.url
+            )
+        return format_html(
+            '<span style="color:#999;font-size:12px;">No image</span>'
+        )
+    setup_image_preview.short_description = 'Setup Image'
+    
+    # Customize the change form to show image preview
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        """Override change_view to add custom context"""
+        extra_context = extra_context or {}
+        try:
+            obj = self.get_object(request, object_id)
+            if obj and obj.setup_image:
+                extra_context['has_image'] = True
+                extra_context['image_url'] = obj.setup_image.url
+            else:
+                extra_context['has_image'] = False
+        except Exception:
+            extra_context['has_image'] = False
+        return super().change_view(request, object_id, form_url, extra_context=extra_context)
 
 class PairView(admin.ModelAdmin):
     list_display = ['name', 'trades_count']
@@ -170,8 +206,8 @@ class FundedAccountAdmin(admin.ModelAdmin):
 # Inline admin for showing trades within account view
 class TradeInline(admin.TabularInline):
     model = models.Trades
-    fields = ['trade_id', 'pair', 'buy_or_sell', 'risk_reward', 'target', 'timestamp']
-    readonly_fields = ['trade_id', 'pair', 'buy_or_sell', 'risk_reward', 'target', 'timestamp']
+    fields = ['trade_id', 'pair', 'buy_or_sell', 'risk_reward', 'target', 'timestamp', 'setup_image_thumbnail']
+    readonly_fields = ['trade_id', 'pair', 'buy_or_sell', 'risk_reward', 'target', 'timestamp', 'setup_image_thumbnail']
     extra = 0
     can_delete = False
     max_num = 10
@@ -179,6 +215,16 @@ class TradeInline(admin.TabularInline):
     
     def has_add_permission(self, request, obj=None):
         return False
+    
+    def setup_image_thumbnail(self, obj):
+        """Display small image thumbnail in inline"""
+        if obj.setup_image:
+            return format_html(
+                '<img src="{}" style="max-height:30px; max-width:50px; border-radius:3px; object-fit:cover;" />',
+                obj.setup_image.url
+            )
+        return '-'
+    setup_image_thumbnail.short_description = 'Image'
 
 # Enhanced FundedAccount admin with inline trades
 class FundedAccountDetailedAdmin(FundedAccountAdmin):

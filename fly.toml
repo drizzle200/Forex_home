@@ -8,8 +8,13 @@ console_command = '/app/manage.py shell'
 
 # Mount the volume to /data, not /code
 [mounts]
-source = "fxhome_data"
-destination = "/data"
+  source = "fxhome_data"
+  destination = "/data"
+
+# Media volume for persistent image uploads
+[[mounts]]
+  source = "media_volume"
+  destination = "/media"
 
 [deploy]
   release_command = 'python manage.py migrate --noinput'

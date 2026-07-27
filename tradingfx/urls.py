@@ -25,6 +25,7 @@ urlpatterns = [
 
 if settings.DEBUG:
     # Serve static files - with safety check
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     if hasattr(settings, 'STATICFILES_DIRS') and settings.STATICFILES_DIRS:
         try:
             urlpatterns += static(

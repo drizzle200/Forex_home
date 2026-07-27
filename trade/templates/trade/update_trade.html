@@ -228,7 +228,116 @@
     box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
 }
 
-/* Narration - Compact */
+/* ===== SETUP IMAGE UPLOAD ===== */
+.image-upload-section {
+    padding: 0 20px 16px;
+}
+
+.image-upload-section .image-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.image-upload-area {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: var(--bg-primary);
+    position: relative;
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
+}
+
+.image-upload-area:hover {
+    border-color: var(--primary);
+    background: var(--primary-soft);
+}
+
+.image-upload-area.dragover {
+    border-color: var(--primary);
+    background: var(--primary-soft);
+    box-shadow: 0 0 30px var(--primary-glow);
+}
+
+.image-upload-area .upload-icon {
+    font-size: 28px;
+    color: var(--text-muted);
+}
+
+.image-upload-area .upload-text {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.image-upload-area .upload-hint {
+    font-size: 10px;
+    color: var(--text-muted);
+    opacity: 0.6;
+}
+
+.image-preview-wrapper {
+    margin-top: 10px;
+    display: none;
+}
+
+.image-preview-wrapper.has-image {
+    display: block;
+}
+
+.image-preview {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    box-shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
+}
+
+.image-preview img {
+    width: 100%;
+    max-height: 250px;
+    object-fit: contain;
+    display: block;
+}
+
+.image-preview .remove-image-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: var(--danger);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
+}
+
+.image-preview .remove-image-btn:hover {
+    transform: scale(1.1);
+}
+
+/* ===== NARRATION ===== */
 .narration-section {
     padding: 0 20px 16px;
     display: none;
@@ -290,6 +399,7 @@
     background: var(--bg-secondary);
     border-top: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
 }
 
 .summary-item {
@@ -489,7 +599,8 @@
     }
     
     .reason-section,
-    .narration-section {
+    .narration-section,
+    .image-upload-section {
         padding: 0 16px 12px;
     }
     
@@ -500,6 +611,19 @@
     .reason-chip {
         font-size: 11px;
         padding: 4px 10px;
+    }
+    
+    .image-upload-area {
+        padding: 12px;
+        min-height: 60px;
+    }
+    
+    .image-upload-area .upload-icon {
+        font-size: 22px;
+    }
+    
+    .image-preview img {
+        max-height: 150px;
     }
     
     .summary-bar {
@@ -534,7 +658,7 @@
 
 <div class="update-container">
     <div class="trade-card">
-        <form method="post" action="{% url 'update_trade' trade.trade_id %}" id="journalForm">
+        <form method="post" action="{% url 'update_trade' trade.trade_id %}" id="journalForm" enctype="multipart/form-data">
             {% csrf_token %}
             
             <!-- Hidden Fields -->
@@ -585,6 +709,33 @@
                 </div>
             </div>
 
+            <!-- ===== SETUP IMAGE UPLOAD ===== -->
+            <div class="image-upload-section">
+                <div class="image-label">
+                    <i class="fas fa-image"></i>
+                    Setup Image
+                    <span style="color:var(--text-muted);font-size:10px;font-weight:normal;">(optional)</span>
+                </div>
+                
+                <!-- Upload Area -->
+                <div id="uploadArea" class="image-upload-area" onclick="document.getElementById('fileInput').click()">
+                    <span class="upload-icon"><i class="fas fa-cloud-upload-alt"></i></span>
+                    <span class="upload-text">Click to upload setup image</span>
+                    <span class="upload-hint">PNG, JPG, GIF, WEBP up to 5MB</span>
+                    <input type="file" name="setup_image" id="fileInput" accept="image/*" style="display:none;" onchange="handleFileSelect(event)">
+                </div>
+                
+                <!-- Image Preview -->
+                <div id="previewWrapper" class="image-preview-wrapper {% if trade.setup_image %}has-image{% endif %}">
+                    <div class="image-preview">
+                        <img id="imagePreview" src="{% if trade.setup_image %}{{ trade.setup_image.url }}{% endif %}" alt="Setup Image">
+                        <button type="button" class="remove-image-btn" onclick="removeImage()" title="Remove image">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Narration Section -->
             <div class="narration-section visible" id="narrationSection">
                 <div class="narration-label">
@@ -616,8 +767,8 @@
                 </div>
                 <span class="summary-divider" id="summaryDivider" {% if trade.target != '0' %}style="display:none;"{% endif %}>|</span>
                 <div class="summary-item" style="margin-left: auto;">
-                    <i class="fas fa-pen"></i>
-                    <span id="summaryLength">{{ trade.narration|default:''|length }}</span> chars
+                    <i class="fas fa-image"></i>
+                    <span id="imageStatus">{% if trade.setup_image %}✅ Uploaded{% else %}❌ No image{% endif %}</span>
                 </div>
             </div>
 
@@ -647,9 +798,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const summaryReason = document.getElementById('summaryReason');
     const summaryReasonContainer = document.getElementById('summaryReasonContainer');
     const summaryDivider = document.getElementById('summaryDivider');
-    const summaryLength = document.getElementById('summaryLength');
     const autoSave = document.getElementById('autoSave');
     const submitBtn = document.getElementById('submitBtn');
+
+    // Image elements
+    const fileInput = document.getElementById('fileInput');
+    const uploadArea = document.getElementById('uploadArea');
+    const previewWrapper = document.getElementById('previewWrapper');
+    const imagePreview = document.getElementById('imagePreview');
+    const imageStatus = document.getElementById('imageStatus');
 
     // Win/Loss buttons
     const winLossBtns = document.querySelectorAll('.quick-btn');
@@ -659,17 +816,101 @@ document.addEventListener('DOMContentLoaded', function() {
     // Character limit
     const MAX_CHARS = 500;
 
-    // --- Win/Loss Selection ---
+    // Track if image was removed
+    let imageRemoved = false;
+    let currentFile = null;
+
+    // ===== IMAGE UPLOAD HANDLING =====
+    window.handleFileSelect = function(event) {
+        const file = event.target.files[0];
+        if (file) {
+            handleFile(file);
+        }
+      
+    };
+
+    function handleFile(file) {
+        // Validate file type
+        const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!validTypes.includes(file.type)) {
+            showToast('Please upload a valid image (JPG, PNG, GIF, WEBP)', 'error');
+            return;
+        }
+
+        // Validate file size (5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            showToast('Image size must be less than 5MB', 'error');
+            return;
+        }
+
+        currentFile = file;
+        imageRemoved = false;
+        
+        // Preview the image
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            imagePreview.src = e.target.result;
+            previewWrapper.classList.add('has-image');
+            imageStatus.textContent = '📤 New image selected';
+            imageStatus.style.color = 'var(--warning)';
+            
+            // Hide upload area, show preview
+            uploadArea.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+        
+        showToast('Image selected. Click Save to upload.', 'info');
+    }
+
+    // Remove image
+    window.removeImage = function() {
+        currentFile = null;
+        imageRemoved = true;
+        previewWrapper.classList.remove('has-image');
+        imagePreview.src = '';
+        uploadArea.style.display = 'flex';
+        imageStatus.textContent = '❌ No image';
+        imageStatus.style.color = 'var(--text-muted)';
+        
+        // Clear the file input
+        fileInput.value = '';
+        
+        showToast('Image removed', 'info');
+    };
+
+    // Drag and drop support
+    uploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        this.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFile(files[0]);
+            // Update file input
+            const dt = new DataTransfer();
+            dt.items.add(files[0]);
+            fileInput.files = dt.files;
+        }
+    });
+
+    // ===== WIN/LOSS SELECTION =====
     winLossBtns.forEach(btn => {
         btn.addEventListener('click', function() {
-            // Remove selected from all
             winLossBtns.forEach(b => b.classList.remove('selected'));
             this.classList.add('selected');
 
             const value = this.dataset.value;
             targetInput.value = value;
 
-            // Update summary
             if (value === '1') {
                 summaryOutcome.textContent = 'Win';
                 summaryOutcome.className = 'value win';
@@ -685,7 +926,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 reasonSection.classList.add('visible');
                 summaryReasonContainer.style.display = 'flex';
                 summaryDivider.style.display = 'inline';
-                // Auto select first reason if none selected
                 if (!reasonInput.value && reasonChips.length > 0) {
                     reasonChips[0].click();
                 }
@@ -697,7 +937,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // --- Reason Selection ---
+    // ===== REASON SELECTION =====
     reasonChips.forEach(chip => {
         chip.addEventListener('click', function() {
             reasonChips.forEach(c => c.classList.remove('selected'));
@@ -710,20 +950,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // --- Narration Input ---
+    // ===== NARRATION INPUT =====
     noteTextarea.addEventListener('input', function() {
         const text = this.value;
         const length = text.length;
 
-        // Character count
         charCount.textContent = length;
-        summaryLength.textContent = length;
 
-        // Limit characters
         if (length > MAX_CHARS) {
             this.value = text.substring(0, MAX_CHARS);
             charCount.textContent = MAX_CHARS;
-            summaryLength.textContent = MAX_CHARS;
             showToast('Character limit reached (500)', 'warning');
         }
 
@@ -734,7 +970,7 @@ document.addEventListener('DOMContentLoaded', function() {
         this._saveTimeout = setTimeout(() => autoSaveToggle('saved'), 800);
     });
 
-    // --- Auto-save toggle ---
+    // ===== AUTO-SAVE TOGGLE =====
     function autoSaveToggle(state) {
         if (state === 'saved') {
             autoSave.innerHTML = '<i class="fas fa-check-circle"></i> Saved';
@@ -745,13 +981,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // --- Update Summary ---
+    // ===== UPDATE SUMMARY =====
     function updateSummary() {
         const target = targetInput.value;
         const reason = reasonInput.value;
         const narration = noteTextarea.value;
 
-        // Outcome
         if (target === '1') {
             summaryOutcome.textContent = 'Win';
             summaryOutcome.className = 'value win';
@@ -763,19 +998,15 @@ document.addEventListener('DOMContentLoaded', function() {
             summaryOutcome.className = 'value text-muted';
         }
 
-        // Reason
         if (reason) {
             const chip = document.querySelector(`.reason-chip[data-value="${reason}"]`);
             if (chip) {
                 summaryReason.textContent = chip.textContent.trim();
             }
         }
-
-        // Length
-        summaryLength.textContent = narration.length;
     }
 
-    // --- Form Submit ---
+    // ===== FORM SUBMIT =====
     form.addEventListener('submit', function(e) {
         // Validate
         if (!targetInput.value) {
@@ -797,6 +1028,12 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        // If image was removed, we need to handle that
+        if (imageRemoved && !currentFile) {
+            // We'll let the view handle the removal
+            // The hidden field will be empty
+        }
+
         // Update hidden inputs
         narrationInput.value = noteTextarea.value;
 
@@ -805,7 +1042,7 @@ document.addEventListener('DOMContentLoaded', function() {
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
     });
 
-    // --- Toast Notification ---
+    // ===== TOAST NOTIFICATION =====
     function showToast(message, type = 'info') {
         const existing = document.querySelector('.toast');
         if (existing) existing.remove();
@@ -835,7 +1072,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 3000);
     }
 
-    // --- Initialize ---
+    // ===== INITIALIZE =====
     updateSummary();
 
     // If loss and no reason, auto-select first
@@ -843,7 +1080,16 @@ document.addEventListener('DOMContentLoaded', function() {
         reasonChips[0].click();
     }
 
-    // --- Keyboard shortcuts ---
+    // Update image status on load
+    if (imagePreview.src && imagePreview.src !== '') {
+        imageStatus.textContent = '✅ Uploaded';
+        imageStatus.style.color = 'var(--success)';
+    } else {
+        imageStatus.textContent = '❌ No image';
+        imageStatus.style.color = 'var(--text-muted)';
+    }
+
+    // ===== KEYBOARD SHORTCUTS =====
     document.addEventListener('keydown', function(e) {
         // Ctrl+Enter to submit
         if (e.ctrlKey && e.key === 'Enter') {
@@ -867,7 +1113,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // --- Tooltip for shortcuts ---
     console.log('⌨️ Shortcuts: 1=Win, 2=Loss, Ctrl+Enter=Submit, Escape=Cancel');
 });
 </script>

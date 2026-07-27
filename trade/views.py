@@ -47,7 +47,9 @@ from .utils import (
     get_recent_activity, calculate_consistency_grade, prepare_chart_data,
     
     # Mood tracking functions
-    get_mood_streak, get_mood_achievements, get_mood_stats_for_dashboard
+    get_mood_streak, get_mood_achievements, get_mood_stats_for_dashboard,
+
+    generate_educational_insights
 )
 
 
@@ -589,37 +591,26 @@ def journal_view(request):
 
 @login_required
 def update_trade_view(request, trade_id):
-    """Update an existing trade."""
-    # Ensure user can only update their own trades
+    """Update an existing trade - set target, reason, narration, and closing time."""
     trade = get_object_or_404(Trades, trade_id=trade_id, user=request.user)
-
     old_target = trade.target
 
     if request.method == "POST":
-        form = TradeUpdateForm(request.POST, instance=trade)
+        form = TradeUpdateForm(request.POST, request.FILES, instance=trade)
 
         if form.is_valid():
-            updated_trade = form.save(commit=False)
-
-            # Convert empty strings to NULL
-            for field in Trades._meta.fields:
-                if field.is_relation:
-                    continue
-                if getattr(updated_trade, field.name) == "":
-                    setattr(updated_trade, field.name, None)
-
-            # ✅ SET holding time ONLY when target is updated first time
-            if (
-                old_target is None
-                and updated_trade.target is not None
-                and updated_trade.holding_time is None
-            ):
-                delta = now() - updated_trade.timestamp
-                updated_trade.holding_time = int(
-                    delta.total_seconds() // 60
-                )
-
-            updated_trade.save()
+            # ✅ Save the form WITHOUT commit=False - handles everything including files
+            updated_trade = form.save()
+            
+            # Now handle the additional logic
+            if old_target is None and updated_trade.target is not None:
+                updated_trade.closed_at = timezone.now()
+                if updated_trade.holding_time is None:
+                    delta = timezone.now() - updated_trade.timestamp
+                    updated_trade.holding_time = int(delta.total_seconds() // 60)
+                updated_trade.save()  # Save the additional fields
+            
+            messages.success(request, f"✅ Trade #{trade.trade_id} journaled successfully!")
             return redirect("journal")
 
     else:
@@ -633,8 +624,143 @@ def update_trade_view(request, trade_id):
             "trade": trade,
         }
     )
+    
+# Add this function to views.py
+
+def generate_educational_insights(trade):
+    """Generate learning insights for a trade."""
+    insights = {
+        'outcome': 'Win 🏆' if trade.target == 1 else 'Loss 💔',
+        'outcome_color': '#34d399' if trade.target == 1 else '#f87171',
+        'key_takeaways': [],
+        'what_went_right': [],
+        'what_went_wrong': [],
+        'recommendation': '',
+    }
+    
+    # Analyze RVS
+    if trade.rvs_grade == 'A+' or trade.rvs_grade == 'A':
+        insights['what_went_right'].append('✅ Excellent rule adherence (RVS Grade A)')
+    elif trade.rvs_grade == 'F':
+        insights['what_went_wrong'].append('❌ Multiple rule violations detected (RVS Grade F)')
+    
+    # Analyze setup quality
+    if trade.setup_quality and trade.setup_quality >= 4:
+        insights['what_went_right'].append(f'✅ High quality setup ({trade.setup_quality}/5 stars)')
+    elif trade.setup_quality and trade.setup_quality <= 2:
+        insights['what_went_wrong'].append(f'❌ Low quality setup ({trade.setup_quality}/5 stars)')
+    
+    # Analyze confirmation
+    if trade.confirmation and trade.confirmation != 'No confirmation':
+        insights['what_went_right'].append(f'✅ Had confirmation: {trade.confirmation}')
+    elif trade.confirmation == 'No confirmation':
+        insights['what_went_wrong'].append('❌ No confirmation - traded without validation')
+    
+    # Analyze mood
+    if trade.mood == 'Calm':
+        insights['what_went_right'].append('✅ Calm mindset during entry')
+    elif trade.mood in ['FOMO', 'Frustrated']:
+        insights['what_went_wrong'].append(f'❌ Emotional trading detected (Mood: {trade.mood})')
+    
+    # Analyze loss reason
+    if trade.target == 0 and trade.reason:
+        reason_advice = {
+            'Psycho/Mood': '🧠 Work on emotional discipline. Take breaks between trades.',
+            'Wrong Structure': '📐 Review your structural analysis. Wait for clear setups.',
+            'Trend': '📈 Trade with the trend, not against it.',
+            'FOMO': '🎯 Never chase trades. There will always be more opportunities.',
+            'Greed': '💰 Stick to your profit targets. Greed is destructive.',
+            'No Confirmation': '⏳ Patience pays. Wait for confirmation signals.',
+            'Momentum': '⚡ Only take trades with strong momentum alignment.',
+            'News': '📰 Avoid trading during high-impact news events.',
+        }
+        advice = reason_advice.get(trade.reason, 'Review your strategy and learn from this loss.')
+        insights['recommendation'] = advice
+    
+    # General takeaways based on outcome
+    if trade.target == 1:
+        insights['key_takeaways'].append('✅ Win: Replicate this setup pattern')
+        insights['key_takeaways'].append(f'📊 Risk/Reward: {trade.risk_reward}R')
+        if trade.rvs_grade in ['A+', 'A']:
+            insights['key_takeaways'].append('📋 Good discipline maintained throughout')
+    else:
+        insights['key_takeaways'].append('❌ Loss: Identify what went wrong')
+        insights['key_takeaways'].append('📊 Risk/Reward: -1R')
+        if trade.reason:
+            insights['key_takeaways'].append(f'📋 Reason: {trade.reason}')
+    
+    # Add RVS insight
+    rvs_insight = {
+        'A+': '🎯 Perfect execution! Keep following your rules.',
+        'A': '✅ Good discipline. Minor improvements possible.',
+        'B': '⚠️ Some rule violations. Review your checklist.',
+        'C': '⚠️ Multiple violations. Consider slowing down.',
+        'F': '🔴 Major rule violations. Stop and reassess your process.'
+    }
+    if trade.rvs_grade in rvs_insight:
+        insights['recommendation'] = rvs_insight[trade.rvs_grade]
+    
+    return insights
 
 
+@login_required
+def trade_detail_view(request, trade_id):
+    """AJAX view to get trade details for the modal."""
+    try:
+        trade = get_object_or_404(Trades, trade_id=trade_id, user=request.user)
+        
+        # Prepare the response data
+        data = {
+            'trade_id': trade.trade_id,
+            'pair': trade.pair.name if trade.pair else 'N/A',
+            'buy_or_sell': trade.buy_or_sell,
+            'timestamp': trade.timestamp.strftime('%Y-%m-%d %H:%M'),
+            'closed_at': trade.closed_at.strftime('%Y-%m-%d %H:%M') if trade.closed_at else None,
+            'holding_time_display': trade.holding_time_display,
+            
+            # Trade characteristics
+            'trade_type': trade.trade_type,
+            'setup_quality': trade.setup_quality,
+            'entry_place': trade.entry_place,
+            'confirmation': trade.confirmation,
+            'mood': trade.mood,
+            'tp': trade.tp,
+            'tp_reason': trade.tp_reason,
+            'risk_reward': trade.risk_reward,
+            'rvs': trade.rvs,
+            'rvs_grade': trade.rvs_grade,
+            'target': trade.target,
+            'reason': trade.reason,
+            'narration': trade.narration,
+            
+            # Account info
+            'account_name': trade.account.account_name if trade.account else 'N/A',
+            'account_type': trade.account.account_type if trade.account else 'N/A',
+            
+            # Risk management data
+            'risk_percent': float(trade.risk_percent) if trade.risk_percent else None,
+            'stop_loss_pips': trade.stop_loss_pips,
+            'calculated_lot_size': float(trade.calculated_lot_size) if trade.calculated_lot_size else None,
+            
+            # Momentum data
+            'momentum_h4': trade.momentum_h4,
+            'momentum_h1': trade.momentum_h1,
+            'momentum_15m': trade.momentum_15m,
+            'momentum_5m': trade.momentum_5m,
+            'momentum_1m': trade.momentum_1m,
+            
+            # Image
+            'setup_image_url': trade.setup_image.url if trade.setup_image else None,
+            
+            # Educational insights
+            'educational_insights': generate_educational_insights(trade),
+        }
+        
+        return JsonResponse({'success': True, 'data': data})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+        
 @login_required
 def delete_trade_view(request, trade_id):
     """Confirm trade deletion."""
@@ -1056,7 +1182,7 @@ def test_view(request):
 
 @login_required
 def home_view(request):
-    """Home dashboard - OPTIMIZED for speed."""
+    """Home dashboard - with profit/loss based on closing date."""
     import pytz
     from django.db.models import Count, Sum, Q, Avg, StdDev, Case, When, Value, FloatField
     from django.core.cache import cache
@@ -1128,16 +1254,24 @@ def home_view(request):
     overall_profit = round(overall_profit, 2)
     
     # ============================================
-    # 3. OPTIMIZED TODAY/YESTERDAY QUERIES
+    # 3. TODAY/YESTERDAY - BASED ON CLOSING DATE
     # ============================================
     today = timezone.now().date()
     yesterday = today - timedelta(days=1)
     
-    today_trades = user_trades.filter(timestamp__date=today)
-    yesterday_trades = user_trades.filter(timestamp__date=yesterday)
+    # Get trades that were CLOSED today (closed_at date = today, target is set)
+    today_closed = user_trades.filter(
+        target__in=[0, 1],
+        closed_at__date=today
+    )
     
-    # Today's stats
-    today_closed = today_trades.filter(target__in=[0, 1])
+    # Get trades that were CLOSED yesterday
+    yesterday_closed = user_trades.filter(
+        target__in=[0, 1],
+        closed_at__date=yesterday
+    )
+    
+    # Today's profit from closed trades
     todays_profit = today_closed.aggregate(
         total=Sum(
             Case(
@@ -1149,8 +1283,7 @@ def home_view(request):
     )['total'] or 0
     todays_profit = round(todays_profit, 2)
     
-    # Yesterday's stats
-    yesterday_closed = yesterday_trades.filter(target__in=[0, 1])
+    # Yesterday's profit from closed trades
     yesterday_profit = yesterday_closed.aggregate(
         total=Sum(
             Case(
@@ -1161,6 +1294,15 @@ def home_view(request):
         )
     )['total'] or 0
     yesterday_profit = round(yesterday_profit, 2)
+    
+    # Today's closed trade count
+    todays_closed_count = today_closed.count()
+    
+    # Get today's open trades (entered today, not yet closed)
+    todays_open_trades = user_trades.filter(
+        timestamp__date=today,
+        target__isnull=True
+    ).count()
     
     # ============================================
     # 4. OPTIMIZED PERFORMANCE STATS
@@ -1227,10 +1369,10 @@ def home_view(request):
         dates.append(trade.timestamp.strftime("%Y-%m-%d"))
     
     # ============================================
-    # 7. CALCULATE SEVERITY AND ISSUES (FIXED)
+    # 7. CALCULATE SEVERITY AND ISSUES
     # ============================================
     issues = []
-    severity = 'good'  # default
+    severity = 'good'
     severity_display = 'Good'
     severity_light = 'green-light'
     
@@ -1337,7 +1479,6 @@ def home_view(request):
     # ============================================
     # 9. OPTIMIZED MOOD DATA
     # ============================================
-    today = timezone.now().date()
     today_mood = None
     mood_streak = 0
     mood_achievements = []
@@ -1384,13 +1525,15 @@ def home_view(request):
         'best_pairs': market_data.get('trading_session_data', {}).get('best_pairs', []),
         'session_pairs': market_data.get('trading_session_data', {}),
         
-        # Trade stats
+        # Trade stats - UPDATED with closing date tracking
         'total_trades': total_user_trades,
         'overallwinrate': overallwinrate,
         'overalllossrate': overalllossrate,
         'overall_profit': overall_profit,
-        'todays_profit': todays_profit,
-        'yesterday_profit': yesterday_profit,
+        'todays_profit': todays_profit,  # Now based on closed_at date
+        'yesterday_profit': yesterday_profit,  # Now based on closed_at date
+        'todays_closed_count': todays_closed_count,  # Trades closed today
+        'todays_open_trades': todays_open_trades,  # Trades entered today, not yet closed
         'avg_risk_reward': avg_risk_reward,
         'std_dev_rr': std_dev_rr,
         'avg_rvs': avg_rvs,
@@ -1409,7 +1552,7 @@ def home_view(request):
         'performance': performance,
         'dates': dates,
         
-        # ===== PERFORMANCE STATUS - NOW PROPERLY CALCULATED =====
+        # Performance status
         'advice': advice,
         'issues': issues,
         'severity': severity,

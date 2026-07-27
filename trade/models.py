@@ -185,6 +185,12 @@ class Trades(models.Model):
     holding_time   = models.IntegerField(null=True, blank=True)
     narration   = models.CharField(max_length=500, null=True,blank=True,  )
     timestamp   = models.DateTimeField(auto_now_add=True)
+    setup_image = models.ImageField(
+        upload_to='trade_setups/%Y/%m/%d/',  # Better organization by date
+        null=True,
+        blank=True,
+        help_text="Upload a screenshot of your trade setup"
+    )
     
     is_draft = models.BooleanField(
         default=False,
@@ -200,6 +206,12 @@ class Trades(models.Model):
         blank=True,
         help_text="When the draft was last updated"
     )    
+
+    closed_at = models.DateTimeField(
+        null=True, 
+        blank=True,
+        help_text="When the trade was closed (journaled)"
+    )
 
     @property
     def holding_time_display(self):

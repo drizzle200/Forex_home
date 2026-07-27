@@ -1,6 +1,7 @@
 from .models import Trades
 
 def draft_count(request):
+
     """Context processor for draft and journal counts."""
     context = {
         'draft_count': 0,

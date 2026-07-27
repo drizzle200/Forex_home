@@ -1,6 +1,6 @@
 """
 Django settings for tradingfx project.
-Configured for Neon PostgreSQL on Fly.io
+Configured for Neon PostgreSQL on Fly.io with persistent media storage
 """
 
 from pathlib import Path
@@ -61,9 +61,12 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                # ===== REGISTER YOUR CUSTOM CONTEXT PROCESSOR =====
+                'trade.context_processors.draft_count',  # ✅ This is the key!
             ],
         },
     },
@@ -108,22 +111,133 @@ USE_I18N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
+# ============================================
+# STATIC FILES CONFIGURATION
+# ============================================
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'  # Changed: Use app directory (no volume needed)
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-LOGIN_URL = '/login/'
-
-# Media files (if you ever need them)
+# ============================================
+# MEDIA FILE CONFIGURATION - PERSISTENT STORAGE
+# ============================================
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'  # Changed: Use app directory
 
-# Default primary key field type
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+# Use Fly.io volume if available, fallback to local
+if os.path.exists('/media/'):
+    MEDIA_ROOT = '/media/'
+    print("📁 Using Fly.io volume for media storage at /media/")
+else:
+    MEDIA_ROOT = BASE_DIR / 'media'
+    print("📁 Using local media storage at", MEDIA_ROOT)
 
+# Ensure media directory exists
+os.makedirs(MEDIA_ROOT, exist_ok=True)
 
-# Security settings for production
+# File upload settings
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
+
+# ============================================
+# LOGIN / AUTHENTICATION SETTINGS
+# ============================================
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'index'
+LOGOUT_REDIRECT_URL = 'login'
+
+# ============================================
+# MESSAGE TAGS (for Bootstrap compatibility)
+# ============================================
+from django.contrib.messages import constants as messages
+
+MESSAGE_TAGS = {
+    messages.DEBUG: 'debug',
+    messages.INFO: 'info',
+    messages.SUCCESS: 'success',
+    messages.WARNING: 'warning',
+    messages.ERROR: 'error',
+}
+
+# ============================================
+# CACHING (Optional - for performance)
+# ============================================
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+    }
+}
+
+# ============================================
+# SESSION SETTINGS
+# ============================================
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_AGE = 86400  # 24 hours
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+# ============================================
+# CUSTOM SETTINGS
+# ============================================
+# Your app-specific settings go here
+
+# Trading session settings
+TRADING_SESSION_CACHE_TIMEOUT = 300  # 5 minutes
+
+# Performance settings
+PERFORMANCE_CACHE_TIMEOUT = 3600  # 1 hour
+
+# ============================================
+# LOGGING (Optional)
+# ============================================
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'debug.log',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'trade': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'django.db.backends': {
+            'level': 'INFO',  # Change to DEBUG to see SQL queries
+            'handlers': ['console'],
+        },
+    },
+}
+
+# ============================================
+# SECURITY SETTINGS FOR PRODUCTION
+# ============================================
 if not DEBUG:
     # For Fly.io - SSL is terminated at the proxy level
     SECURE_SSL_REDIRECT = False
@@ -140,25 +254,3 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000  # 1 year
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
-
-
-# Logging configuration (helps debug Neon connection issues)
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-        },
-    },
-    'root': {
-        'handlers': ['console'],
-        'level': 'INFO',
-    },
-    'loggers': {
-        'django.db.backends': {
-            'level': 'INFO',  # Change to DEBUG to see SQL queries
-            'handlers': ['console'],
-        },
-    },
-}

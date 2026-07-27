@@ -43,12 +43,20 @@ class TradeUpdateForm(forms.ModelForm):
     class Meta:
         model = Trades
         fields = [
-        "target","reason","holding_time","narration"
+            "target", "reason", "holding_time", "narration",
+            "setup_image",  # ✅ ADD THIS
         ]
+        widgets = {
+            'setup_image': forms.ClearableFileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*',
+            }),
+        }
     
-    def __init__(self,*args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["reason"].required=False
+        self.fields["reason"].required = False
+        self.fields["setup_image"].required = False
 
     def clean(self):
         cleaned_data = super().clean()

@@ -1012,3 +1012,79 @@ def get_user_active_account(user):
         )
     
     return account
+
+
+def generate_educational_insights(trade):
+    """Generate learning insights for a trade."""
+    insights = {
+        'outcome': 'Win 🏆' if trade.target == 1 else 'Loss 💔',
+        'outcome_color': '#34d399' if trade.target == 1 else '#f87171',
+        'key_takeaways': [],
+        'what_went_right': [],
+        'what_went_wrong': [],
+        'recommendation': '',
+    }
+    
+    # Analyze RVS
+    if trade.rvs_grade == 'A+' or trade.rvs_grade == 'A':
+        insights['what_went_right'].append('✅ Excellent rule adherence (RVS Grade A)')
+    elif trade.rvs_grade == 'F':
+        insights['what_went_wrong'].append('❌ Multiple rule violations detected (RVS Grade F)')
+    
+    # Analyze setup quality
+    if trade.setup_quality and trade.setup_quality >= 4:
+        insights['what_went_right'].append(f'✅ High quality setup ({trade.setup_quality}/5 stars)')
+    elif trade.setup_quality and trade.setup_quality <= 2:
+        insights['what_went_wrong'].append(f'❌ Low quality setup ({trade.setup_quality}/5 stars)')
+    
+    # Analyze confirmation
+    if trade.confirmation and trade.confirmation != 'No confirmation':
+        insights['what_went_right'].append(f'✅ Had confirmation: {trade.confirmation}')
+    elif trade.confirmation == 'No confirmation':
+        insights['what_went_wrong'].append('❌ No confirmation - traded without validation')
+    
+    # Analyze mood
+    if trade.mood == 'Calm':
+        insights['what_went_right'].append('✅ Calm mindset during entry')
+    elif trade.mood in ['FOMO', 'Frustrated']:
+        insights['what_went_wrong'].append(f'❌ Emotional trading detected (Mood: {trade.mood})')
+    
+    # Analyze loss reason
+    if trade.target == 0 and trade.reason:
+        reason_advice = {
+            'Psycho/Mood': '🧠 Work on emotional discipline. Take breaks between trades.',
+            'Wrong Structure': '📐 Review your structural analysis. Wait for clear setups.',
+            'Trend': '📈 Trade with the trend, not against it.',
+            'FOMO': '🎯 Never chase trades. There will always be more opportunities.',
+            'Greed': '💰 Stick to your profit targets. Greed is destructive.',
+            'No Confirmation': '⏳ Patience pays. Wait for confirmation signals.',
+            'Momentum': '⚡ Only take trades with strong momentum alignment.',
+            'News': '📰 Avoid trading during high-impact news events.',
+        }
+        advice = reason_advice.get(trade.reason, 'Review your strategy and learn from this loss.')
+        insights['recommendation'] = advice
+    
+    # General takeaways based on outcome
+    if trade.target == 1:
+        insights['key_takeaways'].append('✅ Win: Replicate this setup pattern')
+        insights['key_takeaways'].append(f'📊 Risk/Reward: {trade.risk_reward}R')
+        if trade.rvs_grade in ['A+', 'A']:
+            insights['key_takeaways'].append('📋 Good discipline maintained throughout')
+    else:
+        insights['key_takeaways'].append('❌ Loss: Identify what went wrong')
+        insights['key_takeaways'].append('📊 Risk/Reward: -1R')
+        if trade.reason:
+            insights['key_takeaways'].append(f'📋 Reason: {trade.reason}')
+    
+    # Add RVS insight
+    rvs_insight = {
+        'A+': '🎯 Perfect execution! Keep following your rules.',
+        'A': '✅ Good discipline. Minor improvements possible.',
+        'B': '⚠️ Some rule violations. Review your checklist.',
+        'C': '⚠️ Multiple violations. Consider slowing down.',
+        'F': '🔴 Major rule violations. Stop and reassess your process.'
+    }
+    if trade.rvs_grade in rvs_insight:
+        insights['recommendation'] = rvs_insight[trade.rvs_grade]
+    
+    return insights 
