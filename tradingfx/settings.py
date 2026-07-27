@@ -1,6 +1,6 @@
 """
 Django settings for tradingfx project.
-Configured for Neon PostgreSQL on Fly.io with persistent media storage
+Configured for Neon PostgreSQL on Fly.io
 """
 
 from pathlib import Path
@@ -111,25 +111,16 @@ USE_I18N = True
 USE_TZ = True
 
 
-# ============================================
-# STATIC FILES CONFIGURATION
-# ============================================
+# Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # ============================================
-# MEDIA FILE CONFIGURATION - PERSISTENT STORAGE
+# MEDIA FILE CONFIGURATION - FIXED FOR IMAGE UPLOADS
 # ============================================
 MEDIA_URL = '/media/'
-
-# Use Fly.io volume if available, fallback to local
-if os.path.exists('/media/'):
-    MEDIA_ROOT = '/media/'
-    print("📁 Using Fly.io volume for media storage at /media/")
-else:
-    MEDIA_ROOT = BASE_DIR / 'media'
-    print("📁 Using local media storage at", MEDIA_ROOT)
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Ensure media directory exists
 os.makedirs(MEDIA_ROOT, exist_ok=True)
@@ -174,6 +165,16 @@ CACHES = {
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_AGE = 86400  # 24 hours
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+# ============================================
+# SECURITY (Production settings - uncomment in production)
+# ============================================
+# SECURE_SSL_REDIRECT = True
+# CSRF_COOKIE_SECURE = True
+# SESSION_COOKIE_SECURE = True
+# SECURE_BROWSER_XSS_FILTER = True
+# SECURE_CONTENT_TYPE_NOSNIFF = True
+# X_FRAME_OPTIONS = 'DENY'
 
 # ============================================
 # CUSTOM SETTINGS
